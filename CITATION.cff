@@ -1,6 +1,6 @@
 cff-version: 1.1.0
 message: "If you use this software, please cite it as below. Also consider citing the mainline hstrat package."
-title: 'wse-sketches: agent-based evolution on the Cerebras Wafer-scale Engine (WSE)'
+title: 'async-ga: agent-based evolution on the Cerebras Wafer-scale Engine (WSE)'
 abstract: "Development work for agent-based evolution on the Cerebras Wafer-scale Engine (WSE) hardware. Incoprorates hereditary stratigraphy methodology for distributed tracking of agent phylogenies."
 authors:
 - family-names: Moreno
@@ -9,7 +9,6 @@ authors:
 - family-names: Yang
   given-names: Connor
 date-released: 2024-03-04
-doi: https://zenodo.org/doi/10.5281/zenodo.10779280
 license: MIT
-repository-code: https://github.com/mmore500/wse-sketches
-url: "https://github.com/mmore500/wse-sketches"
+repository-code: https://github.com/mmore500/wse-async-ga
+url: "https://github.com/mmore500/wse-async-ga"

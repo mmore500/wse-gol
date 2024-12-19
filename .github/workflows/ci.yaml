@@ -10,50 +10,6 @@ on:
   workflow_dispatch:
 
 jobs:
-  test-ziglib:
-    name: Test ziglib
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v2
-
-      - name: Set up Zig
-        uses: goto-bus-stop/setup-zig@v2
-        with:
-            version: 0.11.0
-
-      - name: Build ziglib
-        run: zig build
-        working-directory: ./ziglib
-
-      - name: Run test script
-        run: ./ziglib/test.sh
-
-      - name: Run benchmarks
-        run: ./ziglib/zig-out/bin/ziglib_benchmark
-
-      - name: Set up Python
-        uses: actions/setup-python@v2
-        with:
-          python-version: '3.10'
-
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          python -m pip install --upgrade uv
-          uv pip install -r requirements.txt --system
-
-      - name: Concatenate output
-        run: ls -1 /tmp/a=benchmark-zig-hsurf+policy=*+ext=.csv | python3 -m joinem /tmp/a=benchmark-zig-hsurf+ext=.csv
-
-      - name: Upload output as artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: benchmark-zig-hsurf
-          path: /tmp/a=benchmark-zig-hsurf+ext=.csv
-
-
   test-pylib:
     name: Test pylib
     runs-on: ubuntu-latest
@@ -76,10 +32,20 @@ jobs:
       - name: Run test script
         run: ./pylib/test.sh
 
-  test-csl-kernels:
+  test-async-ga:
     name: Test csl kernels
     runs-on: ubuntu-latest
-    if: ${{ github.event.repository.name == 'wse-sketches-mirror' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        genome:
+          - genome_frozenliteral
+          - genome_bitdrift
+          - genome_hsurftiltedsticky
+          - genome_purifyingonly
+          - genome_purifyingplus
+          - genome_purifyingstripped
+          - genome_hypermutator
     env:
       CSLC: cslc
       CS_PYTHON: cs_python
@@ -127,99 +93,92 @@ jobs:
           CEREBRAS_SDK_URL: ${{ secrets.CEREBRAS_SDK_URL }}
 
       - name: Test SDK
-        run: |
-          sudo env PATH=$PATH cslc -h
-          sudo env PATH=$PATH csdb --help
-          sudo env PATH=$PATH cs_python -h
-          sudo env PATH=$PATH cs_readelf -h
-          sudo env PATH=$PATH sdk_debug_shell --help
-          echo "SINGULARITYENV_CSL_SUPPRESS_SIMFAB_TRACE ${SINGULARITYENV_CSL_SUPPRESS_SIMFAB_TRACE}"
+        run: sudo env PATH=$PATH cslc -h  >/dev/null 2>&1
+      - run: sudo env PATH=$PATH csdb --help  >/dev/null 2>&1
+      - run: sudo env PATH=$PATH cs_python -h  >/dev/null 2>&1
+      - run: sudo env PATH=$PATH cs_readelf -h >/dev/null 2>&1
+      - run: sudo env PATH=$PATH sdk_debug_shell --help
+      - run: echo "SINGULARITYENV_CSL_SUPPRESS_SIMFAB_TRACE ${SINGULARITYENV_CSL_SUPPRESS_SIMFAB_TRACE}"
 
-      - name: Test self-driving
+      - name: Compile async-ga
         run: |
-          sudo env PATH=$PATH CSLC=$CSLC CS_PYTHON=$CS_PYTHON \
-            ./kernel-self-driving/compile.sh
-          sudo env PATH=$PATH CSLC=$CSLC CS_PYTHON=$CS_PYTHON \
-            ./kernel-self-driving/execute.sh
-
-      - name: Test memcpy
-        run: |
-          sudo env PATH=$PATH CSLC=$CSLC CS_PYTHON=$CS_PYTHON \
-            ./kernel-test-memcpy/compile.sh
-          sudo env PATH=$PATH CSLC=$CSLC CS_PYTHON=$CS_PYTHON  \
-            ./kernel-test-memcpy/execute.sh
-
-      - name: Test async-ga, genome_frozenliteral
-        run: |
-          export ASYNC_GA_GENOME_FLAVOR="genome_frozenliteral"
+          export ASYNC_GA_GENOME_FLAVOR="${{ matrix.genome }}"
           export CSLC CS_PYTHON PATH
           sudo -E env PATH=$PATH \
-            ./kernel-async-ga/compile.sh
-          sudo -E env PATH=$PATH \
-            ./kernel-async-ga/execute.sh
+            ./kernel-async-ga/compile.sh \
+            >/dev/null 2>&1
 
-      - name: Test async-ga, genome_bitdrift
+      - name: Run async-ga
         run: |
-          export ASYNC_GA_GENOME_FLAVOR="genome_bitdrift"
-          export ASYNC_GA_NCYCLE_AT_LEAST=0
-          export ASYNC_GA_MSEC_AT_LEAST=0
-          export ASYNC_GA_TSC_AT_LEAST=1000
+          export ASYNC_GA_GENOME_FLAVOR="${{ matrix.genome }}"
           export CSLC CS_PYTHON PATH
           sudo -E env PATH=$PATH \
-            ./kernel-async-ga/compile.sh
-          sudo -E env PATH=$PATH \
-            ./kernel-async-ga/execute.sh
+            ./kernel-async-ga/execute.sh \
+            >/dev/null 2>&1
 
-      - name: Test async-ga, genome_hsurftiltedsticky
-        run: |
-          export ASYNC_GA_GENOME_FLAVOR="genome_hsurftiltedsticky"
-          export CSLC CS_PYTHON PATH
-          sudo -E env PATH=$PATH \
-            ./kernel-async-ga/compile.sh
-          sudo -E env PATH=$PATH \
-            ./kernel-async-ga/execute.sh
+  test-sample-populations:
+    name: Test csl kernels
+    runs-on: ubuntu-latest
+    env:
+      CSLC: cslc
+      CS_PYTHON: cs_python
+      SINGULARITYENV_CSL_SUPPRESS_SIMFAB_TRACE: 1
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
 
-      - name: Test async-ga, genome_purifyingonly
-        run: |
-          export ASYNC_GA_GENOME_FLAVOR="genome_purifyingonly"
-          export CSLC CS_PYTHON PATH
-          sudo -E env PATH=$PATH \
-            ./kernel-async-ga/compile.sh
-          sudo -E env PATH=$PATH \
-            ./kernel-async-ga/execute.sh
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.10'
 
-      - name: Test async-ga, genome_purifyingplus
+      - name: Install Python dependencies
         run: |
-          export ASYNC_GA_GENOME_FLAVOR="genome_purifyingplus"
-          export CSLC CS_PYTHON PATH
-          sudo -E env PATH=$PATH \
-            ./kernel-async-ga/compile.sh
-          sudo -E env PATH=$PATH \
-            ./kernel-async-ga/execute.sh
+          python -m pip install --upgrade pip
+          python -m pip install --upgrade uv
+          uv pip install -r requirements.txt --system
 
-      - name: Test async-ga, genome_purifyingstripped
+      - name: Set up Apptainer
         run: |
-          export ASYNC_GA_GENOME_FLAVOR="genome_purifyingstripped"
-          export CSLC CS_PYTHON PATH
-          sudo -E env PATH=$PATH \
-            ./kernel-async-ga/compile.sh
-          sudo -E env PATH=$PATH \
-            ./kernel-async-ga/execute.sh
+          sudo apt-get update
+          sudo apt-get install -y rpm2cpio
+          sudo apt-get install -y golang-go
+          mkdir -p ~/apptainer
+          # echo 'export PATH="$HOME/apptainer/bin:$PATH"' >> ~/.bashrc
+          echo "$HOME/apptainer/bin" >> $GITHUB_PATH
+          curl -s https://raw.githubusercontent.com/apptainer/apptainer/03bb84afc90c9699816db2e2730b56f2d3501eff/tools/install-unprivileged.sh | bash -s - ~/apptainer
 
-      - name: Test async-ga, genome_hypermutator
+      - name: Test Apptainer
         run: |
-          export ASYNC_GA_GENOME_FLAVOR="genome_hypermutator"
-          export CSLC CS_PYTHON PATH
-          sudo -E env PATH=$PATH \
-            ./kernel-async-ga/compile.sh
-          sudo -E env PATH=$PATH \
-            ./kernel-async-ga/execute.sh
+          apptainer --version
+          sudo "$(which apptainer)" exec docker://busybox:latest echo "Hello from Singularity and Docker!"
+
+      - name: Set up SDK
+        uses: nick-fields/retry@v3
+        with:
+          timeout_minutes: 15
+          max_attempts: 3
+          command: |
+            mkdir -p ~/cerebras/bin
+            curl -L "${CEREBRAS_SDK_URL}" | tar -xzv -C ~/cerebras/bin
+            echo "$HOME/cerebras/bin" >> $GITHUB_PATH
+        env:
+          CEREBRAS_SDK_URL: ${{ secrets.CEREBRAS_SDK_URL }}
+
+      - name: Test SDK
+        run: sudo env PATH=$PATH cslc -h  >/dev/null 2>&1
+      - run: sudo env PATH=$PATH csdb --help  >/dev/null 2>&1
+      - run: sudo env PATH=$PATH cs_python -h  >/dev/null 2>&1
+      - run: sudo env PATH=$PATH cs_readelf -h >/dev/null 2>&1
+      - run: sudo env PATH=$PATH sdk_debug_shell --help
+      - run: echo "SINGULARITYENV_CSL_SUPPRESS_SIMFAB_TRACE ${SINGULARITYENV_CSL_SUPPRESS_SIMFAB_TRACE}"
 
       - name: Generate sample tagged populations
         run: |
           export CSLC CS_PYTHON PATH
           sudo -E env PATH=$PATH \
-            ./kernel-async-ga/generate_sample_tagged_populations.sh
+            ./kernel-async-ga/generate_sample_tagged_populations.sh \
+            >/dev/null 2>&1
 
       - name: Upload output as artifact
         uses: actions/upload-artifact@v4
@@ -230,7 +189,6 @@ jobs:
   test-cerebraslib:
     name: Test cerebraslib
     runs-on: ubuntu-latest
-    if: ${{ github.event.repository.name == 'wse-sketches-mirror' }}
     env:
       CSLC: cslc
       CS_PYTHON: cs_python
@@ -278,97 +236,21 @@ jobs:
           CEREBRAS_SDK_URL: ${{ secrets.CEREBRAS_SDK_URL }}
 
       - name: Test SDK
-        run: |
-          sudo env PATH=$PATH cslc -h
-          sudo env PATH=$PATH csdb --help
-          sudo env PATH=$PATH cs_python -h
-          sudo env PATH=$PATH cs_readelf -h
-          sudo env PATH=$PATH sdk_debug_shell --help
-          echo "SINGULARITYENV_CSL_SUPPRESS_SIMFAB_TRACE ${SINGULARITYENV_CSL_SUPPRESS_SIMFAB_TRACE}"
+        run: sudo env PATH=$PATH cslc -h  >/dev/null 2>&1
+      - run: sudo env PATH=$PATH csdb --help  >/dev/null 2>&1
+      - run: sudo env PATH=$PATH cs_python -h  >/dev/null 2>&1
+      - run: sudo env PATH=$PATH cs_readelf -h >/dev/null 2>&1
+      - run: sudo env PATH=$PATH sdk_debug_shell --help
+      - run: echo "SINGULARITYENV_CSL_SUPPRESS_SIMFAB_TRACE ${SINGULARITYENV_CSL_SUPPRESS_SIMFAB_TRACE}"
 
-      - name: Test cerebraslib
+      - name: Compile cerebraslib tests
         run: |
           sudo env PATH=$PATH CSLC=$CSLC CS_PYTHON=$CS_PYTHON \
-            ./kernel-test-cerebraslib/compile.sh
-          sudo env PATH=$PATH CSLC=$CSLC CS_PYTHON=$CS_PYTHON \
-            ./kernel-test-cerebraslib/execute.sh
+            ./kernel-test-cerebraslib/compile.sh \
+            >/dev/null 2>&1
 
-  binder:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Set Swap Space
-        uses: pierotofy/set-swap-space@master
-        with:
-          swap-size-gb: 16
-      - name: Install Qt
-        uses: jurplel/install-qt-action@v3
-        with:
-          version: '6.6.*'
-          setup-python: 'true'
-      - uses: actions/checkout@v2
-      - run: |
-          sudo apt-get update -y
-          sudo apt-get install -y ghostscript ffmpeg libsm6 libxext6 libgl1 libegl1 libxcb-cursor0 qt6-base-dev
-          python3 --version
-          python3 -m pip install pip --upgrade
-          python3 -m pip install uv --upgrade
-          python3 -m uv pip install -r requirements.txt --system
-      # Adapted from https://askubuntu.com/a/524368
-      - run: ./binder/execute_notebooks.sh
-        env:
-          QT_QPA_PLATFORM: offscreen
-          XDG_RUNTIME_DIR: /tmp/runtime-runner
-      # adapted from https://unix.stackexchange.com/a/545630
-      - run: find -type f -name "*.pdf" -exec bash -c 'gs -sDEVICE=pdfwrite -dCompatibilityLevel=1.4 -dPDFSETTINGS=/screen -dNOPAUSE -dBATCH -dQUIET -sOutputFile="new.pdf" "{}"; rm "{}"; mv "new.pdf" "{}";' {} \;
-      - run: rm -rf .git
-      - run: git init
-      - uses: fregante/setup-git-user@v1
-      - run: git commit --allow-empty -m "Initial commit"
-      - uses: JamesIves/github-pages-deploy-action@4.0.0
-        with:
-          branch: binder # The branch the action should deploy to.
-          folder: "${{ github.workspace }}" # The folder the action should deploy.
-
-  push-to-mirror:
-    runs-on: ubuntu-latest
-    if: ${{ github.ref == 'refs/heads/master' && github.event.repository.name == 'wse-sketches-mirror' }}
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v2
-        with:
-          fetch-depth: 0
-          persist-credentials: false
-      - uses: fregante/setup-git-user@v2
-      - name: Push to mirror
+      - name: Run cerebraslib tests
         run: |
-          git status
-          git log
-          git remote set-url origin https://mmore500:${HUBGIT_AUTH_TOKEN}@github.com/mmore500/wse-sketches.git
-          git push origin master:master
-        env:
-          HUBGIT_AUTH_TOKEN: ${{ secrets.HUBGIT_AUTH_TOKEN }}
-
-
-  latex:
-    name: Latex Build
-    runs-on: ubuntu-20.04
-    container:
-      image: ghcr.io/mmore500/teximage:sha-77b8179
-      # github actions requires root to access mounted volumes
-      options: --user root
-    steps:
-      - uses: actions/checkout@v2
-        with:
-          submodules: 'recursive'
-      - run: (make -C tex/ || (cat tex/*.log && false))
-      - name: Upload output as artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: manuscript
-          path: tex/${{ github.event.repository.name }}-draft.pdf
-      - run: (make -C tex-access-proposal/ || (cat tex-access-proposal/*.log && false))
-      - name: Upload output as artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: access-proposal
-          path: tex-access-proposal/${{ github.event.repository.name }}-draft.pdf
+          sudo env PATH=$PATH CSLC=$CSLC CS_PYTHON=$CS_PYTHON \
+            ./kernel-test-cerebraslib/execute.sh \
+            >/dev/null 2>&1

@@ -1,8 +1,0 @@
-run = "make -C tex fresh; make -C tex-access-proposal fresh"
-hidden = [".config"]
-
-[nix]
-channel = "stable-23_05"
-
-[env]
-GIT_EDITOR = "vim"
