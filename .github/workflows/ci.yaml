@@ -166,7 +166,13 @@ jobs:
           CEREBRAS_SDK_URL: ${{ secrets.CEREBRAS_SDK_URL }}
 
       - name: Test SDK
-        run: sudo env PATH=$PATH cslc -h  >/dev/null 2>&1
+        run: |
+          which cslc
+          which csdb
+          which cs_python
+          which cs_readelf
+          which sdk_debug_shell
+      - run: sudo env PATH=$PATH cslc -h  >/dev/null 2>&1
       - run: sudo env PATH=$PATH csdb --help  >/dev/null 2>&1
       - run: sudo env PATH=$PATH cs_python -h  >/dev/null 2>&1
       - run: sudo env PATH=$PATH cs_readelf -h >/dev/null 2>&1
