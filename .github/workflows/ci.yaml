@@ -117,7 +117,7 @@ jobs:
             >/dev/null 2>&1
 
   test-sample-populations:
-    name: Test csl kernels
+    name: Test sample population generation
     runs-on: ubuntu-latest
     env:
       CSLC: cslc
