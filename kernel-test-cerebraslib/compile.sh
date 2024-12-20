@@ -3,6 +3,8 @@
 set -e
 set -u
 
+shopt -s globstar
+
 cd "$(dirname "$0")"
 
 echo "CSLC ${CSLC}"
@@ -25,7 +27,7 @@ rm -rf out*
 if [ "$#" -ge 1 ]; then  # use user argument if provided
     test_module_paths="$@"
 else
-    test_module_paths="$(ls cerebraslib/test_*.csl)"
+    test_module_paths="$(ls test_cerebraslib/**/test_*.csl)"
 fi
 num_tests="$(echo "${test_module_paths}" | wc -l)"
 echo "${num_tests} tests detected"
