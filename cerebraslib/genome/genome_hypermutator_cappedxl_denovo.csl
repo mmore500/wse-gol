@@ -9,6 +9,8 @@
 const math = @import_module("<math>");
 const random = @import_module("<random>");
 
+const compconf = @import_module("<compconf>");
+
 const bitmanip = @import_module("cerebraslib/bitmanip.csl");
 const opscalar = @import_module("cerebraslib/opscalar.csl");
 const tilted = @import_module("cerebraslib/dstream_tilted.csl");
@@ -23,7 +25,10 @@ const sb = 0.1;
 const sd = 0.1;
 const Ub = 0.000001;
 const Ud = 0.0001;
-const benCap = 1;
+const benCap = compconf.get_value_or(
+    "cerebraslib_hypermutator_num_avail_ben_muts",
+    @as(u16, 1),
+);
 
 // internal functions =========================================================
 fn _apply_mutation(genome: genomePtr_t) void {
