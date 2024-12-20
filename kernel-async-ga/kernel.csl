@@ -27,6 +27,7 @@ param nRow: i16;  // how big is PE array?
 param nCol: i16;
 param nRowSubgrid: i16;  // if n, disable migration between PEs every n rows
 param nColSubgrid: i16;  // if n, disable migration between PEs every n cols
+param nonBlock: u8;  // if true, unblock memcpy command stream at startup
 param popSize: u16;  // how many genomes in each local population?
 param tournSize: f32;  // how many genomes compete for selection?
 param memcpy_params: comptime_struct; // parameters for memcpy layout
@@ -362,8 +363,9 @@ fn closeoutRecv() void {
 const closeoutDsd = @get_dsd(fabout_dsd, .{
   .extent = 1, .fabric_color = closeoutColor, });
 task closeoutTask(_: u16) void {
-  if (closeoutSend()) { memcpy.unblock_cmd_stream(); }  // terminate
-  else { @mov16(closeoutDsd, 0); }  // trigger next cycle
+  if (closeoutSend()) {
+    if (!@as(bool, nonBlock)) memcpy.unblock_cmd_stream();  // terminate
+  } else { @mov16(closeoutDsd, 0); }  // trigger next cycle
   closeoutRecv();  // run LAST in either case
 }
 ///////////////////////////////////////////////////////////////////////////////
@@ -480,7 +482,8 @@ fn dolaunch() void {  // launched by RPC (remote procedure call)
   whoami[0] = whereami_y[0] * @as(u32, nCol) + whereami_x[0];
 
   // initialize send flags to request first fill, except for edges
-  sendFlag_N = @as(u8, y != 0);  // except top PE row
+  // @MAM TODO temporarily disabled to deconflict with memcpy
+  sendFlag_N = 0; // @as(u8, y != 0);  // except top PE row
   sendFlag_S = @as(u8, y != nRow - 1);  // except bottom row
   sendFlag_E = @as(u8, x != nCol - 1);  // except right col
   sendFlag_W = @as(u8, x != 0);  // except left col
@@ -512,6 +515,7 @@ fn dolaunch() void {  // launched by RPC (remote procedure call)
   @ptrcast(*[3]u16, &tscControlBuffer).*[1] = 3;
   @ptrcast(*[3]u16, &tscControlBuffer).*[2] = 7;
   time.get_timestamp(@ptrcast(*[3]u16, &tscStartBuffer));
+  if (@as(bool, nonBlock)) memcpy.unblock_cmd_stream();
 }
 
 // bind tasks =================================================================

@@ -46,6 +46,9 @@ jobs:
           - genome_purifyingplus
           - genome_purifyingstripped
           - genome_hypermutator
+        nonBlock:
+          - 0
+          - 1
     env:
       CSLC: cslc
       CS_PYTHON: cs_python
@@ -111,6 +114,7 @@ jobs:
       - name: Compile async-ga
         run: |
           export ASYNC_GA_GENOME_FLAVOR="${{ matrix.genome }}"
+          export ASYNC_GA_NONBLOCK="${{ matrix.nonBlock }}"
           export CSLC CS_PYTHON PATH
           sudo -E env PATH=$PATH \
             ./kernel-async-ga/compile.sh \
@@ -119,6 +123,7 @@ jobs:
       - name: Run async-ga
         run: |
           export ASYNC_GA_GENOME_FLAVOR="${{ matrix.genome }}"
+          export ASYNC_GA_NONBLOCK="${{ matrix.nonBlock }}"
           export CSLC CS_PYTHON PATH
           sudo -E env PATH=$PATH \
             ./kernel-async-ga/execute.sh \

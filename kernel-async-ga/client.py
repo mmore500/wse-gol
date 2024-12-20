@@ -133,6 +133,7 @@ msecAtLeast = int(compile_data["params"]["msecAtLeast"])
 tscAtLeast = int(compile_data["params"]["tscAtLeast"])
 nColSubgrid = int(compile_data["params"]["nColSubgrid"])
 nRowSubgrid = int(compile_data["params"]["nRowSubgrid"])
+nonBlock = bool(compile_data["params"]["nonBlock"])
 tilePopSize = int(compile_data["params"]["popSize"])
 tournSize = (
     float(compile_data["params"]["tournSizeNumerator"])
@@ -164,6 +165,7 @@ metadata = {
     "nCycle": (nCycleAtLeast, pl.UInt32),
     "nColSubgrid": (nColSubgrid, pl.UInt16),
     "nRowSubgrid": (nRowSubgrid, pl.UInt16),
+    "nonBlock": (nonBlock, pl.Boolean),
     "tilePopSize": (tilePopSize, pl.UInt16),
     "tournSize": (tournSize, pl.Float32),
     "msec": (msecAtLeast, pl.Float32),
@@ -186,18 +188,54 @@ print("- runner loaded")
 runner.run()
 print("- runner run ran")
 
-def wait_task(runner, name) -> typing.Iterable[None]:
-    task = runner.launch(name, nonblock=True)
-    while not runner.is_task_done(task):
-        yield None
+runner.launch("dolaunch", nonblock=False)
+print("- runner launch complete")
 
-for __ in tqdm(
-    wait_task(runner, "dolaunch"),
-    mininterval=5,
-):
-    time.sleep(1)
+print(f"- {nonBlock=}, if True waiting for first kernel to finish...")
+while nonBlock:
+    print(".", end="", flush=True)
+    memcpy_dtype = MemcpyDataType.MEMCPY_32BIT
+    out_tensors = np.zeros((nCol, nRow, 1), np.uint32)
+    runner.memcpy_d2h(
+        out_tensors.ravel(),
+        runner.get_id("cycleCounter"),
+        0,  # x0
+        0,  # y0
+        nCol,  # width
+        nRow,  # height
+        1,  # num wavelets
+        streaming=False,
+        data_type=memcpy_dtype,
+        order=MemcpyOrder.ROW_MAJOR,
+        nonblock=False,
+    )
+    cycle_counts = out_tensors.ravel().copy()
+    if np.any(cycle_counts >= nCycleAtLeast):
+        print()
+        break
 
-print("- runner launch unblocked")
+print(f"- {nonBlock=}, if True waiting for last kernel to finish...")
+while nonBlock:
+    print(",", end="", flush=True)
+    memcpy_dtype = MemcpyDataType.MEMCPY_32BIT
+    out_tensors = np.zeros((nCol, nRow, 1), np.uint32)
+    runner.memcpy_d2h(
+        out_tensors.ravel(),
+        runner.get_id("cycleCounter"),
+        0,  # x0
+        0,  # y0
+        nCol,  # width
+        nRow,  # height
+        1,  # num wavelets
+        streaming=False,
+        data_type=memcpy_dtype,
+        order=MemcpyOrder.ROW_MAJOR,
+        nonblock=False,
+    )
+    cycle_counts = out_tensors.ravel().copy()
+    if np.all(cycle_counts >= nCycleAtLeast):
+        print()
+        break
 
 print("whoami ===============================================================")
 memcpy_dtype = MemcpyDataType.MEMCPY_32BIT

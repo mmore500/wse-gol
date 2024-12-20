@@ -6,6 +6,7 @@ param nRow: u16;
 param nCol: u16;
 param nRowSubgrid: u16;
 param nColSubgrid: u16;
+param nonBlock: u8;
 param popSize: u32;
 param tournSizeNumerator: u32;
 param tournSizeDenominator: u32;
@@ -42,6 +43,7 @@ layout {
           .nCol = nCol,
           .nRowSubgrid = nRowSubgrid,
           .nColSubgrid = nColSubgrid,
+          .nonBlock = nonBlock,
           .popSize = popSize,
           .tournSize = tournSize,
           .globalSeed = globalSeed,
