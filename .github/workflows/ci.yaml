@@ -88,6 +88,8 @@ jobs:
           command: |
             mkdir -p ~/cerebras/bin
             curl -L "${CEREBRAS_SDK_URL}" | tar -xzv -C ~/cerebras/bin
+            ls ~/cerebras/bin
+            echo $GITHUB_PATH
             echo "$HOME/cerebras/bin" >> $GITHUB_PATH
         env:
           CEREBRAS_SDK_URL: ${{ secrets.CEREBRAS_SDK_URL }}
@@ -167,6 +169,8 @@ jobs:
           command: |
             mkdir -p ~/cerebras/bin
             curl -L "${CEREBRAS_SDK_URL}" | tar -xzv -C ~/cerebras/bin
+            ls ~/cerebras/bin
+            echo $GITHUB_PATH
             echo "$HOME/cerebras/bin" >> $GITHUB_PATH
         env:
           CEREBRAS_SDK_URL: ${{ secrets.CEREBRAS_SDK_URL }}
@@ -243,6 +247,8 @@ jobs:
           command: |
             mkdir -p ~/cerebras/bin
             curl -L "${CEREBRAS_SDK_URL}" | tar -xzv -C ~/cerebras/bin
+            ls ~/cerebras/bin
+            echo $GITHUB_PATH
             echo "$HOME/cerebras/bin" >> $GITHUB_PATH
         env:
           CEREBRAS_SDK_URL: ${{ secrets.CEREBRAS_SDK_URL }}
