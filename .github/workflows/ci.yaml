@@ -49,7 +49,7 @@ jobs:
     env:
       CSLC: cslc
       CS_PYTHON: cs_python
-      SINGULARITYENV_CSL_SUPPRESS_SIMFAB_TRACE: 1
+      APPTAINERENV_CSL_SUPPRESS_SIMFAB_TRACE: 1
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
@@ -106,7 +106,7 @@ jobs:
       - run: sudo env PATH=$PATH cs_python -h  >/dev/null 2>&1
       - run: sudo env PATH=$PATH cs_readelf -h >/dev/null 2>&1
       - run: sudo env PATH=$PATH sdk_debug_shell --help
-      - run: echo "SINGULARITYENV_CSL_SUPPRESS_SIMFAB_TRACE ${SINGULARITYENV_CSL_SUPPRESS_SIMFAB_TRACE}"
+      - run: echo "APPTAINERENV_CSL_SUPPRESS_SIMFAB_TRACE ${APPTAINERENV_CSL_SUPPRESS_SIMFAB_TRACE}"
 
       - name: Compile async-ga
         run: |
@@ -130,7 +130,7 @@ jobs:
     env:
       CSLC: cslc
       CS_PYTHON: cs_python
-      SINGULARITYENV_CSL_SUPPRESS_SIMFAB_TRACE: 1
+      APPTAINERENV_CSL_SUPPRESS_SIMFAB_TRACE: 1
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
@@ -187,7 +187,7 @@ jobs:
       - run: sudo env PATH=$PATH cs_python -h  >/dev/null 2>&1
       - run: sudo env PATH=$PATH cs_readelf -h >/dev/null 2>&1
       - run: sudo env PATH=$PATH sdk_debug_shell --help
-      - run: echo "SINGULARITYENV_CSL_SUPPRESS_SIMFAB_TRACE ${SINGULARITYENV_CSL_SUPPRESS_SIMFAB_TRACE}"
+      - run: echo "APPTAINERENV_CSL_SUPPRESS_SIMFAB_TRACE ${APPTAINERENV_CSL_SUPPRESS_SIMFAB_TRACE}"
 
       - name: Generate sample tagged populations
         run: |
@@ -208,7 +208,7 @@ jobs:
     env:
       CSLC: cslc
       CS_PYTHON: cs_python
-      SINGULARITYENV_CSL_SUPPRESS_SIMFAB_TRACE: 1
+      APPTAINERENV_CSL_SUPPRESS_SIMFAB_TRACE: 1
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
@@ -265,7 +265,7 @@ jobs:
       - run: sudo env PATH=$PATH cs_python -h  >/dev/null 2>&1
       - run: sudo env PATH=$PATH cs_readelf -h >/dev/null 2>&1
       - run: sudo env PATH=$PATH sdk_debug_shell --help
-      - run: echo "SINGULARITYENV_CSL_SUPPRESS_SIMFAB_TRACE ${SINGULARITYENV_CSL_SUPPRESS_SIMFAB_TRACE}"
+      - run: echo "APPTAINERENV_CSL_SUPPRESS_SIMFAB_TRACE ${APPTAINERENV_CSL_SUPPRESS_SIMFAB_TRACE}"
 
       - name: Compile cerebraslib tests
         run: |
