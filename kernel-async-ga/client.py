@@ -397,7 +397,7 @@ genome_hex = (
 
 # save genome values to a file
 df = pl.DataFrame({
-    "bitfield": pl.Series(genome_hex, dtype=pl.Utf8),
+    "data_hex": pl.Series(genome_hex, dtype=pl.Utf8),
     "fitness": pl.Series(fitness_data.ravel(), dtype=pl.Float32),
     "tile": pl.Series(whoami_data.ravel(), dtype=pl.UInt32),
     "row": pl.Series(whereami_y_data.ravel(), dtype=pl.UInt16),
