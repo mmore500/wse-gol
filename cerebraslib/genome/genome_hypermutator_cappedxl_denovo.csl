@@ -26,7 +26,7 @@ const sd = 0.1;
 const Ub = 0.000001;
 const Ud = 0.0001;
 const benCap = compconf.get_value_or(
-    "cerebraslib_hypermutator_num_avail_ben_muts",
+    "CEREBRASLIB_HYPERMUT_NUM_AVAIL_BEN_MUTS",
     @as(i16, 1),
 );
 
