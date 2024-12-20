@@ -53,7 +53,6 @@ git submodule update --init --recursive
 # symlinks don't work and --import-path doesn't work, so this is a workaround
 trap "git checkout ./cerebraslib" EXIT
 rsync -rI "$(readlink -f cerebraslib)" .
-cp "cerebraslib/genome/${ASYNC_GA_GENOME_FLAVOR}.csl" "cerebraslib/genome.csl"
 
 # target a 2x2 region of interest
 # Every program using memcpy must use a fabric offset of 4,1, and if compiling
@@ -64,4 +63,4 @@ cp "cerebraslib/genome/${ASYNC_GA_GENOME_FLAVOR}.csl" "cerebraslib/genome.csl"
 # 9x4 because compiler says
 # RuntimeError: Fabric dimension must be at least 9-by-4
 
-python3 -m compconf --compconf-verbose --compconf-cslc "${CSLC}" layout.csl ${ASYNC_GA_ARCH_FLAG} --import-path ./downstream/include --fabric-dims=${ASYNC_GA_FABRIC_DIMS} --fabric-offsets=4,1 --channels=1 --memcpy --params=globalSeed:${ASYNC_GA_GLOBAL_SEED},nCycleAtLeast:${ASYNC_GA_NCYCLE_AT_LEAST},msecAtLeast:${ASYNC_GA_MSEC_AT_LEAST},tscAtLeast:${ASYNC_GA_TSC_AT_LEAST},nRow:${ASYNC_GA_NROW},nCol:${ASYNC_GA_NCOL},nRowSubgrid:${ASYNC_GA_NROW_SUBGRID},nColSubgrid:${ASYNC_GA_NCOL_SUBGRID},popSize:${ASYNC_GA_POPSIZE},tournSizeNumerator:${ASYNC_GA_TOURNSIZE_NUMERATOR},tournSizeDenominator:${ASYNC_GA_TOURNSIZE_DENOMINATOR} -o out
+python3 -m compconf --compconf-jq ". += {\"ASYNC_GA_GENOME_FLAVOR:comptime_string\": \"${ASYNC_GA_GENOME_FLAVOR}\"}" --compconf-verbose --compconf-cslc "${CSLC}" layout.csl ${ASYNC_GA_ARCH_FLAG} --import-path ./downstream/include --fabric-dims=${ASYNC_GA_FABRIC_DIMS} --fabric-offsets=4,1 --channels=1 --memcpy --params=globalSeed:${ASYNC_GA_GLOBAL_SEED},nCycleAtLeast:${ASYNC_GA_NCYCLE_AT_LEAST},msecAtLeast:${ASYNC_GA_MSEC_AT_LEAST},tscAtLeast:${ASYNC_GA_TSC_AT_LEAST},nRow:${ASYNC_GA_NROW},nCol:${ASYNC_GA_NCOL},nRowSubgrid:${ASYNC_GA_NROW_SUBGRID},nColSubgrid:${ASYNC_GA_NCOL_SUBGRID},popSize:${ASYNC_GA_POPSIZE},tournSizeNumerator:${ASYNC_GA_TOURNSIZE_NUMERATOR},tournSizeDenominator:${ASYNC_GA_TOURNSIZE_DENOMINATOR} -o out
