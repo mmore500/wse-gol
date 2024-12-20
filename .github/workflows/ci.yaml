@@ -125,7 +125,7 @@ jobs:
             >/dev/null 2>&1
 
   test-sample-populations:
-    name: Test sample population generation
+    name: Test make sample population
     runs-on: ubuntu-latest
     env:
       CSLC: cslc
