@@ -228,8 +228,28 @@ runner.launch("dolaunch", nonblock=False)
 print("- runner launch complete")
 
 print(f"- {nonBlock=}, if True waiting for first kernel to finish...")
+fossils = []
 while nonBlock:
     print(".", end="", flush=True)
+    memcpy_dtype = MemcpyDataType.MEMCPY_32BIT
+    out_tensors = np.zeros((nCol, nRow, nWav), np.uint32)
+
+    runner.memcpy_d2h(
+        out_tensors.ravel(),
+        runner.get_id("genome"),
+        0,  # x0
+        0,  # y0
+        nCol,  # width
+        nRow,  # height
+        nWav,  # num wavelets
+        streaming=False,
+        data_type=memcpy_dtype,
+        order=MemcpyOrder.ROW_MAJOR,
+        nonblock=False,
+    )
+    genome_data = out_tensors.copy()
+    fossils.append(hexify_genome_data(genome_data, verbose=False))
+
     memcpy_dtype = MemcpyDataType.MEMCPY_32BIT
     out_tensors = np.zeros((nCol, nRow, 1), np.uint32)
     runner.memcpy_d2h(
@@ -272,6 +292,34 @@ while nonBlock:
     if np.all(cycle_counts >= nCycleAtLeast):
         print()
         break
+
+print("fossils ==============================================================")
+print(f" - {len(fossils)=}")
+
+if fossils:
+    fossils = np.array(fossils)
+    layers, positions = np.indices(fossils.shape)
+    df = pl.DataFrame({
+        "data_hex": pl.Series(fossils.ravel(), dtype=pl.Utf8),
+        "is_extant": False,
+        "layer": pl.Series(layers.ravel(), dtype=pl.UInt32),
+        "position": pl.Series(positions.ravel(), dtype=pl.UInt32),
+    }).with_columns([
+        pl.lit(value, dtype=dtype).alias(key)
+        for key, (value, dtype) in metadata.items()
+        if key.startswith("dstream_") or key in ("genomeFlavor",)
+    ])
+
+    write_parquet_verbose(
+        df,
+        "a=fossils"
+        f"+flavor={genomeFlavor}"
+        f"+seed={globalSeed}"
+        f"+ncycle={nCycleAtLeast}"
+        "+ext=.pqt",
+    )
+
+del df, fossils
 
 print("whoami ===============================================================")
 memcpy_dtype = MemcpyDataType.MEMCPY_32BIT
@@ -461,6 +509,7 @@ genome_hex = hexify_genome_data(raw_genome_data, verbose=True)
 # save genome values to a file
 df = pl.DataFrame({
     "data_hex": pl.Series(genome_hex, dtype=pl.Utf8),
+    "is_extant": True,
     "fitness": pl.Series(fitness_data.ravel(), dtype=pl.Float32),
     "tile": pl.Series(whoami_data.ravel(), dtype=pl.UInt32),
     "row": pl.Series(whereami_y_data.ravel(), dtype=pl.UInt16),

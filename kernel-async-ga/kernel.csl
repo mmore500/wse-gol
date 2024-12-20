@@ -439,6 +439,10 @@ task cycleTask(_: u16) void {
   for (@range(u16, popSize)) |i| {  // will record last cycle traits were seen
     traitCycles[population_._get_ith_trait_value(i)] = cycleCounter[0];
   }
+  // sample 0th element of population for telemetry
+  for(@range(u16, population_.gSize)) |i| {
+    genome[i] = population_._get_ith_genome(0)[i];
+  }
 
   // trigger next cycle
   // --------------------------------------------------------------------------
@@ -448,10 +452,6 @@ task cycleTask(_: u16) void {
     // closeout telemetry
     // ------------------------------------------------------------------------
     time.get_timestamp(@ptrcast(*[3]u16, &tscEndBuffer));
-    // sample 0th element of population for telemetry
-    for(@range(u16, population_.gSize)) |i| {
-      genome[i] = population_._get_ith_genome(0)[i];
-    }
     fitness[0] = population_._calc_ith_fitness(0);
     // record final trait distributions
     for (@range(u16, popSize)) |i| {
