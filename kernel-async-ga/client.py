@@ -10,8 +10,6 @@ import uuid
 import shutil
 import subprocess
 import sys
-import time
-import typing
 
 
 def removeprefix(text: str, prefix: str) -> str:
@@ -63,9 +61,9 @@ print("  - tqdm")
 
 print("- importing cerebras depencencies")
 from cerebras.sdk.runtime.sdkruntimepybind import (
-    SdkRuntime,
     MemcpyDataType,
     MemcpyOrder,
+    SdkRuntime,
 )  # pylint: disable=no-name-in-module
 
 print("- defining helper functions")

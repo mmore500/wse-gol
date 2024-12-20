@@ -345,10 +345,10 @@ fn dispatchRecv_W() void { // open an async microthread to recv into recvBuf
 ///////////////////////////////////////////////////////////////////////////////
 var closeoutRemaining: u8;  // set at startup
 fn closeoutSend() bool {
-  if (@as(bool, sendFlag_N)) { sendFlag_N = 0; closeoutRemaining -= 1; }
-  if (@as(bool, sendFlag_S)) { sendFlag_S = 0; closeoutRemaining -= 1; }
-  if (@as(bool, sendFlag_E)) { sendFlag_E = 0; closeoutRemaining -= 1; }
-  if (@as(bool, sendFlag_W)) { sendFlag_W = 0; closeoutRemaining -= 1; }
+  if (sendFlag_N == 1) { sendFlag_N = 0; closeoutRemaining -= 1; }
+  if (sendFlag_S == 1) { sendFlag_S = 0; closeoutRemaining -= 1; }
+  if (sendFlag_E == 1) { sendFlag_E = 0; closeoutRemaining -= 1; }
+  if (sendFlag_W == 1) { sendFlag_W = 0; closeoutRemaining -= 1; }
   return !@as(bool, closeoutRemaining);
 }
 task ignRecvTask_N(_: u16) void { } task ignRecvTask_S(_: u16) void { }
