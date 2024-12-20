@@ -10,6 +10,8 @@ import uuid
 import shutil
 import subprocess
 import sys
+import time
+import typing
 
 
 def removeprefix(text: str, prefix: str) -> str:
@@ -56,6 +58,8 @@ import polars as pl
 print("  - polars")
 from scipy import stats as sps
 print("  - scipy")
+from tqdm import tqdm
+print("  - tqdm")
 
 print("- importing cerebras depencencies")
 from cerebras.sdk.runtime.sdkruntimepybind import (
@@ -182,7 +186,17 @@ print("- runner loaded")
 runner.run()
 print("- runner run ran")
 
-runner.launch("dolaunch", nonblock=False)
+def wait_task(runner, name) -> typing.Iterable[None]:
+    task = runner.launch(name, nonblock=True)
+    while not runner.is_task_done(task):
+        yield None
+
+for __ in tqdm(
+    wait_task(runner, "dolaunch"),
+    mininterval=5,
+):
+    time.sleep(1)
+
 print("- runner launch unblocked")
 
 print("whoami ===============================================================")
