@@ -17,6 +17,20 @@
 // byte 15
 // TOTAL: 4 words -> 16 bytes
 
+//! {
+//!     "dstream_algo": (
+//!         compconf_data.get(
+//!             "CEREBRASLIB_HSTRAT_DSTREAM_ALGO_NAME", "tilted_algo"
+//!         ),
+//!         pl.Categorical,
+//!     ),
+//!     "dstream_storage_bitoffset": (64, pl.UInt8),
+//!     "dstream_storage_bitwidth": (64, pl.UInt8),
+//!     "dstream_T_bitoffset": (4, pl.UInt8),
+//!     "dstream_T_bitwidth": (32, pl.UInt8),
+//!     "dstream_S": (64, pl.UInt8),
+//! }
+
 // module imports =============================================================
 const math = @import_module("<math>");
 const random = @import_module("<random>");

@@ -1,5 +1,5 @@
 # pylib
-compconf==0.3.0
+compconf==0.3.1
 dendropy
 opytional
 pandas

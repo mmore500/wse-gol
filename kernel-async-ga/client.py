@@ -5,10 +5,17 @@ import atexit
 from collections import Counter
 import json
 import os
+import pathlib
 import uuid
 import shutil
 import subprocess
 import sys
+
+
+def removeprefix(text: str, prefix: str) -> str:
+    if text.startswith(prefix):
+        return text[len(prefix):]
+    return text
 
 
 print("- setting up temp dir")
@@ -106,9 +113,6 @@ parser = argparse.ArgumentParser()
 parser.add_argument("--name", help="the test compile output dir", default="out")
 add_bool_arg(parser, "suptrace", default=True)
 parser.add_argument("--cmaddr", help="IP:port for CS system")
-parser.add_argument(
-    "--genomeFlavor", help="specify what genome source is used", default=""
-)
 print("- parsing arguments")
 args = parser.parse_args()
 
@@ -130,9 +134,22 @@ tournSize = (
     float(compile_data["params"]["tournSizeNumerator"])
     / float(compile_data["params"]["tournSizeDenominator"])
 )
-genomeFlavor = args.genomeFlavor or "unknown"
 
-# save genome values to a file
+with open(f"compconf.json", encoding="utf-8") as json_file:
+    compconf_data = json.load(json_file)
+
+genomeFlavor = compconf_data["ASYNC_GA_GENOME_FLAVOR:comptime_string"]
+print(f" - {genomeFlavor=}")
+genomePath = f"/cerebraslib/genome/{genomeFlavor}.csl"
+print (" - reading genome data from", genomePath)
+genomeDataRaw = "".join(
+    removeprefix(line, "//!").strip()
+    for line in pathlib.Path(genomePath).read_text().split("\n")
+    if line.startswith("//!")
+) or "{}"
+genomeData = eval(genomeDataRaw, {"compconf_data": compconf_data, "pl": pl})
+print (f" - {genomeData=}")
+
 metadata = {
     "genomeFlavor": (genomeFlavor, pl.Categorical),
     "globalSeed": (globalSeed, pl.UInt32),
@@ -148,6 +165,7 @@ metadata = {
     "msec": (msecAtLeast, pl.Float32),
     "tsc": (tscAtLeast, pl.UInt64),
     "replicate": (str(uuid.uuid4()), pl.Categorical),
+    **genomeData,
 }
 print(metadata)
 
