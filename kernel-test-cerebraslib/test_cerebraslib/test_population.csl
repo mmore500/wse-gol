@@ -1,4 +1,4 @@
-const genome = @import_module("cerebraslib/genome_bitdrift.csl", .{
+const genome = @import_module("cerebraslib/genome/genome_bitdrift.csl", .{
     .peId = 0,
 });
 const population = @import_module("cerebraslib/population.csl", .{
