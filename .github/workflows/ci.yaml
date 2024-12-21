@@ -69,19 +69,27 @@ jobs:
           uv pip install -r requirements.txt --system
 
       - name: Set up Apptainer
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y rpm2cpio
-          sudo apt-get install -y golang-go
-          mkdir -p ~/apptainer
-          # echo 'export PATH="$HOME/apptainer/bin:$PATH"' >> ~/.bashrc
-          echo "$HOME/apptainer/bin" >> $GITHUB_PATH
-          curl -s https://raw.githubusercontent.com/apptainer/apptainer/03bb84afc90c9699816db2e2730b56f2d3501eff/tools/install-unprivileged.sh | bash -s - ~/apptainer
+        uses: nick-fields/retry@v3
+        with:
+          timeout_minutes: 15
+          max_attempts: 3
+          command: |
+            sudo apt-get update
+            sudo apt-get install -y rpm2cpio
+            sudo apt-get install -y golang-go
+            mkdir -p ~/apptainer
+            # echo 'export PATH="$HOME/apptainer/bin:$PATH"' >> ~/.bashrc
+            echo "$HOME/apptainer/bin" >> $GITHUB_PATH
+            curl -s https://raw.githubusercontent.com/apptainer/apptainer/03bb84afc90c9699816db2e2730b56f2d3501eff/tools/install-unprivileged.sh | bash -s - ~/apptainer
 
       - name: Test Apptainer
-        run: |
-          apptainer --version
-          sudo "$(which apptainer)" exec docker://busybox:latest echo "Hello from Singularity and Docker!"
+        uses: nick-fields/retry@v3
+        with:
+          timeout_minutes: 15
+          max_attempts: 3
+          command: |
+            apptainer --version
+            sudo "$(which apptainer)" exec docker://busybox:latest echo "Hello from Singularity and Docker!"
 
       - name: Set up SDK
         uses: nick-fields/retry@v3
@@ -152,19 +160,27 @@ jobs:
           uv pip install -r requirements.txt --system
 
       - name: Set up Apptainer
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y rpm2cpio
-          sudo apt-get install -y golang-go
-          mkdir -p ~/apptainer
-          # echo 'export PATH="$HOME/apptainer/bin:$PATH"' >> ~/.bashrc
-          echo "$HOME/apptainer/bin" >> $GITHUB_PATH
-          curl -s https://raw.githubusercontent.com/apptainer/apptainer/03bb84afc90c9699816db2e2730b56f2d3501eff/tools/install-unprivileged.sh | bash -s - ~/apptainer
+        uses: nick-fields/retry@v3
+        with:
+          timeout_minutes: 15
+          max_attempts: 3
+          command: |
+            sudo apt-get update
+            sudo apt-get install -y rpm2cpio
+            sudo apt-get install -y golang-go
+            mkdir -p ~/apptainer
+            # echo 'export PATH="$HOME/apptainer/bin:$PATH"' >> ~/.bashrc
+            echo "$HOME/apptainer/bin" >> $GITHUB_PATH
+            curl -s https://raw.githubusercontent.com/apptainer/apptainer/03bb84afc90c9699816db2e2730b56f2d3501eff/tools/install-unprivileged.sh | bash -s - ~/apptainer
 
       - name: Test Apptainer
-        run: |
-          apptainer --version
-          sudo "$(which apptainer)" exec docker://busybox:latest echo "Hello from Singularity and Docker!"
+        uses: nick-fields/retry@v3
+        with:
+          timeout_minutes: 15
+          max_attempts: 3
+          command: |
+            apptainer --version
+            sudo "$(which apptainer)" exec docker://busybox:latest echo "Hello from Singularity and Docker!"
 
       - name: Set up SDK
         uses: nick-fields/retry@v3
@@ -230,19 +246,27 @@ jobs:
           uv pip install -r requirements.txt --system
 
       - name: Set up Apptainer
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y rpm2cpio
-          sudo apt-get install -y golang-go
-          mkdir -p ~/apptainer
-          # echo 'export PATH="$HOME/apptainer/bin:$PATH"' >> ~/.bashrc
-          echo "$HOME/apptainer/bin" >> $GITHUB_PATH
-          curl -s https://raw.githubusercontent.com/apptainer/apptainer/03bb84afc90c9699816db2e2730b56f2d3501eff/tools/install-unprivileged.sh | bash -s - ~/apptainer
+        uses: nick-fields/retry@v3
+        with:
+          timeout_minutes: 15
+          max_attempts: 3
+          command: |
+            sudo apt-get update
+            sudo apt-get install -y rpm2cpio
+            sudo apt-get install -y golang-go
+            mkdir -p ~/apptainer
+            # echo 'export PATH="$HOME/apptainer/bin:$PATH"' >> ~/.bashrc
+            echo "$HOME/apptainer/bin" >> $GITHUB_PATH
+            curl -s https://raw.githubusercontent.com/apptainer/apptainer/03bb84afc90c9699816db2e2730b56f2d3501eff/tools/install-unprivileged.sh | bash -s - ~/apptainer
 
       - name: Test Apptainer
-        run: |
-          apptainer --version
-          sudo "$(which apptainer)" exec docker://busybox:latest echo "Hello from Singularity and Docker!"
+        uses: nick-fields/retry@v3
+        with:
+          timeout_minutes: 15
+          max_attempts: 3
+          command: |
+            apptainer --version
+            sudo "$(which apptainer)" exec docker://busybox:latest echo "Hello from Singularity and Docker!"
 
       - name: Set up SDK
         uses: nick-fields/retry@v3
