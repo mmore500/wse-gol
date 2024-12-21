@@ -1,0 +1,32 @@
+const random = @import_module("<random>");
+
+const genome = @import_module("cerebraslib/genome/genome_purifyingonly_dstream_validation.csl", .{
+    .peId = 0,
+});
+
+fn test_elapse_inheritance_of() void {
+    var g = @zeros(genome.genome_t);
+    genome.elapse_inheritance_of(&g);
+}
+
+fn test_calc_fitness_of() void {
+    var g = @zeros(genome.genome_t);
+    @assert(genome.calc_fitness_of(&g) == 0.0);
+}
+
+fn test_get_trait_value() void {
+    var g = @zeros(genome.genome_t);
+    @assert(genome.get_trait_value(&g) == 0);
+    @assert(genome.get_trait_value(&g) < genome.nTraitVals);
+}
+
+fn test_initialize_one() void {
+    var g = @zeros(genome.genome_t);
+    genome.initialize_one(&g);
+}
+
+fn do_test() void {
+    test_calc_fitness_of();
+    test_elapse_inheritance_of();
+    test_initialize_one();
+}

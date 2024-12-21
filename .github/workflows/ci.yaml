@@ -43,6 +43,7 @@ jobs:
           - genome_bitdrift
           - genome_hsurftiltedsticky
           - genome_purifyingonly
+          - genome_purifyingonly_dstream_validation
           - genome_purifyingplus
           - genome_purifyingstripped
           - genome_hypermutator

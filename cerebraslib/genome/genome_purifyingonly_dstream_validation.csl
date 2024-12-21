@@ -1,0 +1,132 @@
+// memory layout ===============================================================
+// byte 0 FITNESS (f32, 4 bytes)
+// byte 1
+// byte 2
+// byte 3
+// byte 4 COUNTER (u32, 4 bytes)
+// byte 5
+// byte 6
+// byte 7
+// byte 8 BITFIELD (8 bytes)
+// byte 9
+// byte 10
+// byte 11
+// byte 12
+// byte 13
+// byte 14
+// byte 15
+// TOTAL: 4 words -> 16 bytes
+
+//! {
+//!     "dstream_algo": (
+//!         compconf_data.get(
+//!             "CEREBRASLIB_HSTRAT_DSTREAM_ALGO_NAME", "tilted_algo"
+//!         ),
+//!         pl.Categorical,
+//!     ),
+//!     "downstream_validate_exploded": {
+//!         "block": "pl.col('dstream_value') == pl.col('dstream_Tbar') // 33",
+//!         "checkerboard": "pl.col('dstream_value') == pl.col('dstream_Tbar') % 2",
+//!    }[
+//!         compconf_data.get("CEREBRASLIB_DSTREAM_VALIDATOR", "checkerboard")
+//!    ],
+//!     "downstream_validate_unpacked": f"""pl.col('dstream_T') == {
+//!         compconf_data.get("CEREBRASLIB_DSTREAM_EXPECTED_T", 64)
+//!     }""",
+//!     "dstream_storage_bitoffset": (64, pl.UInt8),
+//!     "dstream_storage_bitwidth": (64, pl.UInt8),
+//!     "dstream_T_bitoffset": (4, pl.UInt8),
+//!     "dstream_T_bitwidth": (32, pl.UInt8),
+//!     "dstream_S": (64, pl.UInt8),
+//! }
+
+// module imports =============================================================
+const math = @import_module("<math>");
+const random = @import_module("<random>");
+
+const compconf = @import_module("<compconf>");
+const dstream_algo_name = compconf.get_value_or(
+    "CEREBRASLIB_HSTRAT_DSTREAM_ALGO_NAME",
+    "tilted_algo",
+);
+const dstream_algo = @import_module(
+    @strcat("<downstream/dstream/", dstream_algo_name, ">"),
+);
+const dstream_expected_T = compconf.get_value_or(
+    "CEREBRASLIB_DSTREAM_EXPECTED_T",
+    @as(u8, 64),
+);
+const validator = compconf.get_value_or(
+    "CEREBRASLIB_DSTREAM_VALIDATOR",
+    "checkerboard",
+);
+
+const bitmanip = @import_module("cerebraslib/bitmanip.csl");
+const opscalar = @import_module("cerebraslib/opscalar.csl");
+const tilted = @import_module("cerebraslib/tilted_sticky.csl");
+
+// module config specs ========================================================
+const gSize: u16 = 4;
+const genome_t = [gSize]u32;
+const genomePtr_t = [*]u32;
+const nTraitVals: u16 = 1;
+
+// internal functions =========================================================
+fn _apply_mutation(genome: genomePtr_t) void {
+    var mutated = calc_fitness_of(genome);
+    const scale = (mutated + 1.0) / 1024.0;
+
+    if (opscalar.p(0.3)) {
+        mutated -= math.abs(random.random_normal_f32()) * scale;
+    }
+    // mutate fitness value
+    @ptrcast(*f32, genome).* = mutated;
+}
+
+fn _step_instrumentation(genome: genomePtr_t) void {
+    // elapse generation in bitfield
+    const rank = @ptrcast([*]u32, genome)[1];
+    const site = dstream_algo.assign_storage_site(64, rank);
+
+    const offset_bits: u16 = (4 + 4) * 8;
+    const target_bit = @as(u16, site) + offset_bits;
+
+    const value = if (validator == "block")
+        rank / 33 == 1
+    else if (validator == "checkerboard")
+        rank % 2 == 1
+    else
+        false;
+
+    bitmanip.set_nth_bit(
+        @ptrcast([*]u8, genome),
+        target_bit,
+        value,
+    );
+
+    // elapse generation in counter
+    @ptrcast([*]u32, genome)[1] += 1;
+}
+
+// public API =================================================================
+fn elapse_inheritance_of(genome: genomePtr_t) void {
+    _apply_mutation(genome);
+}
+
+fn calc_fitness_of(genome: genomePtr_t) f32 {
+    return @ptrcast(*f32, genome).*;
+}
+
+fn get_trait_value(genome: genomePtr_t) u32 {
+    return 0;
+}
+
+fn initialize_one(genome: genomePtr_t) void {
+    const gHalfWords: u16 = gSize * 2;
+    bitmanip.randomize(@ptrcast([*]u16, genome), gHalfWords);
+    @ptrcast(*f32, genome).* = 0.0;
+    @ptrcast([*]u32, genome)[1] = 0;
+    for (@range(u8, dstream_expected_T)) |_| {
+        _step_instrumentation(genome);
+    }
+}
