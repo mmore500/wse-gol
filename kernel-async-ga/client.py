@@ -319,7 +319,9 @@ if fossils:
         "+ext=.pqt",
     )
 
-del df, fossils
+    del df
+
+del fossils
 
 print("whoami ===============================================================")
 memcpy_dtype = MemcpyDataType.MEMCPY_32BIT
