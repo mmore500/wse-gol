@@ -157,10 +157,8 @@ const closeoutTaskID: data_task_id = @get_data_task_id(closeoutColor);
 
 // queue IDs ==================================================================
 ///////////////////////////////////////////////////////////////////////////////
-const q_out_N: i16 = 0;  // input/output queue allocations are kind of fiddly
-const q_out_S: i16 = 1;  // because some are in use by memcpy
-const q_out_E: i16 = 2;  // but these seem to work
-const q_out_W: i16 = 3;
+// leave microthread/queue 0 open for memcpy
+var busyThreads = @zeros([3]u8);  // 1, 2, 3
 
 const q_in_N: i16 = 4;
 const q_in_S: i16 = 5;
@@ -178,70 +176,171 @@ const sendBufSize: u16 = sendNumGenomes * genome_.gSize;
 
 // send NORTH =================================================================
 var sendFlag_N: u8; // need refill? initialized at startup
+var sendThread_N: u8;  // which thread is sending?
 var sendBuf_N = @zeros([sendBufSize]u32);  // hold genomes being sent
 const sendBufDsd_N = @get_dsd(mem1d_dsd, .{
   .tensor_access = |i|{sendBufSize} -> sendBuf_N[i], });
 
 // callback for when send is complete, set flag to request refill & next send
-task sendFinalizeTask_N() void { sendFlag_N = 1; sendCounter_N[0] += 1; }
+task sendFinalizeTask_N() void {
+  sendFlag_N = 1; sendCounter_N[0] += 1; busyThreads[sendThread_N] = 0;
+}
 
-fn dispatchSend_N() void {  // open async microthread to send from sendBuf
+// open async uthread to send from sendBuf
+fn doDispatchSend_N(comptime thread: u8) void {
   const sendDsd_N = @get_dsd(fabout_dsd, .{ .fabric_color = sendColor_N,
-    .extent = sendBufSize, .output_queue = @get_output_queue(q_out_N), });
+    .extent = sendBufSize, .output_queue = @get_output_queue(thread + 1), });
   @fmovs(sendDsd_N, sendBufDsd_N,  // callback on complete
     .{ .async = true, .activate = sendFinalizeTaskID_N, }, );
+}
+
+fn tryDispatchSend_N(thread: u8) bool {
+  if (busyThreads[thread] == 1) { return false; }
+  population_.emigrate_genomes(sendBufDsd_N, sendNumGenomes);
+  busyThreads[thread] = 1;  // mark thread as busy
+  sendThread_N = thread;
+  switch (thread) {
+    0 => doDispatchSend_N(0),
+    1 => doDispatchSend_N(1),
+    2 => doDispatchSend_N(2),
+    else => { @assert(false); },
+  }
   sendCounter_N[0] += 1;  // counter only used for telemetry
+  return true;
+}
+
+fn dispatchSend_N() bool {
+  for (@range(u8, 3)) |thread| {
+    if (tryDispatchSend_N(thread)) { return true; }
+  }
+  return false;
 }
 
 // send SOUTH =================================================================
 var sendFlag_S: u8; // need refill? initialized at startup
+var sendThread_S: u8;  // which thread is sending?
 var sendBuf_S = @zeros([sendBufSize]u32);  // hold genomes being sent
 const sendBufDsd_S = @get_dsd(mem1d_dsd, .{
   .tensor_access = |i|{sendBufSize} -> sendBuf_S[i], });
 
 // callback for when send is complete, set flag to request refill & next send
-task sendFinalizeTask_S() void { sendFlag_S = 1; sendCounter_S[0] += 1; }
+task sendFinalizeTask_S() void {
+  sendFlag_S = 1; sendCounter_S[0] += 1; busyThreads[sendThread_S] = 0;
+}
 
-const sendDsd_S = @get_dsd(fabout_dsd, .{ .fabric_color = sendColor_S,
-  .extent = sendBufSize, .output_queue = @get_output_queue(q_out_S), });
-fn dispatchSend_S() void {  // open async microthread to send from sendBuf
+// open async uthread to send from sendBuf
+fn doDispatchSend_S(comptime thread: u8) void {
+  const sendDsd_S = @get_dsd(fabout_dsd, .{ .fabric_color = sendColor_S,
+    .extent = sendBufSize, .output_queue = @get_output_queue(thread + 1), });
   @fmovs(sendDsd_S, sendBufDsd_S,  // callback on complete
     .{ .async = true, .activate = sendFinalizeTaskID_S, }, );
+}
+
+fn tryDispatchSend_S(thread: u8) bool {
+  if (busyThreads[thread] == 1) { return false; }
+  population_.emigrate_genomes(sendBufDsd_S, sendNumGenomes);
+  busyThreads[thread] = 1;  // mark thread as busy
+  sendThread_S = thread;
+  switch (thread) {
+    0 => doDispatchSend_S(0),
+    1 => doDispatchSend_S(1),
+    2 => doDispatchSend_S(2),
+    else => { @assert(false); },
+  }
   sendCounter_S[0] += 1;  // counter only used for telemetry
+  return true;
+}
+
+fn dispatchSend_S() bool {
+  for (@range(u8, 3)) |thread| {
+    if (tryDispatchSend_S(thread)) { return true; }
+  }
+  return false;
 }
 
 // send EAST =================================================================
 var sendFlag_E: u8; // need refill? initialized at startup
+var sendThread_E: u8;  // which thread is sending?
 var sendBuf_E = @zeros([sendBufSize]u32);  // hold genomes being sent
 const sendBufDsd_E = @get_dsd(mem1d_dsd, .{
   .tensor_access = |i|{sendBufSize} -> sendBuf_E[i], });
 
 // callback for when send is complete, set flag to request refill & next send
-task sendFinalizeTask_E() void { sendFlag_E = 1; sendCounter_E[0] += 1; }
+task sendFinalizeTask_E() void {
+  sendFlag_E = 1; sendCounter_E[0] += 1; busyThreads[sendThread_E] = 0;
+}
 
-fn dispatchSend_E() void {  // open async microthread to send from sendBuf
+// open async uthread to send from sendBuf
+fn doDispatchSend_E(comptime thread: u8) void {
   const sendDsd_E = @get_dsd(fabout_dsd, .{ .fabric_color = sendColor_E,
-    .extent = sendBufSize, .output_queue = @get_output_queue(q_out_E), });
+    .extent = sendBufSize, .output_queue = @get_output_queue(thread + 1), });
   @fmovs(sendDsd_E, sendBufDsd_E,  // callback on complete
     .{ .async = true, .activate = sendFinalizeTaskID_E, }, );
+}
+
+fn tryDispatchSend_E(thread: u8) bool {
+  if (busyThreads[thread] == 1) { return false; }
+  population_.emigrate_genomes(sendBufDsd_E, sendNumGenomes);
+  busyThreads[thread] = 1;  // mark thread as busy
+  sendThread_E = thread;
+  switch (thread) {
+    0 => doDispatchSend_E(0),
+    1 => doDispatchSend_E(1),
+    2 => doDispatchSend_E(2),
+    else => { @assert(false); },
+  }
   sendCounter_E[0] += 1;  // counter only used for telemetry
+  return true;
+}
+
+fn dispatchSend_E() bool {
+  for (@range(u8, 3)) |thread| {
+    if (tryDispatchSend_E(thread)) { return true; }
+  }
+  return false;
 }
 
 // send WEST =================================================================
 var sendFlag_W: u8; // need refill? initialized at startup
+var sendThread_W: u8;  // which thread is sending?
 var sendBuf_W = @zeros([sendBufSize]u32);  // hold genomes being sent
 const sendBufDsd_W = @get_dsd(mem1d_dsd, .{
   .tensor_access = |i|{sendBufSize} -> sendBuf_W[i], });
 
 // callback for when send is complete, set flag to request refill & next send
-task sendFinalizeTask_W() void { sendFlag_W = 1; sendCounter_W[0] += 1; }
+task sendFinalizeTask_W() void {
+  sendFlag_W = 1; sendCounter_W[0] += 1; busyThreads[sendThread_W] = 0;
+}
 
-fn dispatchSend_W() void {  // open async microthread to send from sendBuf
+// open async uthread to send from sendBuf
+fn doDispatchSend_W(comptime thread: u8) void {
   const sendDsd_W = @get_dsd(fabout_dsd, .{ .fabric_color = sendColor_W,
-    .extent = sendBufSize, .output_queue = @get_output_queue(q_out_W), });
+    .extent = sendBufSize, .output_queue = @get_output_queue(thread + 1), });
   @fmovs(sendDsd_W, sendBufDsd_W,  // callback on complete
     .{ .async = true, .activate = sendFinalizeTaskID_W, }, );
+
+}
+
+fn tryDispatchSend_W(thread: u8) bool {
+  if (busyThreads[thread] == 1) { return false; }
+  population_.emigrate_genomes(sendBufDsd_W, sendNumGenomes);
+  busyThreads[thread] = 1;  // mark thread as busy
+  sendThread_W = thread;
+  switch (thread) {
+    0 => doDispatchSend_W(0),
+    1 => doDispatchSend_W(1),
+    2 => doDispatchSend_W(2),
+    else => { @assert(false); },
+  }
   sendCounter_W[0] += 1;  // counter only used for telemetry
+  return true;
+}
+
+fn dispatchSend_W() bool {
+  for (@range(u8, 3)) |thread| {
+    if (tryDispatchSend_W(thread)) { return true; }
+  }
+  return false;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -417,21 +516,19 @@ task cycleTask(_: u16) void {
 
   // handle send flags, load send buffer from pop and start next async send
   // --------------------------------------------------------------------------
-  if (@as(bool, sendFlag_N)) {
-    population_.emigrate_genomes(sendBufDsd_N, sendNumGenomes);
-    sendFlag_N = 0; dispatchSend_N();
-  }
-  if (@as(bool, sendFlag_S)) {
-    population_.emigrate_genomes(sendBufDsd_S, sendNumGenomes);
-    sendFlag_S = 0; dispatchSend_S();
-  }
-  if (@as(bool, sendFlag_E)) {
-    population_.emigrate_genomes(sendBufDsd_E, sendNumGenomes);
-    sendFlag_E = 0; dispatchSend_E();
-  }
-  if (@as(bool, sendFlag_W)) {
-    population_.emigrate_genomes(sendBufDsd_W, sendNumGenomes);
-    sendFlag_W = 0; dispatchSend_W();
+  const shuf = @random16() & 3;
+  for (@range(u16, 4)) |i| {  // send to all neighbors
+    if (busyThreads[0] + busyThreads[1] + busyThreads[2] == 3) { break; }
+    const j = (i + shuf) & 3;  // round-robin order
+    if (j == 0 and sendFlag_N == 1) {
+      if (dispatchSend_N()) { sendFlag_N = 0; }
+    } else if (j == 1 and sendFlag_S == 1) {
+      if (dispatchSend_S()) { sendFlag_S = 0; }
+    } else if (j == 2 and sendFlag_E == 1) {
+      if (dispatchSend_E()) { sendFlag_E = 0; }
+    } else if (j == 3 and sendFlag_W == 1) {
+      if (dispatchSend_W()) { sendFlag_W = 0; }
+    }
   }
 
   // update telemetry
