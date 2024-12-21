@@ -1,5 +1,5 @@
 # pylib
-compconf==0.3.1
+compconf==0.4.0
 dendropy
 hstrat==1.14.0
 opytional

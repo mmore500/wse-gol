@@ -224,16 +224,20 @@ jobs:
           name: sample-tagged-populations
           path: ./kernel-async-ga/a=concatenated_genomes+flavor=genome_hsurftiltedsticky_tagged+ext=.csv
 
-  test-sample-reconstruct:
-    name: Test make sample population
+  test-reconstruct-validate:
+    name: Test reconstruction with dstream validators
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
         genome:
-          - genome_purifyingonly
           - genome_purifyingonly_dstream_validation
-          - genome_purifyingplus
+        dstream_validator:
+          - "block"
+          - "checkerboard"
+        dstream_expected_T:
+          - 64
+          - 65
     env:
       CSLC: cslc
       CS_PYTHON: cs_python
@@ -318,6 +322,8 @@ jobs:
           export ASYNC_GA_GENOME_FLAVOR="${{ matrix.genome }}"
           export ASYNC_GA_NONBLOCK="1"
           export CSLC CS_PYTHON PATH
+          export COMPCONFENV_CEREBRASLIB_DSTREAM_VALIDATOR__comptime_string="${{ matrix.validator }}"
+          export COMPCONFENV_CEREBRASLIB_DSTREAM_EXPECTED_T__u32="${{ matrix.dstream_expected_T }}"
           sudo -E env PATH=$PATH \
             ./kernel-async-ga/execute.sh \
             >/dev/null 2>&1
