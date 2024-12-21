@@ -24,7 +24,7 @@ def hexify_genome_data(
     verbose: bool = False,
 ) -> typing.List[str]:
     genome_bytes = [
-        inner.view(np.uint8).tobytes()
+        inner.byteswap().view(np.uint8).tobytes()
         for outer in raw_genome_data
         for inner in outer
     ]
