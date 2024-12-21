@@ -169,7 +169,7 @@ msecAtLeast = int(compile_data["params"]["msecAtLeast"])
 tscAtLeast = int(compile_data["params"]["tscAtLeast"])
 nColSubgrid = int(compile_data["params"]["nColSubgrid"])
 nRowSubgrid = int(compile_data["params"]["nRowSubgrid"])
-nonBlock = bool(compile_data["params"]["nonBlock"])
+nonBlock = bool(int(compile_data["params"]["nonBlock"]))
 tilePopSize = int(compile_data["params"]["popSize"])
 tournSize = (
     float(compile_data["params"]["tournSizeNumerator"])
