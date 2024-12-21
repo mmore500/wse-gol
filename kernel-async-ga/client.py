@@ -10,12 +10,50 @@ import uuid
 import shutil
 import subprocess
 import sys
+import typing
 
 
 def removeprefix(text: str, prefix: str) -> str:
     if text.startswith(prefix):
         return text[len(prefix):]
     return text
+
+
+def hexify_genome_data(
+    raw_genome_data: "np.ndarray",
+    verbose: bool = False,
+) -> typing.List[str]:
+    genome_bytes = [
+        inner.view(np.uint8).tobytes()
+        for outer in raw_genome_data
+        for inner in outer
+    ]
+    genome_ints = [
+        int.from_bytes(genome, byteorder="big") for genome in genome_bytes
+    ]
+
+    # display genome values
+    assert len(genome_ints) == nRow * nCol
+    if verbose:
+        for word in range(nWav):
+            print(f"---------------------------------------------- genome word {word}")
+            print([inner[word] for outer in raw_genome_data for inner in outer][:100])
+
+        print("------------------------------------------------ genome binary strings")
+        for genome_int in genome_ints[:100]:
+            print(np.binary_repr(genome_int, width=nWav * wavSize))
+
+        print("--------------------------------------------------- genome hex strings")
+        for genome_int in genome_ints[:100]:
+            print(np.base_repr(genome_int, base=16).zfill(nWav * wavSize // 4))
+
+    # prevent polars from reading as int64 and overflowing
+    genome_hex = [
+        np.base_repr(genome_int, base=16).zfill(nWav * wavSize // 4)
+        for genome_int in genome_ints
+    ]
+
+    return genome_hex
 
 
 print("- setting up temp dir")
@@ -56,12 +94,14 @@ import polars as pl
 print("  - polars")
 from scipy import stats as sps
 print("  - scipy")
+from tqdm import tqdm
+print("  - tqdm")
 
 print("- importing cerebras depencencies")
 from cerebras.sdk.runtime.sdkruntimepybind import (
-    SdkRuntime,
     MemcpyDataType,
     MemcpyOrder,
+    SdkRuntime,
 )  # pylint: disable=no-name-in-module
 
 print("- defining helper functions")
@@ -129,6 +169,7 @@ msecAtLeast = int(compile_data["params"]["msecAtLeast"])
 tscAtLeast = int(compile_data["params"]["tscAtLeast"])
 nColSubgrid = int(compile_data["params"]["nColSubgrid"])
 nRowSubgrid = int(compile_data["params"]["nRowSubgrid"])
+nonBlock = bool(int(compile_data["params"]["nonBlock"]))
 tilePopSize = int(compile_data["params"]["popSize"])
 tournSize = (
     float(compile_data["params"]["tournSizeNumerator"])
@@ -160,6 +201,7 @@ metadata = {
     "nCycle": (nCycleAtLeast, pl.UInt32),
     "nColSubgrid": (nColSubgrid, pl.UInt16),
     "nRowSubgrid": (nRowSubgrid, pl.UInt16),
+    "nonBlock": (nonBlock, pl.Boolean),
     "tilePopSize": (tilePopSize, pl.UInt16),
     "tournSize": (tournSize, pl.Float32),
     "msec": (msecAtLeast, pl.Float32),
@@ -183,7 +225,103 @@ runner.run()
 print("- runner run ran")
 
 runner.launch("dolaunch", nonblock=False)
-print("- runner launch unblocked")
+print("- runner launch complete")
+
+print(f"- {nonBlock=}, if True waiting for first kernel to finish...")
+fossils = []
+while nonBlock:
+    print(".", end="", flush=True)
+    memcpy_dtype = MemcpyDataType.MEMCPY_32BIT
+    out_tensors = np.zeros((nCol, nRow, nWav), np.uint32)
+
+    runner.memcpy_d2h(
+        out_tensors.ravel(),
+        runner.get_id("genome"),
+        0,  # x0
+        0,  # y0
+        nCol,  # width
+        nRow,  # height
+        nWav,  # num wavelets
+        streaming=False,
+        data_type=memcpy_dtype,
+        order=MemcpyOrder.ROW_MAJOR,
+        nonblock=False,
+    )
+    genome_data = out_tensors.copy()
+    fossils.append(hexify_genome_data(genome_data, verbose=False))
+
+    memcpy_dtype = MemcpyDataType.MEMCPY_32BIT
+    out_tensors = np.zeros((nCol, nRow, 1), np.uint32)
+    runner.memcpy_d2h(
+        out_tensors.ravel(),
+        runner.get_id("cycleCounter"),
+        0,  # x0
+        0,  # y0
+        nCol,  # width
+        nRow,  # height
+        1,  # num wavelets
+        streaming=False,
+        data_type=memcpy_dtype,
+        order=MemcpyOrder.ROW_MAJOR,
+        nonblock=False,
+    )
+    cycle_counts = out_tensors.ravel().copy()
+    if np.any(cycle_counts >= nCycleAtLeast):
+        print()
+        break
+
+print(f"- {nonBlock=}, if True waiting for last kernel to finish...")
+while nonBlock:
+    print(",", end="", flush=True)
+    memcpy_dtype = MemcpyDataType.MEMCPY_32BIT
+    out_tensors = np.zeros((nCol, nRow, 1), np.uint32)
+    runner.memcpy_d2h(
+        out_tensors.ravel(),
+        runner.get_id("cycleCounter"),
+        0,  # x0
+        0,  # y0
+        nCol,  # width
+        nRow,  # height
+        1,  # num wavelets
+        streaming=False,
+        data_type=memcpy_dtype,
+        order=MemcpyOrder.ROW_MAJOR,
+        nonblock=False,
+    )
+    cycle_counts = out_tensors.ravel().copy()
+    if np.all(cycle_counts >= nCycleAtLeast):
+        print()
+        break
+
+print("fossils ==============================================================")
+print(f" - {len(fossils)=}")
+
+if fossils:
+    fossils = np.array(fossils)
+    layers, positions = np.indices(fossils.shape)
+    df = pl.DataFrame({
+        "data_hex": pl.Series(fossils.ravel(), dtype=pl.Utf8),
+        "is_extant": False,
+        "layer": pl.Series(layers.ravel(), dtype=pl.UInt32),
+        "position": pl.Series(positions.ravel(), dtype=pl.UInt32),
+    }).with_columns([
+        pl.lit(value, dtype=dtype).alias(key)
+        for key, (value, dtype) in metadata.items()
+        if key.startswith("dstream_") or key in ("genomeFlavor",)
+    ])
+
+    write_parquet_verbose(
+        df,
+        "a=fossils"
+        f"+flavor={genomeFlavor}"
+        f"+seed={globalSeed}"
+        f"+ncycle={nCycleAtLeast}"
+        "+ext=.pqt",
+    )
+
+    del df
+
+del fossils
 
 print("whoami ===============================================================")
 memcpy_dtype = MemcpyDataType.MEMCPY_32BIT
@@ -367,37 +505,13 @@ runner.memcpy_d2h(
     order=MemcpyOrder.ROW_MAJOR,
     nonblock=False,
 )
-genome_data = out_tensors.copy()
-genome_bytes = [
-    inner.view(np.uint8).tobytes() for outer in genome_data for inner in outer
-]
-genome_ints = [
-    int.from_bytes(genome, byteorder="big") for genome in genome_bytes
-]
-
-# display genome values
-assert len(genome_ints) == nRow * nCol
-for word in range(nWav):
-    print(f"---------------------------------------------- genome word {word}")
-    print([inner[word] for outer in genome_data for inner in outer][:100])
-
-print("------------------------------------------------ genome binary strings")
-for genome_int in genome_ints[:100]:
-    print(np.binary_repr(genome_int, width=nWav * wavSize))
-
-print("--------------------------------------------------- genome hex strings")
-for genome_int in genome_ints[:100]:
-    print(np.base_repr(genome_int, base=16).zfill(nWav * wavSize // 4))
-
-# prevent polars from reading as int64 and overflowing
-genome_hex = (
-    np.base_repr(genome_int, base=16).zfill(nWav * wavSize // 4)
-    for genome_int in genome_ints
-)
+raw_genome_data = out_tensors.copy()
+genome_hex = hexify_genome_data(raw_genome_data, verbose=True)
 
 # save genome values to a file
 df = pl.DataFrame({
     "data_hex": pl.Series(genome_hex, dtype=pl.Utf8),
+    "is_extant": True,
     "fitness": pl.Series(fitness_data.ravel(), dtype=pl.Float32),
     "tile": pl.Series(whoami_data.ravel(), dtype=pl.UInt32),
     "row": pl.Series(whereami_y_data.ravel(), dtype=pl.UInt16),
@@ -415,7 +529,7 @@ write_parquet_verbose(
     f"+ncycle={nCycleAtLeast}"
     "+ext=.pqt",
 )
-del df, fitness_data, genome_ints, genome_bytes, genome_hex
+del df, fitness_data, genome_hex
 
 print("cycle counter =======================================================")
 memcpy_dtype = MemcpyDataType.MEMCPY_32BIT

@@ -1,11 +1,10 @@
 #!/bin/bash
 
-set -e
+set -euo pipefail
 
 cd "$(dirname "$0")"
 
 echo "CS_PYTHON ${CS_PYTHON}"
-echo "ASYNC_GA_GENOME_FLAVOR ${ASYNC_GA_GENOME_FLAVOR}"
 echo "ASYNC_GA_EXECUTE_FLAGS ${ASYNC_GA_EXECUTE_FLAGS:-}"
 
 export APPTAINERENV_ASYNC_GA_NCOL="${ASYNC_GA_NCOL:-3}"
