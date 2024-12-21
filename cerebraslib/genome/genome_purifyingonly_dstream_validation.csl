@@ -24,15 +24,21 @@
 //!         ),
 //!         pl.Categorical,
 //!     ),
-//!     "downstream_validate_exploded": {
-//!         "block": "pl.col('dstream_value') == pl.col('dstream_Tbar') // 33",
-//!         "checkerboard": "pl.col('dstream_value') == pl.col('dstream_Tbar') % 2",
-//!    }[
-//!         compconf_data.get("CEREBRASLIB_DSTREAM_VALIDATOR", "checkerboard")
-//!    ],
-//!     "downstream_validate_unpacked": f"""pl.col('dstream_T') == {
-//!         compconf_data.get("CEREBRASLIB_DSTREAM_EXPECTED_T", 64)
-//!     }""",
+//!     "downstream_validate_exploded": (
+//!         {
+//!             "block": "pl.col('dstream_value') == pl.col('dstream_Tbar') // 33",
+//!             "checkerboard": "pl.col('dstream_value') == pl.col('dstream_Tbar') % 2",
+//!         }[
+//!             compconf_data.get("CEREBRASLIB_DSTREAM_VALIDATOR", "checkerboard")
+//!         ],
+//!         pl.Categorical,
+//!     ),
+//!     "downstream_validate_unpacked": (
+//!         f"""pl.col('dstream_T') == {
+//!             compconf_data.get("CEREBRASLIB_DSTREAM_EXPECTED_T", 64)
+//!         }""",
+//!        pl.Categorical,
+//!     ),
 //!     "dstream_storage_bitoffset": (64, pl.UInt8),
 //!     "dstream_storage_bitwidth": (64, pl.UInt8),
 //!     "dstream_T_bitoffset": (4, pl.UInt8),
