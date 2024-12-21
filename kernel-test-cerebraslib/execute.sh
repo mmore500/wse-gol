@@ -1,12 +1,10 @@
 #!/bin/bash
 
-set -e
+set -euo pipefail
 
 cd "$(dirname "$0")"
 
 echo "CS_PYTHON ${CS_PYTHON}"
-
-MAX_PROCESSES=$([ -n "$CI" ] && echo 1 || echo 2)
 
 # Find directories that match the pattern 'out*'
 dir_list=$(find . -maxdepth 1 -type d -name 'out*')
@@ -27,21 +25,12 @@ echo "Running ${num_dirs} tests with up to ${MAX_PROCESSES} parallel processes"
 export APPTAINERENV_CSL_SUPPRESS_SIMFAB_TRACE=${APPTAINERENV_CSL_SUPPRESS_SIMFAB_TRACE:-1}
 echo "APPTAINERENV_CSL_SUPPRESS_SIMFAB_TRACE ${APPTAINERENV_CSL_SUPPRESS_SIMFAB_TRACE}"
 
-for dir in $dir_list END; do
-    if [ "$dir" = "END" ]; then
-        wait
-    else
-        # Ensure the number of parallel jobs does not exceed MAX_PROCESSES
-        while [ "$(jobs -r | wc -l)" -ge "$MAX_PROCESSES" ]; do
-            wait -n
-        done
+for dir in $dir_list; do
+    # Run the client.py script in the background for the current directory
+    "${CS_PYTHON}" client.py --name "${dir}"
 
-        # Run the client.py script in the background for the current directory
-        "${CS_PYTHON}" client.py --name "${dir}"
-
-        # Print the directory name to stdout for tqdm to track progress
-        echo "${dir}"
-    fi
+    # Print the directory name to stdout for tqdm to track progress
+    echo "${dir}"
 done | python3 -m tqdm --total "${num_dirs}" --unit test --unit_scale --desc "running tests"
 
 echo "All tests processed."

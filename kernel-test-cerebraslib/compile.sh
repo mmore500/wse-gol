@@ -1,7 +1,6 @@
 #!/bin/bash
 
-set -e
-set -u
+set -euo pipefail
 
 shopt -s globstar
 
@@ -32,21 +31,11 @@ fi
 num_tests="$(echo "${test_module_paths}" | wc -l)"
 echo "${num_tests} tests detected"
 
-set +u
-MAX_PROCESSES=$([ -n "$CI" ] && echo 2 || echo 4)
-set -u
-echo "Compiling ${num_tests} tests with up to ${MAX_PROCESSES} processes"
+echo "Compiling ${num_tests} tests"
 
-for test_module_path in ${test_module_paths} END; do
-    if [ "${test_module_path}" = "END" ]; then
-        wait
-    else
-        cp "${test_module_path}" "cerebraslib/current_compilation_target.csl"
-        test_basename="$(basename -- "${test_module_path}")"
-        test_name="${test_basename%.csl}"
-          while [ "$(jobs -r | wc -l)" -ge "$MAX_PROCESSES" ]; do
-            wait -n
-        done
-        python3 -m compconf --compconf-cslc "${CSLC}" layout.csl --fabric-dims=9,4 --fabric-offsets=4,1 --channels=1 --memcpy -o "out_${test_name}" --verbose
-    fi
+for test_module_path in ${test_module_paths}; do
+    cp "${test_module_path}" "cerebraslib/current_compilation_target.csl"
+    test_basename="$(basename -- "${test_module_path}")"
+    test_name="${test_basename%.csl}"
+    python3 -m compconf --compconf-cslc "${CSLC}" layout.csl --fabric-dims=9,4 --fabric-offsets=4,1 --channels=1 --memcpy -o "out_${test_name}" --verbose
 done | python3 -m tqdm --total "${num_tests}" --unit test --unit_scale --desc "Compiling"
