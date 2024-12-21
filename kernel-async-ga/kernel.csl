@@ -579,9 +579,7 @@ fn dolaunch() void {  // launched by RPC (remote procedure call)
   whoami[0] = whereami_y[0] * @as(u32, nCol) + whereami_x[0];
 
   // initialize send flags to request first fill, except for edges
-  // @MAM TODO temporarily disabled N in nonBlock mode
-  // to deconflict queue 0 with memcpy
-  sendFlag_N = @as(u8, y != 0 and nonBlock != 1);  // except top PE row
+  sendFlag_N = @as(u8, y != 0);  // except top PE row
   sendFlag_S = @as(u8, y != nRow - 1);  // except bottom row
   sendFlag_E = @as(u8, x != nCol - 1);  // except right col
   sendFlag_W = @as(u8, x != 0);  // except left col
