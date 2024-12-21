@@ -58,7 +58,7 @@ fn test_immigrate_genomes() void {
     population.immigrate_genomes(population.swapDsd, 10);
 }
 
-fn test_do_generaiton() void { population.do_generation(); }
+fn test_do_generation() void { population.do_generation(); }
 
 // test runner ================================================================
 fn do_test() void {
@@ -77,5 +77,5 @@ fn do_test() void {
     test_sample_n();
     test_emigrate_genomes();
     test_immigrate_genomes();
-    test_do_generaiton();
+    test_do_generation();
 }
