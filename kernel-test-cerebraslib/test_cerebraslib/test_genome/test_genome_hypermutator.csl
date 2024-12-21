@@ -1,6 +1,6 @@
 const random = @import_module("<random>");
 
-const genome = @import_module("cerebraslib/genome_hypermutator.csl");
+const genome = @import_module("cerebraslib/genome/genome_hypermutator.csl");
 
 fn test_elapse_inheritance_of() void {
     var g = @zeros(genome.genome_t);
