@@ -20,7 +20,7 @@
 //! {
 //!     "dstream_algo": (
 //!         compconf_data.get(
-//!             "CEREBRASLIB_HSTRAT_DSTREAM_ALGO_NAME", "tilted_algo"
+//!             "CEREBRASLIB_HSTRAT_DSTREAM_ALGO_NAME", "dstream.tilted_algo"
 //!         ),
 //!         pl.Categorical,
 //!     ),
@@ -53,7 +53,7 @@ const random = @import_module("<random>");
 const compconf = @import_module("<compconf>");
 const dstream_algo_name = compconf.get_value_or(
     "CEREBRASLIB_HSTRAT_DSTREAM_ALGO_NAME",
-    "tilted_algo",
+    "dstream.tilted_algo",
 );
 const dstream_algo = @import_module(
     @strcat("<downstream/dstream/", dstream_algo_name, ">"),
