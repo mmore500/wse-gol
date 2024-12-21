@@ -19,7 +19,7 @@ fi
 num_dirs=$(echo "$dir_list" | wc -l)
 echo "${num_dirs} directories detected"
 
-echo "Running ${num_dirs} tests with up to ${MAX_PROCESSES} parallel processes"
+echo "Running ${num_dirs} tests"
 
 # set if not set to 0
 export APPTAINERENV_CSL_SUPPRESS_SIMFAB_TRACE=${APPTAINERENV_CSL_SUPPRESS_SIMFAB_TRACE:-1}
