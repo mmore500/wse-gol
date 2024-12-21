@@ -277,6 +277,7 @@ jobs:
           sudo env PATH=$PATH CSLC=$CSLC CS_PYTHON=$CS_PYTHON \
             ./kernel-test-cerebraslib/compile.sh \
             >/dev/null 2>&1
+          ls ./kernel-test-cerebraslib
 
       - name: Run cerebraslib tests
         run: |
