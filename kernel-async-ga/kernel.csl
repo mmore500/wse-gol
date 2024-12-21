@@ -308,9 +308,9 @@ task recvFinalizeTask_E() void { recvFlag_E = 1; recvCounter_E[0] += 1;
   if (closeoutRemaining == 0) { @unblock(ignRecvTaskID_E); }
 }
 
-const recvDsd_E = @get_dsd(fabin_dsd, .{  .fabric_color = recvColor_E,
-  .extent = recvBufSize, .input_queue = @get_input_queue(q_in_E), });
 fn dispatchRecv_E() void {  // open an async microthread to recv into recvBuf
+  const recvDsd_E = @get_dsd(fabin_dsd, .{  .fabric_color = recvColor_E,
+    .extent = recvBufSize, .input_queue = @get_input_queue(q_in_E), });
   @fmovs(recvBufDsd_E, recvDsd_E,  // callback on complete
     .{ .async = true, .activate = recvFinalizeTaskID_E, }, );
   recvCounter_E[0] += 1;  // counter only used for telemetry
@@ -394,19 +394,19 @@ task cycleTask(_: u16) void {
   // handle recv flags, pull recv buffer into pop and start next async recv
   // note: never-filled recv requests on PE array edges ok
   // --------------------------------------------------------------------------
-  if (@as(bool, recvFlag_N)) {  // has open recv request been filled?
+  if (recvFlag_N == 1) {  // has open recv request been filled?
     population_.immigrate_genomes(recvBufDsd_N, recvNumGenomes);
     recvFlag_N = 0; dispatchRecv_N();
   }
-  if (@as(bool, recvFlag_S)) {
+  if (recvFlag_S == 1) {
     population_.immigrate_genomes(recvBufDsd_S, recvNumGenomes);
     recvFlag_S = 0; dispatchRecv_S();
   }
-  if (@as(bool, recvFlag_E)) {
+  if (recvFlag_E == 1) {
     population_.immigrate_genomes(recvBufDsd_E, recvNumGenomes);
     recvFlag_E = 0; dispatchRecv_E();
   }
-  if (@as(bool, recvFlag_W)) {
+  if (recvFlag_W == 1) {
     population_.immigrate_genomes(recvBufDsd_W, recvNumGenomes);
     recvFlag_W = 0; dispatchRecv_W();
   }
