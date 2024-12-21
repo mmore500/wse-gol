@@ -364,7 +364,7 @@ const closeoutDsd = @get_dsd(fabout_dsd, .{
   .extent = 1, .fabric_color = closeoutColor, });
 task closeoutTask(_: u16) void {
   if (closeoutSend()) {
-    if (nonBlock = 0) memcpy.unblock_cmd_stream();  // terminate
+    if (nonBlock == 0) memcpy.unblock_cmd_stream();  // terminate
   } else { @mov16(closeoutDsd, 0); }  // trigger next cycle
   closeoutRecv();  // run LAST in either case
 }
