@@ -8,9 +8,12 @@ cd "$(dirname "$0")"
 
 echo "CSLC ${CSLC}"
 
+git submodule update --init --recursive
+
 # symlinks don't work and --import-path doesn't work, so this is a workaround
-trap "git checkout ./cerebraslib" EXIT
+trap "git checkout ./cerebraslib ./downstream" EXIT
 rsync -rI "$(readlink -f cerebraslib)" .
+rsync -rI "$(readlink -f downstream)" .
 
 # remove any old output
 rm -rf out*
@@ -37,5 +40,5 @@ for test_module_path in ${test_module_paths}; do
     cp "${test_module_path}" "cerebraslib/current_compilation_target.csl"
     test_basename="$(basename -- "${test_module_path}")"
     test_name="${test_basename%.csl}"
-    python3 -m compconf --compconf-cslc "${CSLC}" layout.csl --fabric-dims=9,4 --fabric-offsets=4,1 --channels=1 --memcpy -o "out_${test_name}" --verbose
+    python3 -m compconf --compconf-cslc "${CSLC}" layout.csl --import-path ./downstream/include --fabric-dims=9,4 --fabric-offsets=4,1 --channels=1 --memcpy -o "out_${test_name}" --verbose
 done | python3 -m tqdm --total "${num_tests}" --unit test --unit_scale --desc "Compiling"
