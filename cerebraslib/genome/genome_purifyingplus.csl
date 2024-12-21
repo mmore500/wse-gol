@@ -19,7 +19,7 @@
 
 //! {
 //!     "dstream_algo": (
-//!         compconf_data.get(
+//!         "dstream." + compconf_data.get(
 //!             "CEREBRASLIB_HSTRAT_DSTREAM_ALGO_NAME", "tilted_algo"
 //!         ),
 //!         pl.Categorical,
