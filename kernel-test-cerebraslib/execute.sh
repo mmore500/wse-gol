@@ -27,7 +27,7 @@ echo "APPTAINERENV_CSL_SUPPRESS_SIMFAB_TRACE ${APPTAINERENV_CSL_SUPPRESS_SIMFAB_
 
 for dir in $dir_list; do
     # Run the client.py script in the background for the current directory
-    "${CS_PYTHON}" client.py --name "${dir}"
+    "${CS_PYTHON}" client.py --name "${dir}" >/dev/null 2>&1
 
     # Print the directory name to stdout for tqdm to track progress
     echo "${dir}"
