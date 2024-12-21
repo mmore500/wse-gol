@@ -157,8 +157,7 @@ const closeoutTaskID: data_task_id = @get_data_task_id(closeoutColor);
 
 // queue IDs ==================================================================
 ///////////////////////////////////////////////////////////////////////////////
-// leave microthread/queue 0 open for memcpy
-var busyThreads = @zeros([3]u8);  // 1, 2, 3
+var busyThreads = @zeros([4]u8);  // 0, 1, 2, 3
 
 const q_in_N: i16 = 4;
 const q_in_S: i16 = 5;
@@ -189,7 +188,7 @@ task sendFinalizeTask_N() void {
 // open async uthread to send from sendBuf
 fn doDispatchSend_N(comptime thread: u8) void {
   const sendDsd_N = @get_dsd(fabout_dsd, .{ .fabric_color = sendColor_N,
-    .extent = sendBufSize, .output_queue = @get_output_queue(thread + 1), });
+    .extent = sendBufSize, .output_queue = @get_output_queue(thread), });
   @fmovs(sendDsd_N, sendBufDsd_N,  // callback on complete
     .{ .async = true, .activate = sendFinalizeTaskID_N, }, );
 }
@@ -203,6 +202,7 @@ fn tryDispatchSend_N(thread: u8) bool {
     0 => doDispatchSend_N(0),
     1 => doDispatchSend_N(1),
     2 => doDispatchSend_N(2),
+    3 => doDispatchSend_N(3),
     else => { @assert(false); },
   }
   sendCounter_N[0] += 1;  // counter only used for telemetry
@@ -210,7 +210,7 @@ fn tryDispatchSend_N(thread: u8) bool {
 }
 
 fn dispatchSend_N() bool {
-  for (@range(u8, 3)) |thread| {
+  for (@range(u8, 4)) |thread| {
     if (tryDispatchSend_N(thread)) { return true; }
   }
   return false;
@@ -231,7 +231,7 @@ task sendFinalizeTask_S() void {
 // open async uthread to send from sendBuf
 fn doDispatchSend_S(comptime thread: u8) void {
   const sendDsd_S = @get_dsd(fabout_dsd, .{ .fabric_color = sendColor_S,
-    .extent = sendBufSize, .output_queue = @get_output_queue(thread + 1), });
+    .extent = sendBufSize, .output_queue = @get_output_queue(thread), });
   @fmovs(sendDsd_S, sendBufDsd_S,  // callback on complete
     .{ .async = true, .activate = sendFinalizeTaskID_S, }, );
 }
@@ -245,6 +245,7 @@ fn tryDispatchSend_S(thread: u8) bool {
     0 => doDispatchSend_S(0),
     1 => doDispatchSend_S(1),
     2 => doDispatchSend_S(2),
+    3 => doDispatchSend_S(3),
     else => { @assert(false); },
   }
   sendCounter_S[0] += 1;  // counter only used for telemetry
@@ -252,7 +253,7 @@ fn tryDispatchSend_S(thread: u8) bool {
 }
 
 fn dispatchSend_S() bool {
-  for (@range(u8, 3)) |thread| {
+  for (@range(u8, 4)) |thread| {
     if (tryDispatchSend_S(thread)) { return true; }
   }
   return false;
@@ -273,7 +274,7 @@ task sendFinalizeTask_E() void {
 // open async uthread to send from sendBuf
 fn doDispatchSend_E(comptime thread: u8) void {
   const sendDsd_E = @get_dsd(fabout_dsd, .{ .fabric_color = sendColor_E,
-    .extent = sendBufSize, .output_queue = @get_output_queue(thread + 1), });
+    .extent = sendBufSize, .output_queue = @get_output_queue(thread), });
   @fmovs(sendDsd_E, sendBufDsd_E,  // callback on complete
     .{ .async = true, .activate = sendFinalizeTaskID_E, }, );
 }
@@ -287,6 +288,7 @@ fn tryDispatchSend_E(thread: u8) bool {
     0 => doDispatchSend_E(0),
     1 => doDispatchSend_E(1),
     2 => doDispatchSend_E(2),
+    3 => doDispatchSend_E(3),
     else => { @assert(false); },
   }
   sendCounter_E[0] += 1;  // counter only used for telemetry
@@ -294,7 +296,7 @@ fn tryDispatchSend_E(thread: u8) bool {
 }
 
 fn dispatchSend_E() bool {
-  for (@range(u8, 3)) |thread| {
+  for (@range(u8, 4)) |thread| {
     if (tryDispatchSend_E(thread)) { return true; }
   }
   return false;
@@ -315,7 +317,7 @@ task sendFinalizeTask_W() void {
 // open async uthread to send from sendBuf
 fn doDispatchSend_W(comptime thread: u8) void {
   const sendDsd_W = @get_dsd(fabout_dsd, .{ .fabric_color = sendColor_W,
-    .extent = sendBufSize, .output_queue = @get_output_queue(thread + 1), });
+    .extent = sendBufSize, .output_queue = @get_output_queue(thread), });
   @fmovs(sendDsd_W, sendBufDsd_W,  // callback on complete
     .{ .async = true, .activate = sendFinalizeTaskID_W, }, );
 
@@ -330,6 +332,7 @@ fn tryDispatchSend_W(thread: u8) bool {
     0 => doDispatchSend_W(0),
     1 => doDispatchSend_W(1),
     2 => doDispatchSend_W(2),
+    3 => doDispatchSend_W(3),
     else => { @assert(false); },
   }
   sendCounter_W[0] += 1;  // counter only used for telemetry
@@ -337,7 +340,7 @@ fn tryDispatchSend_W(thread: u8) bool {
 }
 
 fn dispatchSend_W() bool {
-  for (@range(u8, 3)) |thread| {
+  for (@range(u8, 4)) |thread| {
     if (tryDispatchSend_W(thread)) { return true; }
   }
   return false;
@@ -518,7 +521,10 @@ task cycleTask(_: u16) void {
   // --------------------------------------------------------------------------
   const shuf = @random16() & 3;
   for (@range(u16, 4)) |i| {  // send to all neighbors
-    if (busyThreads[0] + busyThreads[1] + busyThreads[2] == 3) { break; }
+    const numBusy = (
+      busyThreads[0] + busyThreads[1] + busyThreads[2] + busyThreads[3]
+    );
+    if (numBusy == 4) break;
     const j = (i + shuf) & 3;  // round-robin order
     if (j == 0 and sendFlag_N == 1) {
       if (dispatchSend_N()) { sendFlag_N = 0; }
@@ -577,6 +583,8 @@ fn dolaunch() void {  // launched by RPC (remote procedure call)
   whereami_x[0] = @as(u32, x);
   whereami_y[0] = @as(u32, y);
   whoami[0] = whereami_y[0] * @as(u32, nCol) + whereami_x[0];
+
+  busyThreads[0] = nonBlock;  // leave microthread/queue 0 open for memcpy
 
   // initialize send flags to request first fill, except for edges
   sendFlag_N = @as(u8, y != 0);  // except top PE row
