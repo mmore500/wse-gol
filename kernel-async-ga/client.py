@@ -3,6 +3,7 @@ print("######################################################################")
 import argparse
 import atexit
 from collections import Counter
+import itertools as it
 import json
 import os
 import pathlib
@@ -10,6 +11,7 @@ import uuid
 import shutil
 import subprocess
 import sys
+import textwrap
 import typing
 
 
@@ -26,32 +28,32 @@ def hexify_genome_data(
     if verbose:
         for word in range(nWav):
             print(f"---------------------------------------------- genome word {word}")
-            print([inner[word] for outer in raw_genome_data for inner in outer][:10])
+            values = (
+                inner[word] for outer in raw_genome_data for inner in outer
+            )
+            print([*it.islice(values, 10)])
 
-    genome_ints = [
-        inner.astype(">u4")
-        for outer in raw_genome_data
-        for inner in outer
-    ]
+    shape = raw_genome_data.shape
+    genome_ints = raw_genome_data.astype(">u4").reshape(-1, shape[-1])
     assert len(genome_ints) == nRow * nCol
     if verbose:
-        print("------------------------------------------------ genome binary strings")
+        print("------------------------------------------------ genome u32 ints")
         for genome_int in genome_ints[:10]:
             print(f"{genome_int=}")
 
-    genome_bytes = [arr.tobytes() for arr in genome_ints]
+    genome_hex = genome_ints.tobytes().hex()
     if verbose:
-        print("--------------------------------------------------- genome byte strings")
-        for genome_byte in genome_bytes[:10]:
-            print(f"{genome_byte=}")
+        print("--------------------------------------------------- genome hex string")
+        print(f"{genome_hex[:100]=}", len(genome_hex))
 
-    genome_hex = [arr.hex() for arr in genome_bytes]
+    genome_hexes = textwrap.wrap(genome_hex, nWav * wavSize // 4)
+    assert len(genome_hexes) == nRow * nCol
     if verbose:
-        print("--------------------------------------------------- genome hex strings")
-        for genome_hex_ in genome_hex[:10]:
-            print(f"{genome_hex_=}", len(genome_hex_))
+        print("------------------------------------------------ genome hex strings")
+        for genome_hex_ in genome_hexes[:10]:
+            print(f"{genome_hex_=}")
 
-    return genome_hex
+    return genome_hexes
 
 
 print("- setting up temp dir")
