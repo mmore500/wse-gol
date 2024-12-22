@@ -191,8 +191,8 @@ genomeDataRaw = "".join(
 genomeData = eval(genomeDataRaw, {"compconf_data": compconf_data, "pl": pl})
 print (f" - {genomeData=}")
 
-assert nWav in (genomeData["nWav"], -1)
-nWav = genomeData["nWav"]
+assert nWav in (genomeData["nWav"][0], -1)
+nWav = genomeData["nWav"][0]
 
 metadata = {
     "genomeFlavor": (genomeFlavor, pl.Categorical),
