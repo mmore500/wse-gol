@@ -49,7 +49,7 @@ def hexify_genome_data(
     if verbose:
         print("--------------------------------------------------- genome hex strings")
         for genome_hex_ in genome_hex[:10]:
-            print(f"{genome_hex_=}")
+            print(f"{genome_hex_=}", len(genome_hex_))
 
     return genome_hex
 
