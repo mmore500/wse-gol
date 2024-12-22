@@ -23,28 +23,33 @@ def hexify_genome_data(
     raw_genome_data: "np.ndarray",
     verbose: bool = False,
 ) -> typing.List[str]:
-    genome_ints = [
-        inner.astype(">u4")
-        for outer in raw_genome_data
-        for inner in outer
-    ]
-    genome_bytes = [arr.tobytes() for arr in genome_ints]
-    genome_hex = [arr.hex() for arr in genome_bytes]
-
-    # display genome values
-    assert len(genome_ints) == nRow * nCol
     if verbose:
         for word in range(nWav):
             print(f"---------------------------------------------- genome word {word}")
             print([inner[word] for outer in raw_genome_data for inner in outer][:10])
 
+    genome_ints = [
+        inner.astype(">u4")
+        for outer in raw_genome_data
+        for inner in outer
+    ]
+    assert len(genome_ints) == nRow * nCol
+    if verbose:
         print("------------------------------------------------ genome binary strings")
         for genome_int in genome_ints[:10]:
             print(f"{genome_int=}")
 
-        print("--------------------------------------------------- genome hex strings")
+    genome_bytes = [arr.tobytes() for arr in genome_ints]
+    if verbose:
+        print("--------------------------------------------------- genome byte strings")
         for genome_byte in genome_bytes[:10]:
             print(f"{genome_byte=}")
+
+    genome_hex = [arr.hex() for arr in genome_bytes]
+    if verbose:
+        print("--------------------------------------------------- genome hex strings")
+        for genome_hex_ in genome_hex[:10]:
+            print(f"{genome_hex_=}")
 
     return genome_hex
 
