@@ -44,7 +44,7 @@ def hexify_genome_data(
 
         print("--------------------------------------------------- genome hex strings")
         for genome_byte in genome_bytes[:10]:
-            print(f"{genome_byte=}"
+            print(f"{genome_byte=}")
 
     return genome_hex
 
