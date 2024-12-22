@@ -326,7 +326,7 @@ jobs:
           export COMPCONFENV_CEREBRASLIB_DSTREAM_EXPECTED_T__u32="${{ matrix.dstream_expected_T }}"
           sudo -E env PATH=$PATH \
             ./kernel-async-ga/execute.sh \
-            >/dev/null 2>&1
+            # >/dev/null 2>&1
 
       - name: Reconstruct from end-state genomes
         run: |
