@@ -23,35 +23,28 @@ def hexify_genome_data(
     raw_genome_data: "np.ndarray",
     verbose: bool = False,
 ) -> typing.List[str]:
-    genome_bytes = [
-        inner.byteswap().view(np.uint8).tobytes()
+    genome_ints = [
+        inner.astype(">u4")
         for outer in raw_genome_data
         for inner in outer
     ]
-    genome_ints = [
-        int.from_bytes(genome, byteorder="big") for genome in genome_bytes
-    ]
+    genome_bytes = [arr.tobytes() for arr in genome_ints]
+    genome_hex = [arr.hex() for arr in genome_bytes]
 
     # display genome values
     assert len(genome_ints) == nRow * nCol
     if verbose:
         for word in range(nWav):
             print(f"---------------------------------------------- genome word {word}")
-            print([inner[word] for outer in raw_genome_data for inner in outer][:100])
+            print([inner[word] for outer in raw_genome_data for inner in outer][:10])
 
         print("------------------------------------------------ genome binary strings")
-        for genome_int in genome_ints[:100]:
-            print(np.binary_repr(genome_int, width=nWav * wavSize))
+        for genome_int in genome_ints[:10]:
+            print(f"{genome_int=}")
 
         print("--------------------------------------------------- genome hex strings")
-        for genome_int in genome_ints[:100]:
-            print(np.base_repr(genome_int, base=16).zfill(nWav * wavSize // 4))
-
-    # prevent polars from reading as int64 and overflowing
-    genome_hex = [
-        np.base_repr(genome_int, base=16).zfill(nWav * wavSize // 4)
-        for genome_int in genome_ints
-    ]
+        for genome_byte in genome_bytes[:10]:
+            print(f"{genome_byte=}"
 
     return genome_hex
 
