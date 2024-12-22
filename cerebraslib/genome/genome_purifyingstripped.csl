@@ -5,6 +5,10 @@
 // byte 3
 // TOTAL: 1 words -> 4 bytes
 
+//! {
+//!     "nWav": (1, pl.UInt8),
+//! }
+
 // module imports =============================================================
 const math = @import_module("<math>");
 const random = @import_module("<random>");

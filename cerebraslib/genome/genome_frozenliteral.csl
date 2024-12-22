@@ -13,6 +13,10 @@
 // byte 11
 // TOTAL: 3 words -> 12 bytes
 
+//! {
+//!     "nWav": (3, pl.UInt8),
+//! }
+
 // module config specs ========================================================
 const gSize: u16 = 3;
 const genome_t = [gSize]u32;

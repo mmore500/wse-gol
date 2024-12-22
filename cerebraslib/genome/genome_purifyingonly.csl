@@ -29,6 +29,7 @@
 //!     "dstream_T_bitoffset": (32, pl.UInt8),
 //!     "dstream_T_bitwidth": (32, pl.UInt8),
 //!     "dstream_S": (64, pl.UInt8),
+//!     "nWav": (4, pl.UInt8),
 //! }
 
 // module imports =============================================================

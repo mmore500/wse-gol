@@ -138,7 +138,7 @@ print("- reading env variables")
 # number of rows, columns, and genome words
 nCol = int(os.getenv("ASYNC_GA_NCOL", 3))
 nRow = int(os.getenv("ASYNC_GA_NROW", 3))
-nWav = int(os.getenv("ASYNC_GA_NWAV", 4))
+nWav = int(os.getenv("ASYNC_GA_NWAV", -1))
 nTrait = int(os.getenv("ASYNC_GA_NTRAIT", 1))
 print(f"{nCol=}, {nRow=}, {nWav=}, {nTrait=}")
 
@@ -190,6 +190,9 @@ genomeDataRaw = "".join(
 ) or "{}"
 genomeData = eval(genomeDataRaw, {"compconf_data": compconf_data, "pl": pl})
 print (f" - {genomeData=}")
+
+assert nWav in (genomeData["nWav"], -1)
+nWav = genomeData["nWav"]
 
 metadata = {
     "genomeFlavor": (genomeFlavor, pl.Categorical),

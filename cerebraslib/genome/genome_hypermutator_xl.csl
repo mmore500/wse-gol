@@ -3,8 +3,12 @@
 // byte 1
 // byte 2 MUTATOR (u8, 1 byte)
 // byte 3 DELCOUNT (u8, 1 byte)
-// TOTAL: 5 words -> 20 bytes
+// TOTAL: 1 words -> 4 bytes
 
+//! {
+//!     "nWav": (1, pl.UInt8),
+//! }
+//!
 // module imports =============================================================
 const math = @import_module("<math>");
 const random = @import_module("<random>");
