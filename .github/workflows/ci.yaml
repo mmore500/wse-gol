@@ -39,7 +39,13 @@ jobs:
       fail-fast: false
       matrix:
         genome:
-          - genome_frozenliteral
+          - genome_frozenliteral1
+          - genome_frozenliteral2
+          - genome_frozenliteral3
+          - genome_frozenliteral4
+          - genome_frozenliteral5
+          - genome_frozenliteral6
+          - genome_frozenliteral7
           - genome_bitdrift
           - genome_hsurftiltedsticky
           - genome_purifyingonly
