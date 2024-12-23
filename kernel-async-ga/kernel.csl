@@ -54,6 +54,10 @@ const genome_ = @import_module(
     ".csl",
   ),
 );
+// TODO why can't this be genomes have an even number of words?
+// TODO see https://github.com/mmore500/wse-async-ga/issues/4
+comptime { @comptime_assert(genome_.gSize % 2 == 1); }
+
 const nTraitVals = genome_.nTraitVals;
 const population_ = @import_module("cerebraslib/population.csl", .{
   .gSize = genome_.gSize, .popSize = popSize, .tournamentSize = tournSize,

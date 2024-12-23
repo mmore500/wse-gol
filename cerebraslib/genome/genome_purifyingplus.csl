@@ -17,6 +17,8 @@
 // byte 15
 // TOTAL: 4 words -> 16 bytes
 
+// TODO why can't this be 4 words?
+// TODO see https://github.com/mmore500/wse-async-ga/issues/4
 //! {
 //!     "dstream_algo": (
 //!         "dstream." + compconf_data.get(
@@ -29,7 +31,7 @@
 //!     "dstream_T_bitoffset": (32, pl.UInt8),
 //!     "dstream_T_bitwidth": (32, pl.UInt8),
 //!     "dstream_S": (64, pl.UInt8),
-//!     "nWav": (4, pl.UInt8),
+//!     "nWav": (5, pl.UInt8),
 //! }
 
 // module imports =============================================================
@@ -49,7 +51,7 @@ const bitmanip = @import_module("cerebraslib/bitmanip.csl");
 const opscalar = @import_module("cerebraslib/opscalar.csl");
 
 // module config specs ========================================================
-const gSize: u16 = 4;
+const gSize: u16 = 5;
 const genome_t = [gSize]u32;
 const genomePtr_t = [*]u32;
 const nTraitVals: u16 = 1;

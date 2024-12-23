@@ -9,12 +9,14 @@
 // byte 7
 // TOTAL: 2 words -> 8 bytes
 
+// TODO why can't this be 2 words?
+// TODO see https://github.com/mmore500/wse-async-ga/issues/4
 //! {
-//!     "nWav": (2, pl.UInt8),
+//!     "nWav": (3, pl.UInt8),
 //! }
 
 // module config specs ========================================================
-const gSize: u16 = 2;
+const gSize: u16 = 3;
 const genome_t = [gSize]u32;
 const genomePtr_t = [*]u32;
 const nTraitVals: u16 = 1;
