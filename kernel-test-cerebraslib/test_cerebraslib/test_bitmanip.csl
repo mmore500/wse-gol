@@ -129,10 +129,40 @@ fn test_flip_nth_bit_bigendian() void {
     @assert(bitfield[2] == 0b10000000);
     @assert(bitfield[1] == 0b00000001);
     @assert(bitfield[0] == 0b01000000);
+
+    bitmanip.flip_nth_bit_bigendian(&bitfield, 32);
+    @assert(bitfield[7] == 0b00000001);
+    @assert(bitfield[6] == 0b00000000);
+    @assert(bitfield[5] == 0b00000000);
+    @assert(bitfield[4] == 0b00000000);
+    @assert(bitfield[3] == 0b10000001);
+    @assert(bitfield[2] == 0b10000000);
+    @assert(bitfield[1] == 0b00000001);
+    @assert(bitfield[0] == 0b01000000);
+
+    bitmanip.flip_nth_bit_bigendian(&bitfield, 32);
+    @assert(bitfield[7] == 0b00000000);
+    @assert(bitfield[6] == 0b00000000);
+    @assert(bitfield[5] == 0b00000000);
+    @assert(bitfield[4] == 0b00000000);
+    @assert(bitfield[3] == 0b10000001);
+    @assert(bitfield[2] == 0b10000000);
+    @assert(bitfield[1] == 0b00000001);
+    @assert(bitfield[0] == 0b01000000);
+
+    bitmanip.flip_nth_bit_bigendian(&bitfield, 41);
+    @assert(bitfield[7] == 0b00000000);
+    @assert(bitfield[6] == 0b00000010);
+    @assert(bitfield[5] == 0b00000000);
+    @assert(bitfield[4] == 0b00000000);
+    @assert(bitfield[3] == 0b10000001);
+    @assert(bitfield[2] == 0b10000000);
+    @assert(bitfield[1] == 0b00000001);
+    @assert(bitfield[0] == 0b01000000);
 }
 
 fn test_set_nth_bit_bigendian() void {
-    var bitfield = @zeros([4]u8); // Initialize a 2-byte bitfield
+    var bitfield = @zeros([8]u8); // Initialize a 2-word bitfield
 
     bitmanip.set_nth_bit_bigendian(&bitfield, 0, false);
     @assert(bitfield[3] == 0b00000000);
