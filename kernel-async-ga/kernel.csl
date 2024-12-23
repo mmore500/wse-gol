@@ -175,7 +175,7 @@ const q_in_W: i16 = 7;
 // asynchronously send genomes sampled from population to neighbors
 ///////////////////////////////////////////////////////////////////////////////
 const sendNumGenomes: u16 = 1;  // how many genomes to batch sending together?
-const sendBufSize: u16 = sendNumGenomes * genome_.gSize;
+const sendBufSize: u16 = sendNumGenomes * population_.gSize;
 
 // send NORTH =================================================================
 var sendFlag_N: u8; // need refill? initialized at startup
@@ -358,7 +358,7 @@ fn dispatchSend_W() bool {
 // which are then harvested from buffer & immigrated into the population
 ///////////////////////////////////////////////////////////////////////////////
 const recvNumGenomes: u16 = 4;  // how many genomes to batch together?
-const recvBufSize: u16 = genome_.gSize * recvNumGenomes;
+const recvBufSize: u16 = recvNumGenomes * population_.gSize;
 
 // recv NORTH =================================================================
 var recvFlag_N: u8 = 0;  // need harvest? init 0 (naked dispatchRecv on startup)
