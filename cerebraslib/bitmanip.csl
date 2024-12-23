@@ -19,6 +19,8 @@ fn set_nth_bit(bitfield: [*]u8, n: u16, value: bool) void {
     }
 }
 
+// Toggle the nth bit in a big-endian bitfield.
+// WARNING: note that bitfield size must be a multiple of 4 bytes.
 fn flip_nth_bit_bigendian(bitfield: [*]u8, n: u16) void {
     const byteIndex = n >> 3; // right shift by 3 bits to divide by 8
     const bitPosition = n & 7; // AND with 111 find the remainder modulo 8
