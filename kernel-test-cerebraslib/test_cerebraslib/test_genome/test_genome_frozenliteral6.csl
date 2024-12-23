@@ -1,6 +1,6 @@
 const random = @import_module("<random>");
 
-const genome_frozenliteral6 = @import_module("cerebraslib/genome_frozenliteral6.csl", .{
+const genome_frozenliteral6 = @import_module("cerebraslib/genome/genome_frozenliteral6.csl", .{
     .peId = 0,
 });
 
