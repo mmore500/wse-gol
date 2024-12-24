@@ -411,7 +411,7 @@ fn test_set_nth_bit_bigendian() void {
 fn test_set_nth_bit_bigendian_regression1() void {
     var bitfield = @zeros([16]u8); // Initialize a 2-byte bitfield
 
-    // byte 0
+    // byte 0: 0b01111110 == 0x7e
     bitmanip.set_nth_bit_bigendian(&bitfield, 64 + 1, true);
     bitmanip.set_nth_bit_bigendian(&bitfield, 64 + 2, true);
     bitmanip.set_nth_bit_bigendian(&bitfield, 64 + 3, true);
@@ -419,42 +419,42 @@ fn test_set_nth_bit_bigendian_regression1() void {
     bitmanip.set_nth_bit_bigendian(&bitfield, 64 + 5, true);
     bitmanip.set_nth_bit_bigendian(&bitfield, 64 + 6, true);
 
-    // byte 1
+    // byte 1: 0b01001100 == 0x4c
     bitmanip.set_nth_bit_bigendian(&bitfield, 64 + 8 + 1, true); // 9
     bitmanip.set_nth_bit_bigendian(&bitfield, 64 + 8 + 4, true); // 12
     bitmanip.set_nth_bit_bigendian(&bitfield, 64 + 8 + 5, true); // 13
 
-    // byte 2
+    // byte 2: 0b10011100 == 0x9c
     bitmanip.set_nth_bit_bigendian(&bitfield, 64 + 16 + 0, true); // 16
     bitmanip.set_nth_bit_bigendian(&bitfield, 64 + 16 + 3, true); // 19
     bitmanip.set_nth_bit_bigendian(&bitfield, 64 + 16 + 4, true); // 20
     bitmanip.set_nth_bit_bigendian(&bitfield, 64 + 16 + 5, true); // 21
 
-    // byte 3
+    // byte 3: 0b10011001 == 0x99
     bitmanip.set_nth_bit_bigendian(&bitfield, 64 + 24 + 0, true); // 24
     bitmanip.set_nth_bit_bigendian(&bitfield, 64 + 24 + 3, true); // 27
     bitmanip.set_nth_bit_bigendian(&bitfield, 64 + 24 + 4, true); // 28
     bitmanip.set_nth_bit_bigendian(&bitfield, 64 + 24 + 7, true); // 31
 
-    // byte 4
+    // byte 4: 0b00111100 == 0x3c
     bitmanip.set_nth_bit_bigendian(&bitfield, 64 + 32 + 2, true); // 34
     bitmanip.set_nth_bit_bigendian(&bitfield, 64 + 32 + 3, true); // 35
     bitmanip.set_nth_bit_bigendian(&bitfield, 64 + 32 + 4, true); // 36
     bitmanip.set_nth_bit_bigendian(&bitfield, 64 + 32 + 5, true); // 37
 
-    // byte 5
+    // byte 5: 0b10011001 == 0x99
     bitmanip.set_nth_bit_bigendian(&bitfield, 64 + 40 + 0, true); // 40
     bitmanip.set_nth_bit_bigendian(&bitfield, 64 + 40 + 3, true); // 43
     bitmanip.set_nth_bit_bigendian(&bitfield, 64 + 40 + 4, true); // 44
     bitmanip.set_nth_bit_bigendian(&bitfield, 64 + 40 + 7, true); // 47
 
-    // byte 6
+    // byte 6: 0b00111001 == 0x39
     bitmanip.set_nth_bit_bigendian(&bitfield, 64 + 48 + 2, true); // 50
     bitmanip.set_nth_bit_bigendian(&bitfield, 64 + 48 + 3, true); // 51
     bitmanip.set_nth_bit_bigendian(&bitfield, 64 + 48 + 4, true); // 52
     bitmanip.set_nth_bit_bigendian(&bitfield, 64 + 48 + 7, true); // 55
 
-    // byte 7
+    // byte 7: 0b00110010 == 0x32
     bitmanip.set_nth_bit_bigendian(&bitfield, 64 + 56 + 2, true); // 58
     bitmanip.set_nth_bit_bigendian(&bitfield, 64 + 56 + 3, true); // 59
     bitmanip.set_nth_bit_bigendian(&bitfield, 64 + 56 + 6, true); // 62
