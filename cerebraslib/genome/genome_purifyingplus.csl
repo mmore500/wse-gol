@@ -74,13 +74,15 @@ fn _apply_mutation(genome: genomePtr_t) void {
 fn _step_instrumentation(genome: genomePtr_t) void {
     // elapse generation in bitfield
     if (opscalar.unifbool()) {
-        const rank = @ptrcast([*]u32, genome)[1];
-        const site = dstream_algo.assign_storage_site(64, rank);
+        const S = 64;
+        const T = @ptrcast([*]u32, genome)[1];
+        const site = dstream_algo.assign_storage_site(64, T);
 
         const offset_bits: u16 = (4 + 4) * 8;
         const target_bit = @as(u16, site) + offset_bits;
 
-        bitmanip.flip_nth_bit(@ptrcast([*]u8, genome), target_bit);
+        const genome_bytes = @ptrcast([*]u8, genome);
+        if (site != S) bitmanip.flip_nth_bit(genome_bytes, target_bit);
     }
 
     // elapse generation in counter
