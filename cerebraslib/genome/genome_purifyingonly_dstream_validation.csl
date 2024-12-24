@@ -55,9 +55,9 @@ const random = @import_module("<random>");
 
 const compconf = @import_module("<compconf>");
 comptime { // access via get_value for logging...
-    const _ = compconf.get_value(
+    const _ = compconf.get_value_or(
         "CEREBRASLIB_HSTRAT_DSTREAM_ALGO_NAME",
-        comptime_string,
+        "tilted_algo",
     );
 } // ... raw string works around sdk v1.0.0 limitation
 const compconf_raw = @import_module("<compconf_raw>");
