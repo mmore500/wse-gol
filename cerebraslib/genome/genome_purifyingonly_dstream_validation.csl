@@ -109,7 +109,7 @@ fn _step_instrumentation(genome: genomePtr_t) void {
         false;
 
     const genome_bytes = @ptrcast([*]u8, genome);
-    if (site != S) bitmanip.set_nth_bit(
+    if (site != S) bitmanip.set_nth_bit_bigendian(
         genome_bytes,
         target_bit,
         value,
@@ -132,6 +132,13 @@ fn get_trait_value(genome: genomePtr_t) u32 {
     return 0;
 }
 
+fn _swap_bytes(a: *u8, b: *u8) void {
+    var tmp: u8 = 0;
+    tmp = a.*;
+    a.* = b.*;
+    b.* = tmp;
+}
+
 fn initialize_one(genome: genomePtr_t) void {
     @ptrcast(*f32, genome).* = 0.0;
     @ptrcast([*]u32, genome)[1] = 0;
@@ -140,4 +147,9 @@ fn initialize_one(genome: genomePtr_t) void {
     for (@range(u8, dstream_expected_T)) |_| {
         _step_instrumentation(genome);
     }
+    var genome_bytes = @ptrcast([*]u8, genome);
+    // TODO why is this necessary?
+    // see https://github.com/mmore500/wse-async-ga/issues/5
+    _swap_bytes(&genome_bytes[9], &genome_bytes[13]);
+    _swap_bytes(&genome_bytes[10], &genome_bytes[12]);
 }
