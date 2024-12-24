@@ -79,9 +79,27 @@ fn _swap_bytes(a: *u8, b: *u8) void {
     b.* = tmp;
 }
 
-fn test_set_nth_bit_regression() void {
+fn test_set_nth_bit_regression1() void {
     var bitfield = @zeros([16]u8); // Initialize a 2-byte bitfield
 
+    // byte 0
+    bitmanip.set_nth_bit(&bitfield, 64 - 24 + 24, true);
+    bitmanip.set_nth_bit(&bitfield, 64 - 24 + 27, true);
+    bitmanip.set_nth_bit(&bitfield, 64 - 24 + 28, true);
+    bitmanip.set_nth_bit(&bitfield, 64 - 24 + 31, true);
+
+    // byte 1
+    bitmanip.set_nth_bit(&bitfield, 64 - 8 + 16, true);
+    bitmanip.set_nth_bit(&bitfield, 64 - 8 + 19, true);
+    bitmanip.set_nth_bit(&bitfield, 64 - 8 + 20, true);
+    bitmanip.set_nth_bit(&bitfield, 64 - 8 + 21, true);
+
+    // byte 2
+    bitmanip.set_nth_bit(&bitfield, 64 + 8 + 9, true);
+    bitmanip.set_nth_bit(&bitfield, 64 + 8 + 12, true);
+    bitmanip.set_nth_bit(&bitfield, 64 + 8 + 13, true);
+
+    // byte 3
     bitmanip.set_nth_bit(&bitfield, 64 + 24 + 1, true);
     bitmanip.set_nth_bit(&bitfield, 64 + 24 + 2, true);
     bitmanip.set_nth_bit(&bitfield, 64 + 24 + 3, true);
@@ -89,38 +107,28 @@ fn test_set_nth_bit_regression() void {
     bitmanip.set_nth_bit(&bitfield, 64 + 24 + 5, true);
     bitmanip.set_nth_bit(&bitfield, 64 + 24 + 6, true);
 
-    bitmanip.set_nth_bit(&bitfield, 64 + 8 + 9, true);
-    bitmanip.set_nth_bit(&bitfield, 64 + 8 + 12, true);
-    bitmanip.set_nth_bit(&bitfield, 64 + 8 + 13, true);
+    // byte 4
+    bitmanip.set_nth_bit(&bitfield, 64 - 24 + 58, true);
+    bitmanip.set_nth_bit(&bitfield, 64 - 24 + 59, true);
+    bitmanip.set_nth_bit(&bitfield, 64 - 24 + 62, true);
 
-    bitmanip.set_nth_bit(&bitfield, 64 - 8 + 16, true);
-    bitmanip.set_nth_bit(&bitfield, 64 - 8 + 19, true);
-    bitmanip.set_nth_bit(&bitfield, 64 - 8 + 20, true);
-    bitmanip.set_nth_bit(&bitfield, 64 - 8 + 21, true);
-
-    bitmanip.set_nth_bit(&bitfield, 64 - 24 + 24, true);
-    bitmanip.set_nth_bit(&bitfield, 64 - 24 + 27, true);
-    bitmanip.set_nth_bit(&bitfield, 64 - 24 + 28, true);
-    bitmanip.set_nth_bit(&bitfield, 64 - 24 + 31, true);
-
-    bitmanip.set_nth_bit(&bitfield, 64 + 24 + 34, true);
-    bitmanip.set_nth_bit(&bitfield, 64 + 24 + 35, true);
-    bitmanip.set_nth_bit(&bitfield, 64 + 24 + 36, true);
-    bitmanip.set_nth_bit(&bitfield, 64 + 24 + 37, true);
-
-    bitmanip.set_nth_bit(&bitfield, 64 + 8 + 40, true);
-    bitmanip.set_nth_bit(&bitfield, 64 + 8 + 43, true);
-    bitmanip.set_nth_bit(&bitfield, 64 + 8 + 44, true);
-    bitmanip.set_nth_bit(&bitfield, 64 + 8 + 47, true);
-
+    // byte 5
     bitmanip.set_nth_bit(&bitfield, 64 - 8 + 50, true);
     bitmanip.set_nth_bit(&bitfield, 64 - 8 + 51, true);
     bitmanip.set_nth_bit(&bitfield, 64 - 8 + 52, true);
     bitmanip.set_nth_bit(&bitfield, 64 - 8 + 55, true);
 
-    bitmanip.set_nth_bit(&bitfield, 64 - 24 + 58, true);
-    bitmanip.set_nth_bit(&bitfield, 64 - 24 + 59, true);
-    bitmanip.set_nth_bit(&bitfield, 64 - 24 + 62, true);
+    // byte 6
+    bitmanip.set_nth_bit(&bitfield, 64 + 8 + 40, true);
+    bitmanip.set_nth_bit(&bitfield, 64 + 8 + 43, true);
+    bitmanip.set_nth_bit(&bitfield, 64 + 8 + 44, true);
+    bitmanip.set_nth_bit(&bitfield, 64 + 8 + 47, true);
+
+    // byte 7
+    bitmanip.set_nth_bit(&bitfield, 64 + 24 + 34, true);
+    bitmanip.set_nth_bit(&bitfield, 64 + 24 + 35, true);
+    bitmanip.set_nth_bit(&bitfield, 64 + 24 + 36, true);
+    bitmanip.set_nth_bit(&bitfield, 64 + 24 + 37, true);
 
     // TODO why is this necessary?
     // see https://github.com/mmore500/wse-async-ga/issues/5
@@ -143,6 +151,56 @@ fn test_set_nth_bit_regression() void {
     @assert(bitfield[8 + 5] == 0x39);
     @assert(bitfield[8 + 6] == 0x99);
     @assert(bitfield[8 + 7] == 0x3c);
+}
+
+fn test_set_nth_bit_regression2() void {
+    var bitfield = @zeros([16]u8); // Initialize a 2-byte bitfield
+
+    // byte 0
+    bitmanip.set_nth_bit(&bitfield, 64, true);
+
+    // byte 1
+    bitmanip.set_nth_bit(&bitfield, 64 + 8 + 1, true);
+
+    // byte 2
+    bitmanip.set_nth_bit(&bitfield, 64 + 16 + 2, true);
+
+    // byte 3
+    bitmanip.set_nth_bit(&bitfield, 64 + 24 + 3, true);
+
+    // byte 4
+    bitmanip.set_nth_bit(&bitfield, 64 + 32 + 4, true);
+
+    // byte 5
+    bitmanip.set_nth_bit(&bitfield, 64 + 40 + 5, true);
+
+    // byte 6
+    bitmanip.set_nth_bit(&bitfield, 64 + 48 + 6, true);
+
+    // byte 7
+    bitmanip.set_nth_bit(&bitfield, 64 + 56 + 7, true);
+
+    // TODO why is this necessary?
+    // see https://github.com/mmore500/wse-async-ga/issues/5
+    // _swap_bytes(&bitfield[8 + 1], &bitfield[8 + 4 + 1]);
+    // _swap_bytes(&bitfield[8 + 2], &bitfield[8 + 4]);
+
+    @assert(bitfield[0] == 0x00);
+    @assert(bitfield[1] == 0x00);
+    @assert(bitfield[2] == 0x00);
+    @assert(bitfield[3] == 0x00);
+    @assert(bitfield[4] == 0x00);
+    @assert(bitfield[5] == 0x00);
+    @assert(bitfield[6] == 0x00);
+    @assert(bitfield[7] == 0x00);
+    @assert(bitfield[8 + 0] == 1);
+    @assert(bitfield[8 + 1] == 2);
+    @assert(bitfield[8 + 2] == 4);
+    @assert(bitfield[8 + 3] == 8);
+    @assert(bitfield[8 + 4] == 16);
+    @assert(bitfield[8 + 5] == 32);
+    @assert(bitfield[8 + 6] == 64);
+    @assert(bitfield[8 + 7] == 128);
 }
 
 fn test_flip_nth_bit_bigendian() void {
@@ -350,9 +408,10 @@ fn test_set_nth_bit_bigendian() void {
     @assert(bitfield[0] == 0b10000000);
 }
 
-fn test_set_nth_bit_bigendian_regression() void {
+fn test_set_nth_bit_bigendian_regression1() void {
     var bitfield = @zeros([16]u8); // Initialize a 2-byte bitfield
 
+    // byte 0
     bitmanip.set_nth_bit_bigendian(&bitfield, 64 + 1, true);
     bitmanip.set_nth_bit_bigendian(&bitfield, 64 + 2, true);
     bitmanip.set_nth_bit_bigendian(&bitfield, 64 + 3, true);
@@ -360,35 +419,42 @@ fn test_set_nth_bit_bigendian_regression() void {
     bitmanip.set_nth_bit_bigendian(&bitfield, 64 + 5, true);
     bitmanip.set_nth_bit_bigendian(&bitfield, 64 + 6, true);
 
+    // byte 1
     bitmanip.set_nth_bit_bigendian(&bitfield, 64 + 9, true);
     bitmanip.set_nth_bit_bigendian(&bitfield, 64 + 12, true);
     bitmanip.set_nth_bit_bigendian(&bitfield, 64 + 13, true);
 
+    // byte 2
     bitmanip.set_nth_bit_bigendian(&bitfield, 64 + 16, true);
     bitmanip.set_nth_bit_bigendian(&bitfield, 64 + 19, true);
     bitmanip.set_nth_bit_bigendian(&bitfield, 64 + 20, true);
     bitmanip.set_nth_bit_bigendian(&bitfield, 64 + 21, true);
 
+    // byte 3
     bitmanip.set_nth_bit_bigendian(&bitfield, 64 + 24, true);
     bitmanip.set_nth_bit_bigendian(&bitfield, 64 + 27, true);
     bitmanip.set_nth_bit_bigendian(&bitfield, 64 + 28, true);
     bitmanip.set_nth_bit_bigendian(&bitfield, 64 + 31, true);
 
+    // byte 4
     bitmanip.set_nth_bit_bigendian(&bitfield, 64 + 34, true);
     bitmanip.set_nth_bit_bigendian(&bitfield, 64 + 35, true);
     bitmanip.set_nth_bit_bigendian(&bitfield, 64 + 36, true);
     bitmanip.set_nth_bit_bigendian(&bitfield, 64 + 37, true);
 
+    // byte 5
     bitmanip.set_nth_bit_bigendian(&bitfield, 64 + 40, true);
     bitmanip.set_nth_bit_bigendian(&bitfield, 64 + 43, true);
     bitmanip.set_nth_bit_bigendian(&bitfield, 64 + 44, true);
     bitmanip.set_nth_bit_bigendian(&bitfield, 64 + 47, true);
 
+    // byte 6
     bitmanip.set_nth_bit_bigendian(&bitfield, 64 + 50, true);
     bitmanip.set_nth_bit_bigendian(&bitfield, 64 + 51, true);
     bitmanip.set_nth_bit_bigendian(&bitfield, 64 + 52, true);
     bitmanip.set_nth_bit_bigendian(&bitfield, 64 + 55, true);
 
+    // byte 7
     bitmanip.set_nth_bit_bigendian(&bitfield, 64 + 58, true);
     bitmanip.set_nth_bit_bigendian(&bitfield, 64 + 59, true);
     bitmanip.set_nth_bit_bigendian(&bitfield, 64 + 62, true);
@@ -416,6 +482,56 @@ fn test_set_nth_bit_bigendian_regression() void {
     @assert(bitfield[8 + 7] == 0x3c);
 }
 
+fn test_set_nth_bit_bigendian_regression2() void {
+    var bitfield = @zeros([16]u8); // Initialize a 2-byte bitfield
+
+    // byte 0
+    bitmanip.set_nth_bit_bigendian(&bitfield, 64, true);
+
+    // byte 1
+    bitmanip.set_nth_bit_bigendian(&bitfield, 64 + 8 + 1, true);
+
+    // byte 2
+    bitmanip.set_nth_bit_bigendian(&bitfield, 64 + 16 + 2, true);
+
+    // byte 3
+    bitmanip.set_nth_bit_bigendian(&bitfield, 64 + 24 + 3, true);
+
+    // byte 4
+    bitmanip.set_nth_bit_bigendian(&bitfield, 64 + 32 + 4, true);
+
+    // byte 5
+    bitmanip.set_nth_bit_bigendian(&bitfield, 64 + 40 + 5, true);
+
+    // byte 6
+    bitmanip.set_nth_bit_bigendian(&bitfield, 64 + 48 + 6, true);
+
+    // byte 7
+    bitmanip.set_nth_bit_bigendian(&bitfield, 64 + 56 + 7, true);
+
+    // TODO why is this necessary?
+    // see https://github.com/mmore500/wse-async-ga/issues/5
+    // _swap_bytes(&bitfield[8 + 1], &bitfield[8 + 4 + 1]);
+    // _swap_bytes(&bitfield[8 + 2], &bitfield[8 + 4]);
+
+    @assert(bitfield[0] == 0x00);
+    @assert(bitfield[1] == 0x00);
+    @assert(bitfield[2] == 0x00);
+    @assert(bitfield[3] == 0x00);
+    @assert(bitfield[4] == 0x00);
+    @assert(bitfield[5] == 0x00);
+    @assert(bitfield[6] == 0x00);
+    @assert(bitfield[7] == 0x00);
+    @assert(bitfield[8 + 3] == 1);
+    @assert(bitfield[8 + 2] == 2);
+    @assert(bitfield[8 + 1] == 4);
+    @assert(bitfield[8 + 0] == 8);
+    @assert(bitfield[8 + 7] == 16);
+    @assert(bitfield[8 + 6] == 32);
+    @assert(bitfield[8 + 5] == 64);
+    @assert(bitfield[8 + 4] == 128);
+}
+
 fn test_randomize() void {
     random.set_global_prng_seed(1);
     var bitfield = @zeros([2]u16); // Initialize a 2-byte bitfield
@@ -436,9 +552,11 @@ fn test_randomize() void {
 fn do_test() void {
     test_flip_nth_bit();
     test_set_nth_bit();
-    test_set_nth_bit_regression();
+    test_set_nth_bit_regression1();
+    test_set_nth_bit_regression2();
     test_flip_nth_bit_bigendian();
     test_set_nth_bit_bigendian();
-    test_set_nth_bit_bigendian_regression();
+    test_set_nth_bit_bigendian_regression1();
+    test_set_nth_bit_bigendian_regression2();
     test_randomize();
 }
