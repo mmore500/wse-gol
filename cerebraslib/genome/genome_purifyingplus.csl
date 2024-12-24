@@ -90,7 +90,9 @@ fn _step_instrumentation(genome: genomePtr_t) void {
         const target_bit = @as(u16, site) + offset_bits;
 
         const genome_bytes = @ptrcast([*]u8, genome);
-        if (site != S) bitmanip.flip_nth_bit(genome_bytes, target_bit);
+        if (site != S) bitmanip.flip_nth_bit_with_swaps(
+            genome_bytes, target_bit, .{ .byteSwap = true, .bitSwap = true }
+        );
     }
 
     // elapse generation in counter

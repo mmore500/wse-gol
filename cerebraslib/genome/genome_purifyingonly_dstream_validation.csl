@@ -117,10 +117,11 @@ fn _step_instrumentation(genome: genomePtr_t) void {
         false;
 
     const genome_bytes = @ptrcast([*]u8, genome);
-    if (site != S) bitmanip.set_nth_bit_bigendian(
+    if (site != S) bitmanip.set_nth_bit_with_swaps(
         genome_bytes,
         target_bit,
         value,
+        .{ .byteSwap = true, .bitSwap = true },
     );
 
     // elapse generation in counter
@@ -140,13 +141,6 @@ fn get_trait_value(genome: genomePtr_t) u32 {
     return 0;
 }
 
-fn _swap_bytes(a: *u8, b: *u8) void {
-    var tmp: u8 = 0;
-    tmp = a.*;
-    a.* = b.*;
-    b.* = tmp;
-}
-
 fn initialize_one(genome: genomePtr_t) void {
     @ptrcast(*f32, genome).* = 0.0;
     @ptrcast([*]u32, genome)[1] = 0;
@@ -155,9 +149,93 @@ fn initialize_one(genome: genomePtr_t) void {
     for (@range(u8, dstream_expected_T)) |_| {
         _step_instrumentation(genome);
     }
-    var genome_bytes = @ptrcast([*]u8, genome);
-    // TODO why is this necessary?
-    // see https://github.com/mmore500/wse-async-ga/issues/5
-    _swap_bytes(&genome_bytes[9], &genome_bytes[13]);
-    _swap_bytes(&genome_bytes[10], &genome_bytes[12]);
 }
+
+// debugging ==================================================================
+// bitmanip.set_nth_bit_bigendian(genome_bytes, 64 + 1, true);
+// bitmanip.set_nth_bit_bigendian(genome_bytes, 64 + 2, true);
+// bitmanip.set_nth_bit_bigendian(genome_bytes, 64 + 34, true);
+// bitmanip.set_nth_bit_bigendian(genome_bytes, 64 + 3, true);
+// bitmanip.set_nth_bit_bigendian(genome_bytes, 64 + 19, true);
+// bitmanip.set_nth_bit_bigendian(genome_bytes, 64 + 35, true);
+// bitmanip.set_nth_bit_bigendian(genome_bytes, 64 + 50, true);
+// bitmanip.set_nth_bit_bigendian(genome_bytes, 64 + 4, true);
+// bitmanip.set_nth_bit_bigendian(genome_bytes, 64 + 12, true);
+// bitmanip.set_nth_bit_bigendian(genome_bytes, 64 + 20, true);
+// bitmanip.set_nth_bit_bigendian(genome_bytes, 64 + 27, true);
+// bitmanip.set_nth_bit_bigendian(genome_bytes, 64 + 36, true);
+// bitmanip.set_nth_bit_bigendian(genome_bytes, 64 + 43, true);
+// bitmanip.set_nth_bit_bigendian(genome_bytes, 64 + 51, true);
+// bitmanip.set_nth_bit_bigendian(genome_bytes, 64 + 58, true);
+// bitmanip.set_nth_bit_bigendian(genome_bytes, 64 + 5, true);
+// bitmanip.set_nth_bit_bigendian(genome_bytes, 64 + 9, true);
+// bitmanip.set_nth_bit_bigendian(genome_bytes, 64 + 13, true);
+// bitmanip.set_nth_bit_bigendian(genome_bytes, 64 + 16, true);
+// bitmanip.set_nth_bit_bigendian(genome_bytes, 64 + 21, true);
+// bitmanip.set_nth_bit_bigendian(genome_bytes, 64 + 24, true);
+// bitmanip.set_nth_bit_bigendian(genome_bytes, 64 + 28, true);
+// bitmanip.set_nth_bit_bigendian(genome_bytes, 64 + 31, true);
+// bitmanip.set_nth_bit_bigendian(genome_bytes, 64 + 37, true);
+// bitmanip.set_nth_bit_bigendian(genome_bytes, 64 + 40, true);
+// bitmanip.set_nth_bit_bigendian(genome_bytes, 64 + 44, true);
+// bitmanip.set_nth_bit_bigendian(genome_bytes, 64 + 47, true);
+// bitmanip.set_nth_bit_bigendian(genome_bytes, 64 + 52, true);
+// bitmanip.set_nth_bit_bigendian(genome_bytes, 64 + 55, true);
+// bitmanip.set_nth_bit_bigendian(genome_bytes, 64 + 59, true);
+// bitmanip.set_nth_bit_bigendian(genome_bytes, 64 + 62, true);
+// bitmanip.set_nth_bit_bigendian(genome_bytes, 64 + 6, true);
+
+// _swap_bytes(&genome_bytes[9], &genome_bytes[13]);
+// _swap_bytes(&genome_bytes[10], &genome_bytes[12]);
+
+// bitmanip.set_nth_bit(genome_bytes, 64 + 24 + 1, true);
+// bitmanip.set_nth_bit(genome_bytes, 64 + 24 + 2, true);
+// bitmanip.set_nth_bit(genome_bytes, 64 + 24 + 3, true);
+// bitmanip.set_nth_bit(genome_bytes, 64 + 24 + 4, true);
+// bitmanip.set_nth_bit(genome_bytes, 64 + 24 + 5, true);
+// bitmanip.set_nth_bit(genome_bytes, 64 + 24 + 6, true);
+
+// bitmanip.set_nth_bit(genome_bytes, 64 + 8 + 9, true);
+// bitmanip.set_nth_bit(genome_bytes, 64 + 8 + 12, true);
+// bitmanip.set_nth_bit(genome_bytes, 64 + 8 + 13, true);
+
+// bitmanip.set_nth_bit(genome_bytes, 64 - 8 + 16, true);
+// bitmanip.set_nth_bit(genome_bytes, 64 - 8 + 19, true);
+// bitmanip.set_nth_bit(genome_bytes, 64 - 8 + 20, true);
+// bitmanip.set_nth_bit(genome_bytes, 64 - 8 + 21, true);
+
+// bitmanip.set_nth_bit(genome_bytes, 64 - 24 + 24, true);
+// bitmanip.set_nth_bit(genome_bytes, 64 - 24 + 27, true);
+// bitmanip.set_nth_bit(genome_bytes, 64 - 24 + 28, true);
+// bitmanip.set_nth_bit(genome_bytes, 64 - 24 + 31, true);
+
+// bitmanip.set_nth_bit(genome_bytes, 64 + 24 + 34, true);
+// bitmanip.set_nth_bit(genome_bytes, 64 + 24 + 35, true);
+// bitmanip.set_nth_bit(genome_bytes, 64 + 24 + 36, true);
+// bitmanip.set_nth_bit(genome_bytes, 64 + 24 + 37, true);
+
+// bitmanip.set_nth_bit(genome_bytes, 64 + 8 + 40, true);
+// bitmanip.set_nth_bit(genome_bytes, 64 + 8 + 43, true);
+// bitmanip.set_nth_bit(genome_bytes, 64 + 8 + 44, true);
+// bitmanip.set_nth_bit(genome_bytes, 64 + 8 + 47, true);
+
+// bitmanip.set_nth_bit(genome_bytes, 64 - 8 + 50, true);
+// bitmanip.set_nth_bit(genome_bytes, 64 - 8 + 51, true);
+// bitmanip.set_nth_bit(genome_bytes, 64 - 8 + 52, true);
+// bitmanip.set_nth_bit(genome_bytes, 64 - 8 + 55, true);
+
+// bitmanip.set_nth_bit(genome_bytes, 64 - 24 + 58, true);
+// bitmanip.set_nth_bit(genome_bytes, 64 - 24 + 59, true);
+// bitmanip.set_nth_bit(genome_bytes, 64 - 24 + 62, true);
+
+// _swap_bytes(&genome_bytes[8 + 1], &genome_bytes[8 + 4 + 1]);
+// _swap_bytes(&genome_bytes[8 + 2], &genome_bytes[8 + 4]);
+
+// genome_bytes[8 + 0] = 0x99;
+// genome_bytes[8 + 1] = 0x9c;
+// genome_bytes[8 + 2] = 0x4c;
+// genome_bytes[8 + 3] = 0x7e;
+// genome_bytes[8 + 4] = 0x32;
+// genome_bytes[8 + 5] = 0x39;
+// genome_bytes[8 + 6] = 0x99;
+// genome_bytes[8 + 7] = 0x3c;

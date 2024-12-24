@@ -203,65 +203,70 @@ fn test_set_nth_bit_regression2() void {
     @assert(bitfield[8 + 7] == 128);
 }
 
-fn test_flip_nth_bit_bigendian() void {
+fn test_flip_nth_bit_with_swaps() void {
     var bitfield = @zeros([8]u8); // Initialize a 2-word bitfield
 
-    bitmanip.flip_nth_bit_bigendian(&bitfield, 0);
+    const kwargs = .{
+        .byteSwap = true,
+        .bitSwap = false,
+    };
+
+    bitmanip.flip_nth_bit_with_swaps(&bitfield, 0, kwargs);
     @assert(bitfield[3] == 0b00000001);
     @assert(bitfield[2] == 0b00000000);
     @assert(bitfield[1] == 0b00000000);
     @assert(bitfield[0] == 0b00000000);
 
-    bitmanip.flip_nth_bit_bigendian(&bitfield, 1);
+    bitmanip.flip_nth_bit_with_swaps(&bitfield, 1, kwargs);
     @assert(bitfield[3] == 0b00000011);
     @assert(bitfield[2] == 0b00000000);
     @assert(bitfield[1] == 0b00000000);
     @assert(bitfield[0] == 0b00000000);
 
-    bitmanip.flip_nth_bit_bigendian(&bitfield, 7);
+    bitmanip.flip_nth_bit_with_swaps(&bitfield, 7, kwargs);
     @assert(bitfield[3] == 0b10000011);
     @assert(bitfield[2] == 0b00000000);
     @assert(bitfield[1] == 0b00000000);
     @assert(bitfield[0] == 0b00000000);
 
-    bitmanip.flip_nth_bit_bigendian(&bitfield, 8);
+    bitmanip.flip_nth_bit_with_swaps(&bitfield, 8, kwargs);
     @assert(bitfield[3] == 0b10000011);
     @assert(bitfield[2] == 0b00000001);
     @assert(bitfield[1] == 0b00000000);
     @assert(bitfield[0] == 0b00000000);
 
     // Flip the same bit again to revert it back
-    bitmanip.flip_nth_bit_bigendian(&bitfield, 8);
+    bitmanip.flip_nth_bit_with_swaps(&bitfield, 8, kwargs);
     @assert(bitfield[3] == 0b10000011);
     @assert(bitfield[2] == 0b00000000);
     @assert(bitfield[1] == 0b00000000);
     @assert(bitfield[0] == 0b00000000);
 
-    bitmanip.flip_nth_bit_bigendian(&bitfield, 1);
+    bitmanip.flip_nth_bit_with_swaps(&bitfield, 1, kwargs);
     @assert(bitfield[3] == 0b10000001);
     @assert(bitfield[2] == 0b00000000);
     @assert(bitfield[1] == 0b00000000);
     @assert(bitfield[0] == 0b00000000);
 
-    bitmanip.flip_nth_bit_bigendian(&bitfield, 15);
+    bitmanip.flip_nth_bit_with_swaps(&bitfield, 15, kwargs);
     @assert(bitfield[3] == 0b10000001);
     @assert(bitfield[2] == 0b10000000);
     @assert(bitfield[1] == 0b00000000);
     @assert(bitfield[0] == 0b00000000);
 
-    bitmanip.flip_nth_bit_bigendian(&bitfield, 16);
+    bitmanip.flip_nth_bit_with_swaps(&bitfield, 16, kwargs);
     @assert(bitfield[3] == 0b10000001);
     @assert(bitfield[2] == 0b10000000);
     @assert(bitfield[1] == 0b00000001);
     @assert(bitfield[0] == 0b00000000);
 
-    bitmanip.flip_nth_bit_bigendian(&bitfield, 30);
+    bitmanip.flip_nth_bit_with_swaps(&bitfield, 30, kwargs);
     @assert(bitfield[3] == 0b10000001);
     @assert(bitfield[2] == 0b10000000);
     @assert(bitfield[1] == 0b00000001);
     @assert(bitfield[0] == 0b01000000);
 
-    bitmanip.flip_nth_bit_bigendian(&bitfield, 32);
+    bitmanip.flip_nth_bit_with_swaps(&bitfield, 32, kwargs);
     @assert(bitfield[7] == 0b00000001);
     @assert(bitfield[6] == 0b00000000);
     @assert(bitfield[5] == 0b00000000);
@@ -271,7 +276,7 @@ fn test_flip_nth_bit_bigendian() void {
     @assert(bitfield[1] == 0b00000001);
     @assert(bitfield[0] == 0b01000000);
 
-    bitmanip.flip_nth_bit_bigendian(&bitfield, 32);
+    bitmanip.flip_nth_bit_with_swaps(&bitfield, 32, kwargs);
     @assert(bitfield[7] == 0b00000000);
     @assert(bitfield[6] == 0b00000000);
     @assert(bitfield[5] == 0b00000000);
@@ -281,7 +286,7 @@ fn test_flip_nth_bit_bigendian() void {
     @assert(bitfield[1] == 0b00000001);
     @assert(bitfield[0] == 0b01000000);
 
-    bitmanip.flip_nth_bit_bigendian(&bitfield, 41);
+    bitmanip.flip_nth_bit_with_swaps(&bitfield, 41, kwargs);
     @assert(bitfield[7] == 0b00000000);
     @assert(bitfield[6] == 0b00000010);
     @assert(bitfield[5] == 0b00000000);
@@ -292,82 +297,87 @@ fn test_flip_nth_bit_bigendian() void {
     @assert(bitfield[0] == 0b01000000);
 }
 
-fn test_set_nth_bit_bigendian() void {
+fn test_set_nth_bit_with_swaps() void {
     var bitfield = @zeros([8]u8); // Initialize a 2-word bitfield
 
-    bitmanip.set_nth_bit_bigendian(&bitfield, 0, false);
+    const kwargs = .{
+        .byteSwap = true,
+        .bitSwap = false,
+    };
+
+    bitmanip.set_nth_bit_with_swaps(&bitfield, 0, false, kwargs);
     @assert(bitfield[3] == 0b00000000);
     @assert(bitfield[2] == 0b00000000);
     @assert(bitfield[1] == 0b00000000);
     @assert(bitfield[0] == 0b00000000);
 
-    bitmanip.set_nth_bit_bigendian(&bitfield, 0, true);
+    bitmanip.set_nth_bit_with_swaps(&bitfield, 0, true, kwargs);
     @assert(bitfield[3] == 0b00000001);
     @assert(bitfield[2] == 0b00000000);
     @assert(bitfield[1] == 0b00000000);
     @assert(bitfield[0] == 0b00000000);
 
-    bitmanip.set_nth_bit_bigendian(&bitfield, 0, true);
+    bitmanip.set_nth_bit_with_swaps(&bitfield, 0, true, kwargs);
     @assert(bitfield[3] == 0b00000001);
     @assert(bitfield[2] == 0b00000000);
     @assert(bitfield[1] == 0b00000000);
     @assert(bitfield[0] == 0b00000000);
 
-    bitmanip.set_nth_bit_bigendian(&bitfield, 1, true);
+    bitmanip.set_nth_bit_with_swaps(&bitfield, 1, true, kwargs);
     @assert(bitfield[3] == 0b00000011);
     @assert(bitfield[2] == 0b00000000);
     @assert(bitfield[1] == 0b00000000);
     @assert(bitfield[0] == 0b00000000);
 
-    bitmanip.set_nth_bit_bigendian(&bitfield, 7, true);
+    bitmanip.set_nth_bit_with_swaps(&bitfield, 7, true, kwargs);
     @assert(bitfield[3] == 0b10000011);
     @assert(bitfield[2] == 0b00000000);
     @assert(bitfield[1] == 0b00000000);
     @assert(bitfield[0] == 0b00000000);
 
-    bitmanip.set_nth_bit_bigendian(&bitfield, 1, false);
+    bitmanip.set_nth_bit_with_swaps(&bitfield, 1, false, kwargs);
     @assert(bitfield[3] == 0b10000001);
     @assert(bitfield[2] == 0b00000000);
     @assert(bitfield[1] == 0b00000000);
     @assert(bitfield[0] == 0b00000000);
 
-    bitmanip.set_nth_bit_bigendian(&bitfield, 8, true);
+    bitmanip.set_nth_bit_with_swaps(&bitfield, 8, true, kwargs);
     @assert(bitfield[3] == 0b10000001);
     @assert(bitfield[2] == 0b00000001);
     @assert(bitfield[1] == 0b00000000);
     @assert(bitfield[0] == 0b00000000);
 
-    bitmanip.set_nth_bit_bigendian(&bitfield, 8, false);
+    bitmanip.set_nth_bit_with_swaps(&bitfield, 8, false, kwargs);
     @assert(bitfield[3] == 0b10000001);
     @assert(bitfield[2] == 0b00000000);
     @assert(bitfield[1] == 0b00000000);
     @assert(bitfield[0] == 0b00000000);
 
-    bitmanip.set_nth_bit_bigendian(&bitfield, 16, false);
+    bitmanip.set_nth_bit_with_swaps(&bitfield, 16, false, kwargs);
     @assert(bitfield[3] == 0b10000001);
     @assert(bitfield[2] == 0b00000000);
     @assert(bitfield[1] == 0b00000000);
     @assert(bitfield[0] == 0b00000000);
 
-    bitmanip.set_nth_bit_bigendian(&bitfield, 31, false);
+    bitmanip.set_nth_bit_with_swaps(&bitfield, 31, false, kwargs);
     @assert(bitfield[3] == 0b10000001);
     @assert(bitfield[2] == 0b00000000);
     @assert(bitfield[1] == 0b00000000);
     @assert(bitfield[0] == 0b00000000);
 
-    bitmanip.set_nth_bit_bigendian(&bitfield, 17, true);
+    bitmanip.set_nth_bit_with_swaps(&bitfield, 17, true, kwargs);
     @assert(bitfield[3] == 0b10000001);
     @assert(bitfield[2] == 0b00000000);
     @assert(bitfield[1] == 0b00000010);
     @assert(bitfield[0] == 0b00000000);
 
-    bitmanip.set_nth_bit_bigendian(&bitfield, 31, true);
+    bitmanip.set_nth_bit_with_swaps(&bitfield, 31, true, kwargs);
     @assert(bitfield[3] == 0b10000001);
     @assert(bitfield[2] == 0b00000000);
     @assert(bitfield[1] == 0b00000010);
     @assert(bitfield[0] == 0b10000000);
 
-    bitmanip.set_nth_bit_bigendian(&bitfield, 32, true);
+    bitmanip.set_nth_bit_with_swaps(&bitfield, 32, true, kwargs);
     @assert(bitfield[7] == 0b00000001);
     @assert(bitfield[6] == 0b00000000);
     @assert(bitfield[5] == 0b00000000);
@@ -377,7 +387,7 @@ fn test_set_nth_bit_bigendian() void {
     @assert(bitfield[1] == 0b00000010);
     @assert(bitfield[0] == 0b10000000);
 
-    bitmanip.set_nth_bit_bigendian(&bitfield, 41, true);
+    bitmanip.set_nth_bit_with_swaps(&bitfield, 41, true, kwargs);
     @assert(bitfield[7] == 0b00000001);
     @assert(bitfield[6] == 0b00000010);
     @assert(bitfield[5] == 0b00000000);
@@ -387,7 +397,7 @@ fn test_set_nth_bit_bigendian() void {
     @assert(bitfield[1] == 0b00000010);
     @assert(bitfield[0] == 0b10000000);
 
-    bitmanip.set_nth_bit_bigendian(&bitfield, 32, false);
+    bitmanip.set_nth_bit_with_swaps(&bitfield, 32, false, kwargs);
     @assert(bitfield[7] == 0b00000000);
     @assert(bitfield[6] == 0b00000010);
     @assert(bitfield[5] == 0b00000000);
@@ -397,7 +407,7 @@ fn test_set_nth_bit_bigendian() void {
     @assert(bitfield[1] == 0b00000010);
     @assert(bitfield[0] == 0b10000000);
 
-    bitmanip.set_nth_bit_bigendian(&bitfield, 34, false);
+    bitmanip.set_nth_bit_with_swaps(&bitfield, 34, false, kwargs);
     @assert(bitfield[7] == 0b00000000);
     @assert(bitfield[6] == 0b00000010);
     @assert(bitfield[5] == 0b00000000);
@@ -408,61 +418,61 @@ fn test_set_nth_bit_bigendian() void {
     @assert(bitfield[0] == 0b10000000);
 }
 
-fn test_set_nth_bit_bigendian_regression1() void {
+fn test_set_nth_bit_with_swaps_regression1() void {
     var bitfield = @zeros([16]u8); // Initialize a 2-byte bitfield
 
+    const kwargs = .{
+        .byteSwap = true,
+        .bitSwap = true,
+    };
+
     // byte 0: 0b01111110 == 0x7e
-    bitmanip.set_nth_bit_bigendian(&bitfield, 64 + 1, true);
-    bitmanip.set_nth_bit_bigendian(&bitfield, 64 + 2, true);
-    bitmanip.set_nth_bit_bigendian(&bitfield, 64 + 3, true);
-    bitmanip.set_nth_bit_bigendian(&bitfield, 64 + 4, true);
-    bitmanip.set_nth_bit_bigendian(&bitfield, 64 + 5, true);
-    bitmanip.set_nth_bit_bigendian(&bitfield, 64 + 6, true);
+    bitmanip.set_nth_bit_with_swaps(&bitfield, 64 + 1, true, kwargs);
+    bitmanip.set_nth_bit_with_swaps(&bitfield, 64 + 2, true, kwargs);
+    bitmanip.set_nth_bit_with_swaps(&bitfield, 64 + 3, true, kwargs);
+    bitmanip.set_nth_bit_with_swaps(&bitfield, 64 + 4, true, kwargs);
+    bitmanip.set_nth_bit_with_swaps(&bitfield, 64 + 5, true, kwargs);
+    bitmanip.set_nth_bit_with_swaps(&bitfield, 64 + 6, true, kwargs);
 
     // byte 1: 0b01001100 == 0x4c
-    bitmanip.set_nth_bit_bigendian(&bitfield, 64 + 8 + 1, true); // 9
-    bitmanip.set_nth_bit_bigendian(&bitfield, 64 + 8 + 4, true); // 12
-    bitmanip.set_nth_bit_bigendian(&bitfield, 64 + 8 + 5, true); // 13
+    bitmanip.set_nth_bit_with_swaps(&bitfield, 64 + 8 + 1, true, kwargs); // 9
+    bitmanip.set_nth_bit_with_swaps(&bitfield, 64 + 8 + 4, true, kwargs); // 12
+    bitmanip.set_nth_bit_with_swaps(&bitfield, 64 + 8 + 5, true, kwargs); // 13
 
     // byte 2: 0b10011100 == 0x9c
-    bitmanip.set_nth_bit_bigendian(&bitfield, 64 + 16 + 0, true); // 16
-    bitmanip.set_nth_bit_bigendian(&bitfield, 64 + 16 + 3, true); // 19
-    bitmanip.set_nth_bit_bigendian(&bitfield, 64 + 16 + 4, true); // 20
-    bitmanip.set_nth_bit_bigendian(&bitfield, 64 + 16 + 5, true); // 21
+    bitmanip.set_nth_bit_with_swaps(&bitfield, 64 + 16 + 0, true, kwargs); // 16
+    bitmanip.set_nth_bit_with_swaps(&bitfield, 64 + 16 + 3, true, kwargs); // 19
+    bitmanip.set_nth_bit_with_swaps(&bitfield, 64 + 16 + 4, true, kwargs); // 20
+    bitmanip.set_nth_bit_with_swaps(&bitfield, 64 + 16 + 5, true, kwargs); // 21
 
     // byte 3: 0b10011001 == 0x99
-    bitmanip.set_nth_bit_bigendian(&bitfield, 64 + 24 + 0, true); // 24
-    bitmanip.set_nth_bit_bigendian(&bitfield, 64 + 24 + 3, true); // 27
-    bitmanip.set_nth_bit_bigendian(&bitfield, 64 + 24 + 4, true); // 28
-    bitmanip.set_nth_bit_bigendian(&bitfield, 64 + 24 + 7, true); // 31
+    bitmanip.set_nth_bit_with_swaps(&bitfield, 64 + 24 + 0, true, kwargs); // 24
+    bitmanip.set_nth_bit_with_swaps(&bitfield, 64 + 24 + 3, true, kwargs); // 27
+    bitmanip.set_nth_bit_with_swaps(&bitfield, 64 + 24 + 4, true, kwargs); // 28
+    bitmanip.set_nth_bit_with_swaps(&bitfield, 64 + 24 + 7, true, kwargs); // 31
 
     // byte 4: 0b00111100 == 0x3c
-    bitmanip.set_nth_bit_bigendian(&bitfield, 64 + 32 + 2, true); // 34
-    bitmanip.set_nth_bit_bigendian(&bitfield, 64 + 32 + 3, true); // 35
-    bitmanip.set_nth_bit_bigendian(&bitfield, 64 + 32 + 4, true); // 36
-    bitmanip.set_nth_bit_bigendian(&bitfield, 64 + 32 + 5, true); // 37
+    bitmanip.set_nth_bit_with_swaps(&bitfield, 64 + 32 + 2, true, kwargs); // 34
+    bitmanip.set_nth_bit_with_swaps(&bitfield, 64 + 32 + 3, true, kwargs); // 35
+    bitmanip.set_nth_bit_with_swaps(&bitfield, 64 + 32 + 4, true, kwargs); // 36
+    bitmanip.set_nth_bit_with_swaps(&bitfield, 64 + 32 + 5, true, kwargs); // 37
 
     // byte 5: 0b10011001 == 0x99
-    bitmanip.set_nth_bit_bigendian(&bitfield, 64 + 40 + 0, true); // 40
-    bitmanip.set_nth_bit_bigendian(&bitfield, 64 + 40 + 3, true); // 43
-    bitmanip.set_nth_bit_bigendian(&bitfield, 64 + 40 + 4, true); // 44
-    bitmanip.set_nth_bit_bigendian(&bitfield, 64 + 40 + 7, true); // 47
+    bitmanip.set_nth_bit_with_swaps(&bitfield, 64 + 40 + 0, true, kwargs); // 40
+    bitmanip.set_nth_bit_with_swaps(&bitfield, 64 + 40 + 3, true, kwargs); // 43
+    bitmanip.set_nth_bit_with_swaps(&bitfield, 64 + 40 + 4, true, kwargs); // 44
+    bitmanip.set_nth_bit_with_swaps(&bitfield, 64 + 40 + 7, true, kwargs); // 47
 
     // byte 6: 0b00111001 == 0x39
-    bitmanip.set_nth_bit_bigendian(&bitfield, 64 + 48 + 2, true); // 50
-    bitmanip.set_nth_bit_bigendian(&bitfield, 64 + 48 + 3, true); // 51
-    bitmanip.set_nth_bit_bigendian(&bitfield, 64 + 48 + 4, true); // 52
-    bitmanip.set_nth_bit_bigendian(&bitfield, 64 + 48 + 7, true); // 55
+    bitmanip.set_nth_bit_with_swaps(&bitfield, 64 + 48 + 2, true, kwargs); // 50
+    bitmanip.set_nth_bit_with_swaps(&bitfield, 64 + 48 + 3, true, kwargs); // 51
+    bitmanip.set_nth_bit_with_swaps(&bitfield, 64 + 48 + 4, true, kwargs); // 52
+    bitmanip.set_nth_bit_with_swaps(&bitfield, 64 + 48 + 7, true, kwargs); // 55
 
     // byte 7: 0b00110010 == 0x32
-    bitmanip.set_nth_bit_bigendian(&bitfield, 64 + 56 + 2, true); // 58
-    bitmanip.set_nth_bit_bigendian(&bitfield, 64 + 56 + 3, true); // 59
-    bitmanip.set_nth_bit_bigendian(&bitfield, 64 + 56 + 6, true); // 62
-
-    // TODO why is this necessary?
-    // see https://github.com/mmore500/wse-async-ga/issues/5
-    _swap_bytes(&bitfield[8 + 1], &bitfield[8 + 4 + 1]);
-    _swap_bytes(&bitfield[8 + 2], &bitfield[8 + 4]);
+    bitmanip.set_nth_bit_with_swaps(&bitfield, 64 + 56 + 2, true, kwargs); // 58
+    bitmanip.set_nth_bit_with_swaps(&bitfield, 64 + 56 + 3, true, kwargs); // 59
+    bitmanip.set_nth_bit_with_swaps(&bitfield, 64 + 56 + 6, true, kwargs); // 62
 
     @assert(bitfield[0] == 0x00);
     @assert(bitfield[1] == 0x00);
@@ -482,37 +492,37 @@ fn test_set_nth_bit_bigendian_regression1() void {
     @assert(bitfield[8 + 7] == 0x3c and 0x3c == 0b00111100);
 }
 
-fn test_set_nth_bit_bigendian_regression2() void {
+fn test_set_nth_bit_with_swaps_regression2() void {
     var bitfield = @zeros([16]u8); // Initialize a 2-byte bitfield
 
+    const kwargs = .{
+        .byteSwap = true,
+        .bitSwap = false,
+    };
+
     // byte 0
-    bitmanip.set_nth_bit_bigendian(&bitfield, 64, true);
+    bitmanip.set_nth_bit_with_swaps(&bitfield, 64, true, kwargs);
 
     // byte 1
-    bitmanip.set_nth_bit_bigendian(&bitfield, 64 + 8 + 1, true);
+    bitmanip.set_nth_bit_with_swaps(&bitfield, 64 + 8 + 1, true, kwargs);
 
     // byte 2
-    bitmanip.set_nth_bit_bigendian(&bitfield, 64 + 16 + 2, true);
+    bitmanip.set_nth_bit_with_swaps(&bitfield, 64 + 16 + 2, true, kwargs);
 
     // byte 3
-    bitmanip.set_nth_bit_bigendian(&bitfield, 64 + 24 + 3, true);
+    bitmanip.set_nth_bit_with_swaps(&bitfield, 64 + 24 + 3, true, kwargs);
 
     // byte 4
-    bitmanip.set_nth_bit_bigendian(&bitfield, 64 + 32 + 4, true);
+    bitmanip.set_nth_bit_with_swaps(&bitfield, 64 + 32 + 4, true, kwargs);
 
     // byte 5
-    bitmanip.set_nth_bit_bigendian(&bitfield, 64 + 40 + 5, true);
+    bitmanip.set_nth_bit_with_swaps(&bitfield, 64 + 40 + 5, true, kwargs);
 
     // byte 6
-    bitmanip.set_nth_bit_bigendian(&bitfield, 64 + 48 + 6, true);
+    bitmanip.set_nth_bit_with_swaps(&bitfield, 64 + 48 + 6, true, kwargs);
 
     // byte 7
-    bitmanip.set_nth_bit_bigendian(&bitfield, 64 + 56 + 7, true);
-
-    // TODO why is this necessary?
-    // see https://github.com/mmore500/wse-async-ga/issues/5
-    // _swap_bytes(&bitfield[8 + 1], &bitfield[8 + 4 + 1]);
-    // _swap_bytes(&bitfield[8 + 2], &bitfield[8 + 4]);
+    bitmanip.set_nth_bit_with_swaps(&bitfield, 64 + 56 + 7, true, kwargs);
 
     @assert(bitfield[0] == 0x00);
     @assert(bitfield[1] == 0x00);
@@ -554,9 +564,9 @@ fn do_test() void {
     test_set_nth_bit();
     test_set_nth_bit_regression1();
     test_set_nth_bit_regression2();
-    test_flip_nth_bit_bigendian();
-    test_set_nth_bit_bigendian();
-    test_set_nth_bit_bigendian_regression1();
-    test_set_nth_bit_bigendian_regression2();
+    test_flip_nth_bit_with_swaps();
+    test_set_nth_bit_with_swaps();
+    test_set_nth_bit_with_swaps_regression1();
+    test_set_nth_bit_with_swaps_regression2();
     test_randomize();
 }

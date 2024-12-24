@@ -19,21 +19,54 @@ fn set_nth_bit(bitfield: [*]u8, n: u16, value: bool) void {
     }
 }
 
-// Toggle the nth bit in a big-endian bitfield.
+// Toggle the nth bit in a bitfield, with desired bit/byte endianness.
 // WARNING: note that bitfield size must be a multiple of 4 bytes.
-fn flip_nth_bit_bigendian(bitfield: [*]u8, n: u16) void {
-    const byteIndex = n >> 3; // right shift by 3 bits to divide by 8
-    const realByteIndex = byteIndex ^ 3; // XOR with 3 to byteswap
-    const bitPosition = n & 7; // AND with 111 find the remainder modulo 8
-    const bitMask = @as(u8, 1) << bitPosition; // mask with the nth bit set
+fn flip_nth_bit_with_swaps(
+    bitfield: [*]u8,
+    n: u16,
+    comptime kwargs: comptime_struct,
+) void {
+    const byteSwap = kwargs.byteSwap;
+    const bitSwap = kwargs.bitSwap;
+
+    const logicalByteIndex = n >> 3; // right shift by 3 bits to divide by 8
+    const realByteIndex = if (byteSwap)
+        logicalByteIndex ^ 3 // XOR with 3 to byteswap
+    else
+        logicalByteIndex;
+
+    const logicalBitPosition = n & 7; // AND with 111 find the remainder mod 8
+    const bitMask = if (bitSwap)
+        @as(u8, 0b10000000) >> logicalBitPosition
+    else
+        @as(u8, 0b00000001) << logicalBitPosition; // mask with the nth bit set
+
     bitfield[realByteIndex] ^= bitMask; // use XOR to flip the nth bit
 }
 
-fn set_nth_bit_bigendian(bitfield: [*]u8, n: u16, value: bool) void {
-    const byteIndex = n >> 3; // right shift by 3 bits to divide by 8
-    const realByteIndex = byteIndex ^ 3; // XOR with 3 to byteswap
-    const bitPosition = n & 7; // AND with 111 find the remainder modulo 8
-    const bitMask = @as(u8, 1) << bitPosition; // mask with the nth bit set
+// Set the nth bit in a bitfield, with desired bit/byte endianness.
+// WARNING: note that bitfield size must be a multiple of 4 bytes.
+fn set_nth_bit_with_swaps(
+    bitfield: [*]u8,
+    n: u16,
+    value: bool,
+    comptime kwargs: comptime_struct,
+) void {
+    const byteSwap = kwargs.byteSwap;
+    const bitSwap = kwargs.bitSwap;
+
+    const logicalByteIndex = n >> 3; // right shift by 3 bits to divide by 8
+    const realByteIndex = if (byteSwap)
+        logicalByteIndex ^ 3 // XOR with 3 to byteswap
+    else
+        logicalByteIndex;
+
+    const logicalBitPosition = n & 7; // AND with 111 find the remainder mod 8
+    const bitMask = if (bitSwap)
+        @as(u8, 0b10000000) >> logicalBitPosition
+    else
+        @as(u8, 0b00000001) << logicalBitPosition; // mask with the nth bit set
+
     if (value) {
         bitfield[realByteIndex] |= bitMask; // use OR to set the nth bit
     } else {
