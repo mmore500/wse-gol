@@ -143,14 +143,14 @@ fn test_set_nth_bit_regression1() void {
     @assert(bitfield[5] == 0x00);
     @assert(bitfield[6] == 0x00);
     @assert(bitfield[7] == 0x00);
-    @assert(bitfield[8 + 0] == 0x99);
-    @assert(bitfield[8 + 1] == 0x9c);
-    @assert(bitfield[8 + 2] == 0x4c);
-    @assert(bitfield[8 + 3] == 0x7e);
-    @assert(bitfield[8 + 4] == 0x32);
-    @assert(bitfield[8 + 5] == 0x39);
-    @assert(bitfield[8 + 6] == 0x99);
-    @assert(bitfield[8 + 7] == 0x3c);
+    @assert(bitfield[8 + 0] == 0x99 and 0x99 == 0b10011001);
+    @assert(bitfield[8 + 1] == 0x9c and 0x9c == 0b10011100);
+    @assert(bitfield[8 + 2] == 0x4c and 0x4c == 0b01001100);
+    @assert(bitfield[8 + 3] == 0x7e and 0x7e == 0b01111110);
+    @assert(bitfield[8 + 4] == 0x32 and 0x32 == 0b00110010);
+    @assert(bitfield[8 + 5] == 0x39 and 0x39 == 0b00111001);
+    @assert(bitfield[8 + 6] == 0x99 and 0x99 == 0b10011001);
+    @assert(bitfield[8 + 7] == 0x3c and 0x3c == 0b00111100);
 }
 
 fn test_set_nth_bit_regression2() void {
@@ -472,14 +472,14 @@ fn test_set_nth_bit_bigendian_regression1() void {
     @assert(bitfield[5] == 0x00);
     @assert(bitfield[6] == 0x00);
     @assert(bitfield[7] == 0x00);
-    @assert(bitfield[8 + 0] == 0x99);
-    @assert(bitfield[8 + 1] == 0x9c);
-    @assert(bitfield[8 + 2] == 0x4c);
-    @assert(bitfield[8 + 3] == 0x7e);
-    @assert(bitfield[8 + 4] == 0x32);
-    @assert(bitfield[8 + 5] == 0x39);
-    @assert(bitfield[8 + 6] == 0x99);
-    @assert(bitfield[8 + 7] == 0x3c);
+    @assert(bitfield[8 + 0] == 0x99 and 0x99 == 0b10011001);
+    @assert(bitfield[8 + 1] == 0x9c and 0x9c == 0b10011100);
+    @assert(bitfield[8 + 2] == 0x4c and 0x4c == 0b01001100);
+    @assert(bitfield[8 + 3] == 0x7e and 0x7e == 0b01111110);
+    @assert(bitfield[8 + 4] == 0x32 and 0x32 == 0b00110010);
+    @assert(bitfield[8 + 5] == 0x39 and 0x39 == 0b00111001);
+    @assert(bitfield[8 + 6] == 0x99 and 0x99 == 0b10011001);
+    @assert(bitfield[8 + 7] == 0x3c and 0x3c == 0b00111100);
 }
 
 fn test_set_nth_bit_bigendian_regression2() void {
