@@ -328,7 +328,7 @@ jobs:
           export ASYNC_GA_GENOME_FLAVOR="${{ matrix.genome }}"
           export ASYNC_GA_NONBLOCK="1"
           export CSLC CS_PYTHON PATH
-          export COMPCONFENV_CEREBRASLIB_DSTREAM_VALIDATOR__comptime_string="${{ matrix.validator }}"
+          export COMPCONFENV_CEREBRASLIB_DSTREAM_VALIDATOR__comptime_string="${{ matrix.dstream_validator }}"
           export COMPCONFENV_CEREBRASLIB_DSTREAM_EXPECTED_T__u32="${{ matrix.dstream_expected_T }}"
           sudo -E env PATH=$PATH \
             ./kernel-async-ga/execute.sh \
@@ -343,7 +343,7 @@ jobs:
       - name: Upload output as artifact
         uses: actions/upload-artifact@v4
         with:
-          name: genomes-reconstruction-${{ matrix.genome }}-${{ matrix.validator }}-${{ matrix.dstream_expected_T }}
+          name: genomes-reconstruction-${{ matrix.genome }}-${{ matrix.dstream_validator }}-${{ matrix.dstream_expected_T }}
           path: ./a=reconstruction+what=genomes+ext=.pqt
 
       - name: Reconstruct from fossil genomes
@@ -355,7 +355,7 @@ jobs:
       - name: Upload output as artifact
         uses: actions/upload-artifact@v4
         with:
-          name: fossils-reconstruction-${{ matrix.genome }}-${{ matrix.validator }}-${{ matrix.dstream_expected_T }}
+          name: fossils-reconstruction-${{ matrix.genome }}-${{ matrix.dstream_validator }}-${{ matrix.dstream_expected_T }}
           path: ./a=reconstruction+what=fossils+ext=.pqt
 
       - name: Reconstruct from all genomes
@@ -368,7 +368,7 @@ jobs:
       - name: Upload output as artifact
         uses: actions/upload-artifact@v4
         with:
-          name: fossils-and-genomes-reconstruction-${{ matrix.genome }}-${{ matrix.validator }}-${{ matrix.dstream_expected_T }}
+          name: fossils-and-genomes-reconstruction-${{ matrix.genome }}-${{ matrix.dstream_validator }}-${{ matrix.dstream_expected_T }}
           path: ./a=reconstruction+what=fossils-and-genomes+ext=.pqt
 
   test-cerebraslib:
