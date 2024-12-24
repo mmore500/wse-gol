@@ -343,7 +343,7 @@ jobs:
       - name: Upload output as artifact
         uses: actions/upload-artifact@v4
         with:
-          name: genomes-reconstruction-${{ matrix.genome }}
+          name: genomes-reconstruction-${{ matrix.genome }}-${{ matrix.validator }}-${{ matrix.dstream_expected_T }}
           path: ./a=reconstruction+what=genomes+ext=.pqt
 
       - name: Reconstruct from fossil genomes
@@ -355,7 +355,7 @@ jobs:
       - name: Upload output as artifact
         uses: actions/upload-artifact@v4
         with:
-          name: fossils-reconstruction-${{ matrix.genome }}
+          name: fossils-reconstruction-${{ matrix.genome }}-${{ matrix.validator }}-${{ matrix.dstream_expected_T }}
           path: ./a=reconstruction+what=fossils+ext=.pqt
 
       - name: Reconstruct from all genomes
@@ -368,7 +368,7 @@ jobs:
       - name: Upload output as artifact
         uses: actions/upload-artifact@v4
         with:
-          name: fossils-and-genomes-reconstruction-${{ matrix.genome }}
+          name: fossils-and-genomes-reconstruction-${{ matrix.genome }}-${{ matrix.validator }}-${{ matrix.dstream_expected_T }}
           path: ./a=reconstruction+what=fossils-and-genomes+ext=.pqt
 
   test-cerebraslib:
