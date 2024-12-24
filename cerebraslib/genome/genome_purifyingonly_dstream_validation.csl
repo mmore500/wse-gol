@@ -54,10 +54,18 @@ const math = @import_module("<math>");
 const random = @import_module("<random>");
 
 const compconf = @import_module("<compconf>");
-const dstream_algo_name = compconf.get_value_or(
-    "CEREBRASLIB_HSTRAT_DSTREAM_ALGO_NAME",
-    "tilted_algo",
-);
+comptime { // access via get_value for logging...
+    const _ = compconf.get_value(
+        "CEREBRASLIB_HSTRAT_DSTREAM_ALGO_NAME",
+        comptime_string,
+    );
+} // ... raw string works around sdk v1.0.0 limitation
+const compconf_raw = @import_module("<compconf_raw>");
+const has_value = compconf.has_value("CEREBRASLIB_HSTRAT_DSTREAM_ALGO_NAME");
+const dstream_algo_name = (if (has_value)
+    compconf_raw.CEREBRASLIB_HSTRAT_DSTREAM_ALGO_NAME
+else
+    "tilted_algo");
 const dstream_algo = @import_module(
     @strcat("<downstream/dstream/", dstream_algo_name, ">"),
 );
