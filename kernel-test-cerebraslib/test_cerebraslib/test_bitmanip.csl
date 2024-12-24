@@ -420,44 +420,44 @@ fn test_set_nth_bit_bigendian_regression1() void {
     bitmanip.set_nth_bit_bigendian(&bitfield, 64 + 6, true);
 
     // byte 1
-    bitmanip.set_nth_bit_bigendian(&bitfield, 64 + 9, true);
-    bitmanip.set_nth_bit_bigendian(&bitfield, 64 + 12, true);
-    bitmanip.set_nth_bit_bigendian(&bitfield, 64 + 13, true);
+    bitmanip.set_nth_bit_bigendian(&bitfield, 64 + 8 + 1, true); // 9
+    bitmanip.set_nth_bit_bigendian(&bitfield, 64 + 8 + 4, true); // 12
+    bitmanip.set_nth_bit_bigendian(&bitfield, 64 + 8 + 5, true); // 13
 
     // byte 2
-    bitmanip.set_nth_bit_bigendian(&bitfield, 64 + 16, true);
-    bitmanip.set_nth_bit_bigendian(&bitfield, 64 + 19, true);
-    bitmanip.set_nth_bit_bigendian(&bitfield, 64 + 20, true);
-    bitmanip.set_nth_bit_bigendian(&bitfield, 64 + 21, true);
+    bitmanip.set_nth_bit_bigendian(&bitfield, 64 + 16 + 0, true); // 16
+    bitmanip.set_nth_bit_bigendian(&bitfield, 64 + 16 + 3, true); // 19
+    bitmanip.set_nth_bit_bigendian(&bitfield, 64 + 16 + 4, true); // 20
+    bitmanip.set_nth_bit_bigendian(&bitfield, 64 + 16 + 5, true); // 21
 
     // byte 3
-    bitmanip.set_nth_bit_bigendian(&bitfield, 64 + 24, true);
-    bitmanip.set_nth_bit_bigendian(&bitfield, 64 + 27, true);
-    bitmanip.set_nth_bit_bigendian(&bitfield, 64 + 28, true);
-    bitmanip.set_nth_bit_bigendian(&bitfield, 64 + 31, true);
+    bitmanip.set_nth_bit_bigendian(&bitfield, 64 + 24 + 0, true); // 24
+    bitmanip.set_nth_bit_bigendian(&bitfield, 64 + 24 + 3, true); // 27
+    bitmanip.set_nth_bit_bigendian(&bitfield, 64 + 24 + 4, true); // 28
+    bitmanip.set_nth_bit_bigendian(&bitfield, 64 + 24 + 7, true); // 31
 
     // byte 4
-    bitmanip.set_nth_bit_bigendian(&bitfield, 64 + 34, true);
-    bitmanip.set_nth_bit_bigendian(&bitfield, 64 + 35, true);
-    bitmanip.set_nth_bit_bigendian(&bitfield, 64 + 36, true);
-    bitmanip.set_nth_bit_bigendian(&bitfield, 64 + 37, true);
+    bitmanip.set_nth_bit_bigendian(&bitfield, 64 + 32 + 2, true); // 34
+    bitmanip.set_nth_bit_bigendian(&bitfield, 64 + 32 + 3, true); // 35
+    bitmanip.set_nth_bit_bigendian(&bitfield, 64 + 32 + 4, true); // 36
+    bitmanip.set_nth_bit_bigendian(&bitfield, 64 + 32 + 5, true); // 37
 
     // byte 5
-    bitmanip.set_nth_bit_bigendian(&bitfield, 64 + 40, true);
-    bitmanip.set_nth_bit_bigendian(&bitfield, 64 + 43, true);
-    bitmanip.set_nth_bit_bigendian(&bitfield, 64 + 44, true);
-    bitmanip.set_nth_bit_bigendian(&bitfield, 64 + 47, true);
+    bitmanip.set_nth_bit_bigendian(&bitfield, 64 + 40 + 0, true); // 40
+    bitmanip.set_nth_bit_bigendian(&bitfield, 64 + 40 + 3, true); // 43
+    bitmanip.set_nth_bit_bigendian(&bitfield, 64 + 40 + 4, true); // 44
+    bitmanip.set_nth_bit_bigendian(&bitfield, 64 + 40 + 7, true); // 47
 
     // byte 6
-    bitmanip.set_nth_bit_bigendian(&bitfield, 64 + 50, true);
-    bitmanip.set_nth_bit_bigendian(&bitfield, 64 + 51, true);
-    bitmanip.set_nth_bit_bigendian(&bitfield, 64 + 52, true);
-    bitmanip.set_nth_bit_bigendian(&bitfield, 64 + 55, true);
+    bitmanip.set_nth_bit_bigendian(&bitfield, 64 + 48 + 2, true); // 50
+    bitmanip.set_nth_bit_bigendian(&bitfield, 64 + 48 + 3, true); // 51
+    bitmanip.set_nth_bit_bigendian(&bitfield, 64 + 48 + 4, true); // 52
+    bitmanip.set_nth_bit_bigendian(&bitfield, 64 + 48 + 7, true); // 55
 
     // byte 7
-    bitmanip.set_nth_bit_bigendian(&bitfield, 64 + 58, true);
-    bitmanip.set_nth_bit_bigendian(&bitfield, 64 + 59, true);
-    bitmanip.set_nth_bit_bigendian(&bitfield, 64 + 62, true);
+    bitmanip.set_nth_bit_bigendian(&bitfield, 64 + 56 + 2, true); // 58
+    bitmanip.set_nth_bit_bigendian(&bitfield, 64 + 56 + 3, true); // 59
+    bitmanip.set_nth_bit_bigendian(&bitfield, 64 + 56 + 6, true); // 62
 
     // TODO why is this necessary?
     // see https://github.com/mmore500/wse-async-ga/issues/5
