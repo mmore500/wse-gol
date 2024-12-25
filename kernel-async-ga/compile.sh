@@ -51,7 +51,9 @@ echo "ASYNC_GA_TOURNSIZE_DENOMINATOR ${ASYNC_GA_TOURNSIZE_DENOMINATOR}"
 ASYNC_GA_ARCH_FLAG="${ASYNC_GA_ARCH_FLAG:-}"
 echo "ASYNC_GA_ARCH_FLAG ${ASYNC_GA_ARCH_FLAG}"
 
+pushd ..
 git submodule update --init --recursive
+popd
 
 # symlinks don't work and --import-path doesn't work, so this is a workaround
 trap "git checkout ./cerebraslib" EXIT
