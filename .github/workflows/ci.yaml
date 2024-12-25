@@ -323,6 +323,8 @@ jobs:
           export ASYNC_GA_GENOME_FLAVOR="${{ matrix.genome }}"
           export ASYNC_GA_NONBLOCK="1"
           export CSLC CS_PYTHON PATH
+          export COMPCONFENV_CEREBRASLIB_DSTREAM_VALIDATOR__comptime_string="${{ matrix.dstream_validator }}"
+          export COMPCONFENV_CEREBRASLIB_DSTREAM_EXPECTED_T__u32="${{ matrix.dstream_expected_T }}"
           sudo -E env PATH=$PATH \
             ./kernel-async-ga/compile.sh \
             # >/dev/null 2>&1

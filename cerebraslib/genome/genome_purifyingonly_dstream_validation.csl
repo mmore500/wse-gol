@@ -31,13 +31,13 @@
 //!             "block": "pl.col('dstream_value') == pl.col('dstream_Tbar') // 33",
 //!             "checkerboard": "pl.col('dstream_value') == pl.col('dstream_Tbar') % 2",
 //!         }[
-//!             compconf_data.get("CEREBRASLIB_DSTREAM_VALIDATOR", "checkerboard")
+//!             compconf_data.get("CEREBRASLIB_DSTREAM_VALIDATOR:comptime_string", "checkerboard")
 //!         ],
 //!         pl.Categorical,
 //!     ),
 //!     "downstream_validate_unpacked": (
 //!         f"""pl.col('dstream_T') == {
-//!             compconf_data.get("CEREBRASLIB_DSTREAM_EXPECTED_T", 64)
+//!             compconf_data.get("CEREBRASLIB_DSTREAM_EXPECTED_T:u32", 64)
 //!         }""",
 //!        pl.Categorical,
 //!     ),
@@ -71,7 +71,7 @@ const dstream_algo = @import_module(
 );
 const dstream_expected_T = compconf.get_value_or(
     "CEREBRASLIB_DSTREAM_EXPECTED_T",
-    @as(u8, 64),
+    @as(u32, 64),
 );
 const validator = compconf.get_value_or(
     "CEREBRASLIB_DSTREAM_VALIDATOR",
@@ -146,7 +146,7 @@ fn initialize_one(genome: genomePtr_t) void {
     @ptrcast([*]u32, genome)[1] = 0;
     @ptrcast([*]u32, genome)[2] = 0;
     @ptrcast([*]u32, genome)[3] = 0;
-    for (@range(u8, dstream_expected_T)) |_| {
+    for (@range(u32, dstream_expected_T)) |_| {
         _step_instrumentation(genome);
     }
 }

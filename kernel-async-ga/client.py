@@ -179,6 +179,8 @@ tournSize = (
 with open(f"compconf.json", encoding="utf-8") as json_file:
     compconf_data = json.load(json_file)
 
+print(f" - {compconf_data=}")
+
 genomeFlavor = compconf_data["ASYNC_GA_GENOME_FLAVOR:comptime_string"]
 print(f" - {genomeFlavor=}")
 genomePath = f"/cerebraslib/genome/{genomeFlavor}.csl"
