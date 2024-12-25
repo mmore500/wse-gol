@@ -38,6 +38,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
+        nonBlock:
+          - 0
+          - 1
         genome:
           - genome_frozenliteral1
           - genome_frozenliteral2
@@ -53,9 +56,6 @@ jobs:
           - genome_purifyingplus
           - genome_purifyingstripped
           - genome_hypermutator
-        nonBlock:
-          - 0
-          - 1
     env:
       CSLC: cslc
       CS_PYTHON: cs_python
