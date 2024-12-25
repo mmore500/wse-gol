@@ -66,6 +66,8 @@ const genomePtr_t = [*]u32;
 const nTraitVals: u16 = 1;
 
 // internal functions =========================================================
+const S = 64;
+
 fn _apply_mutation(genome: genomePtr_t) void {
     var mutated = calc_fitness_of(genome);
     const scale = (mutated + 1.0) / 1024.0;
@@ -80,7 +82,6 @@ fn _apply_mutation(genome: genomePtr_t) void {
 fn _step_instrumentation(genome: genomePtr_t) void {
     // elapse generation in bitfield
     if (opscalar.unifbool()) {
-        const S = 64;
         const T = @ptrcast([*]u32, genome)[1];
         const site = dstream_algo.assign_storage_site(64, T);
 
@@ -113,5 +114,5 @@ fn initialize_one(genome: genomePtr_t) void {
     bitmanip.randomize(@ptrcast([*]u16, genome), gHalfWords);
     @ptrcast(*f32, genome).* = 0.0;
     @ptrcast([*]u32, genome)[1] = 0;
-    _step_instrumentation(genome);
+    for (@range(u16, S)) |_| { _step_instrumentation(genome); }
 }
