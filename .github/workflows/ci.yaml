@@ -229,7 +229,7 @@ jobs:
           name: sample-tagged-populations
           path: ./kernel-async-ga/a=concatenated_genomes+flavor=genome_hsurftiltedsticky_tagged+ext=.csv
 
-  test-reconstruct:
+  test-hstrat:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -243,8 +243,8 @@ jobs:
           - 65
         dstream_algo_name:
           - "steady_algo"
-          - "tilted_algo"
           - "stretched_algo"
+          - "tilted_algo"
         genome:
           - genome_purifyingonly_dstream_validation
     env:
