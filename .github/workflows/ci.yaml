@@ -239,9 +239,9 @@ jobs:
         genome:
           - genome_purifyingonly_dstream_validation
         dstream_algo_name:
-          - "steady"
-          - "tilted"
-          - "stretched"
+          - "steady_algo"
+          - "tilted_algo"
+          - "stretched_algo"
         dstream_validator:
           - "block"
           - "checkerboard"
