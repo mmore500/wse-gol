@@ -325,6 +325,7 @@ jobs:
           export CSLC CS_PYTHON PATH
           export COMPCONFENV_CEREBRASLIB_DSTREAM_VALIDATOR__comptime_string="${{ matrix.dstream_validator }}"
           export COMPCONFENV_CEREBRASLIB_DSTREAM_EXPECTED_T__u32="${{ matrix.dstream_expected_T }}"
+          export COMPCONFENV_CEREBRASLIB_HSTRAT_DSTREAM_ALGO_NAME__comptime_string="${{ matrix.dstream_algo_name }}"
           sudo -E env PATH=$PATH \
             ./kernel-async-ga/compile.sh \
             # >/dev/null 2>&1
