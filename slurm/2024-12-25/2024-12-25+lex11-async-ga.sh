@@ -39,6 +39,7 @@ rm -rf "${SOURCEDIR}"
 git clone https://github.com/mmore500/wse-async-ga.git "${SOURCEDIR}" --single-branch
 cd "${SOURCEDIR}"
 git checkout "${WSE_ASYNC_GA_REVISION}"
+git submodule update --init --recursive
 cd -
 
 echo "begin work loop ========================================================"
