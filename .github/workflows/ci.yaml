@@ -33,7 +33,6 @@ jobs:
         run: ./pylib/test.sh
 
   test-async-ga:
-    name: Test csl kernels
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -230,8 +229,7 @@ jobs:
           name: sample-tagged-populations
           path: ./kernel-async-ga/a=concatenated_genomes+flavor=genome_hsurftiltedsticky_tagged+ext=.csv
 
-  test-reconstruct-validate:
-    name: Test reconstruction with dstream validators
+  test-reconstruct:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
