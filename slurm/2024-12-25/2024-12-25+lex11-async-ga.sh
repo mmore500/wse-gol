@@ -192,6 +192,15 @@ EOF
 # ----------------------------------------------------------------------------#
 ###############################################################################
 
+echo "install dependencies ===================================================="
+python3 --version
+venv="$(mktemp -d)"
+echo "venv ${venv}"
+python3 -m venv "${venv}"
+trap "rm -rf ${venv}" EXIT
+source "${venv}/bin/activate"
+python3 -m pip install --upgrade pip
+python3 -m pip install "compconf==0.5.0"
 
 echo "do kernel compile and submit sbatch file ==============================="
 ./kernel-async-ga/compile.sh
