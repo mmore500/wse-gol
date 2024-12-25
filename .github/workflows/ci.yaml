@@ -236,12 +236,6 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        genome:
-          - genome_purifyingonly_dstream_validation
-        dstream_algo_name:
-          - "steady_algo"
-          - "tilted_algo"
-          - "stretched_algo"
         dstream_validator:
           - "block"
           - "checkerboard"
@@ -249,11 +243,23 @@ jobs:
         dstream_expected_T:
           - 64
           - 65
+        dstream_algo_name:
+          - "steady_algo"
+          - "tilted_algo"
+          - "stretched_algo"
+        genome:
+          - genome_purifyingonly_dstream_validation
     env:
       CSLC: cslc
       CS_PYTHON: cs_python
       APPTAINERENV_CSL_SUPPRESS_SIMFAB_TRACE: 1
     steps:
+      - name: Log matrix
+        run: |
+          echo "dstream_validator: ${{ matrix.dstream_validator }}"
+          echo "dstream_expected_T: ${{ matrix.dstream_expected_T }}"
+          echo "dstream_algo_name: ${{ matrix.dstream_algo_name }}"
+          echo "genome: ${{ matrix.genome }}"
       - name: Checkout repository
         uses: actions/checkout@v2
 
