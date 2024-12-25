@@ -72,7 +72,7 @@ echo "rep ${rep}"
 seed=$((seed+1))
 echo "seed ${seed}"
 
-SLUG="wse-sketches+subgrid=${ASYNC_GA_NCOL_SUBGRID}+seed=${seed}"
+SLUG="wse-sketches+genome-flavor=${ASYNC_GA_GENOME_FLAVOR}+seed=${seed}"
 echo "SLUG ${SLUG}"
 
 echo "configure kernel compile ==============================================="
