@@ -245,6 +245,7 @@ jobs:
         dstream_validator:
           - "block"
           - "checkerboard"
+          - "hopscotch"
         dstream_expected_T:
           - 64
           - 65

@@ -30,6 +30,7 @@
 //!         {
 //!             "block": "pl.col('dstream_value') == pl.col('dstream_Tbar') // 33",
 //!             "checkerboard": "pl.col('dstream_value') == pl.col('dstream_Tbar') % 2",
+//!             "hopscotch": "pl.col('dstream_value') == 1 - (pl.col('dstream_Tbar') % 3).sign()",
 //!         }[
 //!             compconf_data.get("CEREBRASLIB_DSTREAM_VALIDATOR:comptime_string", "checkerboard")
 //!         ],
@@ -113,6 +114,8 @@ fn _step_instrumentation(genome: genomePtr_t) void {
         T / 33 == 1
     else if (validator == "checkerboard")
         T % 2 == 1
+    else if (validator == "hopscotch")
+        T % 3 == 0
     else
         false;
 
