@@ -247,6 +247,105 @@ jobs:
           - "tilted_algo"
         genome:
           - genome_purifyingonly_dstream_validation
+          - genome_purifyingonly
+          - genome_purifyingplus
+        exclude:
+          - dstream_validator: "checkerboard"
+            dstream_expected_T: 64
+            dstream_algo_name: "steady_algo"
+            genome: "genome_purifyingonly"
+          - dstream_validator: "checkerboard"
+            dstream_expected_T: 64
+            dstream_algo_name: "steady_algo"
+            genome: "genome_purifyingplus"
+          - dstream_validator: "checkerboard"
+            dstream_expected_T: 64
+            dstream_algo_name: "stretched_algo"
+            genome: "genome_purifyingonly"
+          - dstream_validator: "checkerboard"
+            dstream_expected_T: 64
+            dstream_algo_name: "stretched_algo"
+            genome: "genome_purifyingplus"
+          - dstream_validator: "checkerboard"
+            dstream_expected_T: 64
+            dstream_algo_name: "tilted_algo"
+            genome: "genome_purifyingonly"
+          - dstream_validator: "checkerboard"
+            dstream_expected_T: 64
+            dstream_algo_name: "tilted_algo"
+            genome: "genome_purifyingplus"
+          - dstream_validator: "checkerboard"
+            dstream_expected_T: 65
+            dstream_algo_name: "steady_algo"
+            genome: "genome_purifyingonly"
+          - dstream_validator: "checkerboard"
+            dstream_expected_T: 65
+            dstream_algo_name: "steady_algo"
+            genome: "genome_purifyingplus"
+          - dstream_validator: "checkerboard"
+            dstream_expected_T: 65
+            dstream_algo_name: "stretched_algo"
+            genome: "genome_purifyingonly"
+          - dstream_validator: "checkerboard"
+            dstream_expected_T: 65
+            dstream_algo_name: "stretched_algo"
+            genome: "genome_purifyingplus"
+          - dstream_validator: "checkerboard"
+            dstream_expected_T: 65
+            dstream_algo_name: "tilted_algo"
+            genome: "genome_purifyingonly"
+          - dstream_validator: "checkerboard"
+            dstream_expected_T: 65
+            dstream_algo_name: "tilted_algo"
+            genome: "genome_purifyingplus"
+          - dstream_validator: "hopscotch"
+            dstream_expected_T: 64
+            dstream_algo_name: "steady_algo"
+            genome: "genome_purifyingonly"
+          - dstream_validator: "hopscotch"
+            dstream_expected_T: 64
+            dstream_algo_name: "steady_algo"
+            genome: "genome_purifyingplus"
+          - dstream_validator: "hopscotch"
+            dstream_expected_T: 64
+            dstream_algo_name: "stretched_algo"
+            genome: "genome_purifyingonly"
+          - dstream_validator: "hopscotch"
+            dstream_expected_T: 64
+            dstream_algo_name: "stretched_algo"
+            genome: "genome_purifyingplus"
+          - dstream_validator: "hopscotch"
+            dstream_expected_T: 64
+            dstream_algo_name: "tilted_algo"
+            genome: "genome_purifyingonly"
+          - dstream_validator: "hopscotch"
+            dstream_expected_T: 64
+            dstream_algo_name: "tilted_algo"
+            genome: "genome_purifyingplus"
+          - dstream_validator: "hopscotch"
+            dstream_expected_T: 65
+            dstream_algo_name: "steady_algo"
+            genome: "genome_purifyingonly"
+          - dstream_validator: "hopscotch"
+            dstream_expected_T: 65
+            dstream_algo_name: "steady_algo"
+            genome: "genome_purifyingplus"
+          - dstream_validator: "hopscotch"
+            dstream_expected_T: 65
+            dstream_algo_name: "stretched_algo"
+            genome: "genome_purifyingonly"
+          - dstream_validator: "hopscotch"
+            dstream_expected_T: 65
+            dstream_algo_name: "stretched_algo"
+            genome: "genome_purifyingplus"
+          - dstream_validator: "hopscotch"
+            dstream_expected_T: 65
+            dstream_algo_name: "tilted_algo"
+            genome: "genome_purifyingonly"
+          - dstream_validator: "hopscotch"
+            dstream_expected_T: 65
+            dstream_algo_name: "tilted_algo"
+            genome: "genome_purifyingplus"
     env:
       CSLC: cslc
       CS_PYTHON: cs_python
