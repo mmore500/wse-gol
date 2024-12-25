@@ -13,7 +13,7 @@ popd
 
 cd "$(dirname "$0")"
 
-echo "SLURM_ARRAY_TASK_ID ${SLURM_ARRAY_TASK_ID}"
+echo "SLURM_JOB_ID ${SLURM_JOB_ID:-}"
 
 WSE_ASYNC_GA_REVISION="9ac0c2d4ef2603e306f894395b46d15eaa285148"
 echo "WSE_ASYNC_GA_REVISION ${WSE_ASYNC_GA_REVISION}"
@@ -33,7 +33,7 @@ echo "setup WORKDIR =========================================================="
 mkdir -p "${WORKDIR}"
 
 echo "setup SOURCEDIR ========================================================"
-SOURCEDIR="/tmp/${WSE_ASYNC_GA_REVISION}-${SLURM_JOB_ID}"
+SOURCEDIR="/tmp/${WSE_ASYNC_GA_REVISION}-${SLURM_JOB_ID:-}"
 echo "SOURCEDIR ${SOURCEDIR}"
 rm -rf "${SOURCEDIR}"
 git clone https://github.com/mmore500/wse-async-ga.git "${SOURCEDIR}" --single-branch
@@ -133,14 +133,14 @@ newgrp bio240020p || :
 popd
 
 echo "cc SLURM script --------------------------------------------------------"
-JOBSCRIPT="\${HOME}/jobscript/id=\${SLURM_JOB_ID}+ext=.sbatch"
+JOBSCRIPT="\${HOME}/jobscript/id=\${SLURM_JOB_ID:-}+ext=.sbatch"
 echo "JOBSCRIPT \${JOBSCRIPT}"
 cp "\${0}" "\${JOBSCRIPT}"
 chmod +x "\${JOBSCRIPT}"
 
 echo "job telemetry ----------------------------------------------------------"
-echo "source SLURM_JOB_ID ${SLURM_JOB_ID}"
-echo "current SLURM_JOB_ID \${SLURM_JOB_ID}"
+echo "source SLURM_JOB_ID ${SLURM_JOB_ID:-}"
+echo "current SLURM_JOB_ID \${SLURM_JOB_ID:-}"
 
 echo "initialization telemetry -----------------------------------------------"
 echo "WSE_ASYNC_GA_REVISION ${WSE_ASYNC_GA_REVISION}"
