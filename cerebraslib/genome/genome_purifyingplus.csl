@@ -22,7 +22,7 @@
 //! {
 //!     "dstream_algo": (
 //!         "dstream." + compconf_data.get(
-//!             "CEREBRASLIB_HSTRAT_DSTREAM_ALGO_NAME", "tilted_algo"
+//!             "CEREBRASLIB_HSTRAT_DSTREAM_ALGO_NAME:comptime_string", "tilted_algo"
 //!         ),
 //!         pl.Categorical,
 //!     ),
