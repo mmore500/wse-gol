@@ -80,6 +80,7 @@ echo "configure kernel compile ==============================================="
 rm -rf "${WORKDIR:?}/${SLUG}"
 cp -r "${SOURCEDIR}" "${WORKDIR}/${SLUG}"
 cd "${WORKDIR}/${SLUG}"
+pushd "${SOURCEDIR}"; git status; popd
 
 export ASYNC_GA_FABRIC_DIMS="757,996"
 echo "ASYNC_GA_FABRIC_DIMS ${ASYNC_GA_FABRIC_DIMS}"
@@ -144,6 +145,7 @@ echo "current SLURM_JOB_ID \${SLURM_JOB_ID:-}"
 
 echo "initialization telemetry -----------------------------------------------"
 echo "WSE_ASYNC_GA_REVISION ${WSE_ASYNC_GA_REVISION}"
+echo "HEAD_REVISION $(pushd "${SOURCEDIR}"; git rev-parse HEAD; popd)"
 echo "WORKDIR ${WORKDIR}"
 echo "SLUG ${SLUG}"
 echo "date \$(date)"
