@@ -6,7 +6,9 @@
 #SBATCH --output="/jet/home/%u/joblog/%j"
 
 set -euo pipefail
+pushd ~
 newgrp bio240020p || :
+popd
 
 
 cd "$(dirname "$0")"
@@ -126,7 +128,9 @@ cat > "${SBATCH_FILE}" << EOF
 #SBATCH --exclude=sdf-2
 
 set -euo pipefail
+pushd ~
 newgrp bio240020p || :
+popd
 
 echo "cc SLURM script --------------------------------------------------------"
 JOBSCRIPT="\${HOME}/jobscript/id=\${SLURM_JOB_ID}+ext=.sbatch"
