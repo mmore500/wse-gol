@@ -133,7 +133,7 @@ jobs:
           export CSLC CS_PYTHON PATH
           sudo -E env PATH=$PATH \
             ./kernel-async-ga/compile.sh \
-            >/dev/null 2>&1
+            # >/dev/null 2>&1
 
       - name: Run async-ga
         run: |
@@ -142,7 +142,7 @@ jobs:
           export CSLC CS_PYTHON PATH
           sudo -E env PATH=$PATH \
             ./kernel-async-ga/execute.sh \
-            >/dev/null 2>&1
+            # >/dev/null 2>&1
 
   test-sample-populations:
     name: Test make sample population
@@ -222,7 +222,7 @@ jobs:
           export CSLC CS_PYTHON PATH
           sudo -E env PATH=$PATH \
             ./kernel-async-ga/generate_sample_tagged_populations.sh \
-            >/dev/null 2>&1
+            # >/dev/null 2>&1
 
       - name: Upload output as artifact
         uses: actions/upload-artifact@v4
@@ -325,7 +325,7 @@ jobs:
           export CSLC CS_PYTHON PATH
           sudo -E env PATH=$PATH \
             ./kernel-async-ga/compile.sh \
-            >/dev/null 2>&1
+            # >/dev/null 2>&1
 
       - name: Run async-ga
         run: |
