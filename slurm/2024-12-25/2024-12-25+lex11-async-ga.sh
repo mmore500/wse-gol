@@ -5,6 +5,8 @@
 #SBATCH --cpus-per-task=28
 #SBATCH --output="/jet/home/%u/joblog/id=%j+ext=.txt"
 
+newgrp bio240020p || :
+
 set -e
 
 cd "$(dirname "$0")"
@@ -124,7 +126,7 @@ cat > "${SBATCH_FILE}" << EOF
 #SBATCH --exclude=sdf-2
 
 set -e
-# newgrp GRANT_ID
+newgrp bio240020p || :
 
 echo "cc SLURM script --------------------------------------------------------"
 JOBSCRIPT="\${HOME}/jobscript/id=\${SLURM_JOB_ID}+ext=.sbatch"
