@@ -5,9 +5,9 @@
 #SBATCH --cpus-per-task=28
 #SBATCH --output="/jet/home/%u/joblog/id=%j+ext=.txt"
 
+set -euo pipefail
 newgrp bio240020p || :
 
-set -e
 
 cd "$(dirname "$0")"
 
@@ -125,7 +125,7 @@ cat > "${SBATCH_FILE}" << EOF
 #SBATCH --output="/jet/home/%u/joblog/id=%j+ext=.txt"
 #SBATCH --exclude=sdf-2
 
-set -e
+set -euo pipefail
 newgrp bio240020p || :
 
 echo "cc SLURM script --------------------------------------------------------"
