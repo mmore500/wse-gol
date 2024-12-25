@@ -3,7 +3,7 @@
 #SBATCH --mem=64G
 #SBATCH --time=4:00:00
 #SBATCH --cpus-per-task=28
-#SBATCH --output="/jet/home/%u/joblog/id=%j+ext=.txt"
+#SBATCH --output="/jet/home/%u/joblog/%j"
 
 set -euo pipefail
 newgrp bio240020p || :
@@ -122,7 +122,7 @@ cat > "${SBATCH_FILE}" << EOF
 #SBATCH --cpus-per-task=1
 #SBATCH --mem=128G
 #SBATCH --time=0:15:00
-#SBATCH --output="/jet/home/%u/joblog/id=%j+ext=.txt"
+#SBATCH --output="/jet/home/%u/joblog/%j"
 #SBATCH --exclude=sdf-2
 
 set -euo pipefail
