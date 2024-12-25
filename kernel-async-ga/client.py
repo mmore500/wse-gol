@@ -3,6 +3,7 @@ print("######################################################################")
 import argparse
 import atexit
 from collections import Counter
+import itertools as it
 import json
 import os
 import pathlib
@@ -10,6 +11,7 @@ import uuid
 import shutil
 import subprocess
 import sys
+import textwrap
 import typing
 
 
@@ -23,37 +25,35 @@ def hexify_genome_data(
     raw_genome_data: "np.ndarray",
     verbose: bool = False,
 ) -> typing.List[str]:
-    genome_bytes = [
-        inner.view(np.uint8).tobytes()
-        for outer in raw_genome_data
-        for inner in outer
-    ]
-    genome_ints = [
-        int.from_bytes(genome, byteorder="big") for genome in genome_bytes
-    ]
-
-    # display genome values
-    assert len(genome_ints) == nRow * nCol
     if verbose:
         for word in range(nWav):
             print(f"---------------------------------------------- genome word {word}")
-            print([inner[word] for outer in raw_genome_data for inner in outer][:100])
+            values = (
+                inner[word] for outer in raw_genome_data for inner in outer
+            )
+            print([*it.islice(values, 10)])
 
-        print("------------------------------------------------ genome binary strings")
-        for genome_int in genome_ints[:100]:
-            print(np.binary_repr(genome_int, width=nWav * wavSize))
+    shape = raw_genome_data.shape
+    genome_ints = raw_genome_data.astype(">u4").reshape(-1, shape[-1])
+    assert len(genome_ints) == nRow * nCol
+    if verbose:
+        print("------------------------------------------------ genome u32 ints")
+        for genome_int in genome_ints[:10]:
+            print(f"{genome_int=}")
 
-        print("--------------------------------------------------- genome hex strings")
-        for genome_int in genome_ints[:100]:
-            print(np.base_repr(genome_int, base=16).zfill(nWav * wavSize // 4))
+    genome_hex = genome_ints.tobytes().hex()
+    if verbose:
+        print("--------------------------------------------------- genome hex string")
+        print(f"{genome_hex[:100]=}", len(genome_hex))
 
-    # prevent polars from reading as int64 and overflowing
-    genome_hex = [
-        np.base_repr(genome_int, base=16).zfill(nWav * wavSize // 4)
-        for genome_int in genome_ints
-    ]
+    genome_hexes = textwrap.wrap(genome_hex, nWav * wavSize // 4)
+    assert len(genome_hexes) == nRow * nCol
+    if verbose:
+        print("------------------------------------------------ genome hex strings")
+        for genome_hex_ in genome_hexes[:10]:
+            print(f"{genome_hex_=}")
 
-    return genome_hex
+    return genome_hexes
 
 
 print("- setting up temp dir")
@@ -138,7 +138,7 @@ print("- reading env variables")
 # number of rows, columns, and genome words
 nCol = int(os.getenv("ASYNC_GA_NCOL", 3))
 nRow = int(os.getenv("ASYNC_GA_NROW", 3))
-nWav = int(os.getenv("ASYNC_GA_NWAV", 4))
+nWav = int(os.getenv("ASYNC_GA_NWAV", -1))
 nTrait = int(os.getenv("ASYNC_GA_NTRAIT", 1))
 print(f"{nCol=}, {nRow=}, {nWav=}, {nTrait=}")
 
@@ -179,6 +179,8 @@ tournSize = (
 with open(f"compconf.json", encoding="utf-8") as json_file:
     compconf_data = json.load(json_file)
 
+print(f" - {compconf_data=}")
+
 genomeFlavor = compconf_data["ASYNC_GA_GENOME_FLAVOR:comptime_string"]
 print(f" - {genomeFlavor=}")
 genomePath = f"/cerebraslib/genome/{genomeFlavor}.csl"
@@ -190,6 +192,9 @@ genomeDataRaw = "".join(
 ) or "{}"
 genomeData = eval(genomeDataRaw, {"compconf_data": compconf_data, "pl": pl})
 print (f" - {genomeData=}")
+
+assert nWav in (genomeData["nWav"][0], -1)
+nWav = genomeData["nWav"][0]
 
 metadata = {
     "genomeFlavor": (genomeFlavor, pl.Categorical),
@@ -307,7 +312,11 @@ if fossils:
     }).with_columns([
         pl.lit(value, dtype=dtype).alias(key)
         for key, (value, dtype) in metadata.items()
-        if key.startswith("dstream_") or key in ("genomeFlavor",)
+        if (
+            key.startswith("dstream_")
+            or key.startswith("downstream_")
+            or key in ("genomeFlavor",)
+        )
     ])
 
     write_parquet_verbose(

@@ -33,22 +33,28 @@ jobs:
         run: ./pylib/test.sh
 
   test-async-ga:
-    name: Test csl kernels
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        genome:
-          - genome_frozenliteral
-          - genome_bitdrift
-          - genome_hsurftiltedsticky
-          - genome_purifyingonly
-          - genome_purifyingplus
-          - genome_purifyingstripped
-          - genome_hypermutator
         nonBlock:
           - 0
           - 1
+        genome:
+          - genome_frozenliteral1
+          - genome_frozenliteral2
+          - genome_frozenliteral3
+          - genome_frozenliteral4
+          - genome_frozenliteral5
+          - genome_frozenliteral6
+          - genome_frozenliteral7
+          - genome_bitdrift
+          - genome_hsurftiltedsticky
+          - genome_purifyingonly
+          - genome_purifyingonly_dstream_validation
+          - genome_purifyingplus
+          - genome_purifyingstripped
+          - genome_hypermutator
     env:
       CSLC: cslc
       CS_PYTHON: cs_python
@@ -126,7 +132,7 @@ jobs:
           export CSLC CS_PYTHON PATH
           sudo -E env PATH=$PATH \
             ./kernel-async-ga/compile.sh \
-            >/dev/null 2>&1
+            # >/dev/null 2>&1
 
       - name: Run async-ga
         run: |
@@ -135,7 +141,7 @@ jobs:
           export CSLC CS_PYTHON PATH
           sudo -E env PATH=$PATH \
             ./kernel-async-ga/execute.sh \
-            >/dev/null 2>&1
+            # >/dev/null 2>&1
 
   test-sample-populations:
     name: Test make sample population
@@ -215,13 +221,168 @@ jobs:
           export CSLC CS_PYTHON PATH
           sudo -E env PATH=$PATH \
             ./kernel-async-ga/generate_sample_tagged_populations.sh \
-            >/dev/null 2>&1
+            # >/dev/null 2>&1
 
       - name: Upload output as artifact
         uses: actions/upload-artifact@v4
         with:
           name: sample-tagged-populations
           path: ./kernel-async-ga/a=concatenated_genomes+flavor=genome_hsurftiltedsticky_tagged+ext=.csv
+
+  test-hstrat:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        dstream_validator:
+          - "block"
+          - "checkerboard"
+          - "hopscotch"
+        dstream_expected_T:
+          - 64
+          - 65
+        dstream_algo_name:
+          - "steady_algo"
+          - "stretched_algo"
+          - "tilted_algo"
+        genome:
+          - genome_purifyingonly_dstream_validation
+    env:
+      CSLC: cslc
+      CS_PYTHON: cs_python
+      APPTAINERENV_CSL_SUPPRESS_SIMFAB_TRACE: 1
+    steps:
+      - name: Log matrix
+        run: |
+          echo "dstream_validator: ${{ matrix.dstream_validator }}"
+          echo "dstream_expected_T: ${{ matrix.dstream_expected_T }}"
+          echo "dstream_algo_name: ${{ matrix.dstream_algo_name }}"
+          echo "genome: ${{ matrix.genome }}"
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.10'
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install --upgrade uv
+          uv pip install -r requirements.txt --system
+
+      - name: Set up Apptainer
+        uses: nick-fields/retry@v3
+        with:
+          timeout_minutes: 15
+          max_attempts: 3
+          command: |
+            sudo apt-get update
+            sudo apt-get install -y rpm2cpio
+            sudo apt-get install -y golang-go
+            mkdir -p ~/apptainer
+            # echo 'export PATH="$HOME/apptainer/bin:$PATH"' >> ~/.bashrc
+            echo "$HOME/apptainer/bin" >> $GITHUB_PATH
+            curl -s https://raw.githubusercontent.com/apptainer/apptainer/03bb84afc90c9699816db2e2730b56f2d3501eff/tools/install-unprivileged.sh | bash -s - ~/apptainer
+
+      - name: Test Apptainer
+        uses: nick-fields/retry@v3
+        with:
+          timeout_minutes: 15
+          max_attempts: 3
+          command: |
+            apptainer --version
+            sudo "$(which apptainer)" exec docker://busybox:latest echo "Hello from Singularity and Docker!"
+
+      - name: Set up SDK
+        uses: nick-fields/retry@v3
+        with:
+          timeout_minutes: 15
+          max_attempts: 3
+          command: |
+            mkdir -p ~/cerebras/bin
+            curl -L "${CEREBRAS_SDK_URL}" | tar -xzv -C ~/cerebras/bin
+            ls ~/cerebras/bin
+            echo $GITHUB_PATH
+            echo "$HOME/cerebras/bin" >> $GITHUB_PATH
+        env:
+          CEREBRAS_SDK_URL: ${{ secrets.CEREBRAS_SDK_URL }}
+
+      - name: Test SDK
+        run: |
+          which cslc
+          which csdb
+          which cs_python
+          which cs_readelf
+          which sdk_debug_shell
+      - run: sudo env PATH=$PATH cslc -h  >/dev/null 2>&1
+      - run: sudo env PATH=$PATH csdb --help  >/dev/null 2>&1
+      - run: sudo env PATH=$PATH cs_python -h  >/dev/null 2>&1
+      - run: sudo env PATH=$PATH cs_readelf -h >/dev/null 2>&1
+      - run: sudo env PATH=$PATH sdk_debug_shell --help
+      - run: echo "APPTAINERENV_CSL_SUPPRESS_SIMFAB_TRACE ${APPTAINERENV_CSL_SUPPRESS_SIMFAB_TRACE}"
+
+      - name: Compile async-ga
+        run: |
+          export ASYNC_GA_GENOME_FLAVOR="${{ matrix.genome }}"
+          export ASYNC_GA_NONBLOCK="1"
+          export CSLC CS_PYTHON PATH
+          export COMPCONFENV_CEREBRASLIB_DSTREAM_VALIDATOR__comptime_string="${{ matrix.dstream_validator }}"
+          export COMPCONFENV_CEREBRASLIB_DSTREAM_EXPECTED_T__u32="${{ matrix.dstream_expected_T }}"
+          export COMPCONFENV_CEREBRASLIB_HSTRAT_DSTREAM_ALGO_NAME__comptime_string="${{ matrix.dstream_algo_name }}"
+          sudo -E env PATH=$PATH \
+            ./kernel-async-ga/compile.sh \
+            # >/dev/null 2>&1
+
+      - name: Run async-ga
+        run: |
+          export ASYNC_GA_GENOME_FLAVOR="${{ matrix.genome }}"
+          export ASYNC_GA_NONBLOCK="1"
+          export CSLC CS_PYTHON PATH
+          export COMPCONFENV_CEREBRASLIB_DSTREAM_VALIDATOR__comptime_string="${{ matrix.dstream_validator }}"
+          export COMPCONFENV_CEREBRASLIB_DSTREAM_EXPECTED_T__u32="${{ matrix.dstream_expected_T }}"
+          export COMPCONFENV_CEREBRASLIB_HSTRAT_DSTREAM_ALGO_NAME__comptime_string="${{ matrix.dstream_algo_name }}"
+          sudo -E env PATH=$PATH \
+            ./kernel-async-ga/execute.sh \
+            # >/dev/null 2>&1
+
+      - name: Reconstruct from end-state genomes
+        run: |
+          ls -1 ./kernel-async-ga/a=genomes* \
+            | python3 -m hstrat.dataframe.surface_unpack_reconstruct \
+            a=reconstruction+what=genomes+ext=.pqt
+
+      - name: Upload output as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: genomes-reconstruction-${{ matrix.dstream_algo_name }}-${{ matrix.genome }}-${{ matrix.dstream_validator }}-${{ matrix.dstream_expected_T }}
+          path: ./a=reconstruction+what=genomes+ext=.pqt
+
+      - name: Reconstruct from fossil genomes
+        run: |
+          ls -1 ./kernel-async-ga/a=fossils* \
+            | python3 -m hstrat.dataframe.surface_unpack_reconstruct \
+            a=reconstruction+what=fossils+ext=.pqt
+
+      - name: Upload output as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: fossils-reconstruction-${{ matrix.dstream_algo_name }}-${{ matrix.genome }}-${{ matrix.dstream_validator }}-${{ matrix.dstream_expected_T }}
+          path: ./a=reconstruction+what=fossils+ext=.pqt
+
+      - name: Reconstruct from all genomes
+        run: |
+          ls -1 ./kernel-async-ga/a=fossils* ./kernel-async-ga/a=genomes* \
+            | python3 -m hstrat.dataframe.surface_unpack_reconstruct \
+            --how diagonal_relaxed \
+            a=reconstruction+what=fossils-and-genomes+ext=.pqt
+
+      - name: Upload output as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: fossils-and-genomes-reconstruction-${{ matrix.dstream_algo_name }}-${{ matrix.genome }}-${{ matrix.dstream_validator }}-${{ matrix.dstream_expected_T }}
+          path: ./a=reconstruction+what=fossils-and-genomes+ext=.pqt
 
   test-cerebraslib:
     name: Test cerebraslib
@@ -300,11 +461,11 @@ jobs:
         run: |
           sudo env PATH=$PATH CSLC=$CSLC CS_PYTHON=$CS_PYTHON \
             ./kernel-test-cerebraslib/compile.sh \
-            >/dev/null 2>&1
+            # >/dev/null 2>&1
           ls ./kernel-test-cerebraslib
 
       - name: Run cerebraslib tests
         run: |
           sudo env PATH=$PATH CSLC=$CSLC CS_PYTHON=$CS_PYTHON \
             ./kernel-test-cerebraslib/execute.sh \
-            >/dev/null 2>&1
+            # >/dev/null 2>&1

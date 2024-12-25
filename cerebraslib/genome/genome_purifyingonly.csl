@@ -17,18 +17,21 @@
 // byte 15
 // TOTAL: 4 words -> 16 bytes
 
+// TODO why can't this be 4 words?
+// TODO see https://github.com/mmore500/wse-async-ga/issues/4
 //! {
 //!     "dstream_algo": (
-//!         compconf_data.get(
-//!             "CEREBRASLIB_HSTRAT_DSTREAM_ALGO_NAME", "tilted_algo"
+//!         "dstream." + compconf_data.get(
+//!             "CEREBRASLIB_HSTRAT_DSTREAM_ALGO_NAME:comptime_string", "tilted_algo"
 //!         ),
 //!         pl.Categorical,
 //!     ),
 //!     "dstream_storage_bitoffset": (64, pl.UInt8),
 //!     "dstream_storage_bitwidth": (64, pl.UInt8),
-//!     "dstream_T_bitoffset": (4, pl.UInt8),
+//!     "dstream_T_bitoffset": (32, pl.UInt8),
 //!     "dstream_T_bitwidth": (32, pl.UInt8),
 //!     "dstream_S": (64, pl.UInt8),
+//!     "nWav": (5, pl.UInt8),
 //! }
 
 // module imports =============================================================
@@ -36,10 +39,18 @@ const math = @import_module("<math>");
 const random = @import_module("<random>");
 
 const compconf = @import_module("<compconf>");
-const dstream_algo_name = compconf.get_value_or(
-    "CEREBRASLIB_HSTRAT_DSTREAM_ALGO_NAME",
-    "tilted_algo",
-);
+comptime { // access via get_value for logging...
+    const _ = compconf.get_value_or(
+        "CEREBRASLIB_HSTRAT_DSTREAM_ALGO_NAME",
+        "tilted_algo",
+    );
+} // ... raw string works around sdk v1.0.0 limitation
+const compconf_raw = @import_module("<compconf_raw>");
+const has_value = compconf.has_value("CEREBRASLIB_HSTRAT_DSTREAM_ALGO_NAME");
+const dstream_algo_name = (if (has_value)
+    compconf_raw.CEREBRASLIB_HSTRAT_DSTREAM_ALGO_NAME
+else
+    "tilted_algo");
 const dstream_algo = @import_module(
     @strcat("<downstream/dstream/", dstream_algo_name, ">"),
 );
@@ -49,7 +60,7 @@ const opscalar = @import_module("cerebraslib/opscalar.csl");
 const tilted = @import_module("cerebraslib/tilted_sticky.csl");
 
 // module config specs ========================================================
-const gSize: u16 = 4;
+const gSize: u16 = 5;
 const genome_t = [gSize]u32;
 const genomePtr_t = [*]u32;
 const nTraitVals: u16 = 1;
@@ -69,13 +80,17 @@ fn _apply_mutation(genome: genomePtr_t) void {
 fn _step_instrumentation(genome: genomePtr_t) void {
     // elapse generation in bitfield
     if (opscalar.unifbool()) {
-        const rank = @ptrcast([*]u32, genome)[1];
-        const site = dstream_algo.assign_storage_site(64, rank);
+        const S = 64;
+        const T = @ptrcast([*]u32, genome)[1];
+        const site = dstream_algo.assign_storage_site(64, T);
 
         const offset_bits: u16 = (4 + 4) * 8;
         const target_bit = @as(u16, site) + offset_bits;
 
-        bitmanip.flip_nth_bit(@ptrcast([*]u8, genome), target_bit);
+        const genome_bytes = @ptrcast([*]u8, genome);
+        if (site != S) bitmanip.flip_nth_bit_with_swaps(
+            genome_bytes, target_bit, .{ .byteSwap = true, .bitSwap = true }
+        );
     }
 
     // elapse generation in counter
@@ -98,4 +113,5 @@ fn initialize_one(genome: genomePtr_t) void {
     bitmanip.randomize(@ptrcast([*]u16, genome), gHalfWords);
     @ptrcast(*f32, genome).* = 0.0;
     @ptrcast([*]u32, genome)[1] = 0;
+    _step_instrumentation(genome);
 }

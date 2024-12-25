@@ -72,6 +72,476 @@ fn test_set_nth_bit() void {
     @assert(bitfield[1] == 0b00000000);
 }
 
+fn _swap_bytes(a: *u8, b: *u8) void {
+    var tmp: u8 = 0;
+    tmp = a.*;
+    a.* = b.*;
+    b.* = tmp;
+}
+
+fn test_set_nth_bit_regression1() void {
+    var bitfield = @zeros([16]u8); // Initialize a 2-byte bitfield
+
+    // byte 0
+    bitmanip.set_nth_bit(&bitfield, 64 - 24 + 24, true);
+    bitmanip.set_nth_bit(&bitfield, 64 - 24 + 27, true);
+    bitmanip.set_nth_bit(&bitfield, 64 - 24 + 28, true);
+    bitmanip.set_nth_bit(&bitfield, 64 - 24 + 31, true);
+
+    // byte 1
+    bitmanip.set_nth_bit(&bitfield, 64 - 8 + 16, true);
+    bitmanip.set_nth_bit(&bitfield, 64 - 8 + 19, true);
+    bitmanip.set_nth_bit(&bitfield, 64 - 8 + 20, true);
+    bitmanip.set_nth_bit(&bitfield, 64 - 8 + 21, true);
+
+    // byte 2
+    bitmanip.set_nth_bit(&bitfield, 64 + 8 + 9, true);
+    bitmanip.set_nth_bit(&bitfield, 64 + 8 + 12, true);
+    bitmanip.set_nth_bit(&bitfield, 64 + 8 + 13, true);
+
+    // byte 3
+    bitmanip.set_nth_bit(&bitfield, 64 + 24 + 1, true);
+    bitmanip.set_nth_bit(&bitfield, 64 + 24 + 2, true);
+    bitmanip.set_nth_bit(&bitfield, 64 + 24 + 3, true);
+    bitmanip.set_nth_bit(&bitfield, 64 + 24 + 4, true);
+    bitmanip.set_nth_bit(&bitfield, 64 + 24 + 5, true);
+    bitmanip.set_nth_bit(&bitfield, 64 + 24 + 6, true);
+
+    // byte 4
+    bitmanip.set_nth_bit(&bitfield, 64 - 24 + 58, true);
+    bitmanip.set_nth_bit(&bitfield, 64 - 24 + 59, true);
+    bitmanip.set_nth_bit(&bitfield, 64 - 24 + 62, true);
+
+    // byte 5
+    bitmanip.set_nth_bit(&bitfield, 64 - 8 + 50, true);
+    bitmanip.set_nth_bit(&bitfield, 64 - 8 + 51, true);
+    bitmanip.set_nth_bit(&bitfield, 64 - 8 + 52, true);
+    bitmanip.set_nth_bit(&bitfield, 64 - 8 + 55, true);
+
+    // byte 6
+    bitmanip.set_nth_bit(&bitfield, 64 + 8 + 40, true);
+    bitmanip.set_nth_bit(&bitfield, 64 + 8 + 43, true);
+    bitmanip.set_nth_bit(&bitfield, 64 + 8 + 44, true);
+    bitmanip.set_nth_bit(&bitfield, 64 + 8 + 47, true);
+
+    // byte 7
+    bitmanip.set_nth_bit(&bitfield, 64 + 24 + 34, true);
+    bitmanip.set_nth_bit(&bitfield, 64 + 24 + 35, true);
+    bitmanip.set_nth_bit(&bitfield, 64 + 24 + 36, true);
+    bitmanip.set_nth_bit(&bitfield, 64 + 24 + 37, true);
+
+    // TODO why is this necessary?
+    // see https://github.com/mmore500/wse-async-ga/issues/5
+    _swap_bytes(&bitfield[8 + 1], &bitfield[8 + 4 + 1]);
+    _swap_bytes(&bitfield[8 + 2], &bitfield[8 + 4]);
+
+    @assert(bitfield[0] == 0x00);
+    @assert(bitfield[1] == 0x00);
+    @assert(bitfield[2] == 0x00);
+    @assert(bitfield[3] == 0x00);
+    @assert(bitfield[4] == 0x00);
+    @assert(bitfield[5] == 0x00);
+    @assert(bitfield[6] == 0x00);
+    @assert(bitfield[7] == 0x00);
+    @assert(bitfield[8 + 0] == 0x99 and 0x99 == 0b10011001);
+    @assert(bitfield[8 + 1] == 0x9c and 0x9c == 0b10011100);
+    @assert(bitfield[8 + 2] == 0x4c and 0x4c == 0b01001100);
+    @assert(bitfield[8 + 3] == 0x7e and 0x7e == 0b01111110);
+    @assert(bitfield[8 + 4] == 0x32 and 0x32 == 0b00110010);
+    @assert(bitfield[8 + 5] == 0x39 and 0x39 == 0b00111001);
+    @assert(bitfield[8 + 6] == 0x99 and 0x99 == 0b10011001);
+    @assert(bitfield[8 + 7] == 0x3c and 0x3c == 0b00111100);
+}
+
+fn test_set_nth_bit_regression2() void {
+    var bitfield = @zeros([16]u8); // Initialize a 2-byte bitfield
+
+    // byte 0
+    bitmanip.set_nth_bit(&bitfield, 64, true);
+
+    // byte 1
+    bitmanip.set_nth_bit(&bitfield, 64 + 8 + 1, true);
+
+    // byte 2
+    bitmanip.set_nth_bit(&bitfield, 64 + 16 + 2, true);
+
+    // byte 3
+    bitmanip.set_nth_bit(&bitfield, 64 + 24 + 3, true);
+
+    // byte 4
+    bitmanip.set_nth_bit(&bitfield, 64 + 32 + 4, true);
+
+    // byte 5
+    bitmanip.set_nth_bit(&bitfield, 64 + 40 + 5, true);
+
+    // byte 6
+    bitmanip.set_nth_bit(&bitfield, 64 + 48 + 6, true);
+
+    // byte 7
+    bitmanip.set_nth_bit(&bitfield, 64 + 56 + 7, true);
+
+    // TODO why is this necessary?
+    // see https://github.com/mmore500/wse-async-ga/issues/5
+    // _swap_bytes(&bitfield[8 + 1], &bitfield[8 + 4 + 1]);
+    // _swap_bytes(&bitfield[8 + 2], &bitfield[8 + 4]);
+
+    @assert(bitfield[0] == 0x00);
+    @assert(bitfield[1] == 0x00);
+    @assert(bitfield[2] == 0x00);
+    @assert(bitfield[3] == 0x00);
+    @assert(bitfield[4] == 0x00);
+    @assert(bitfield[5] == 0x00);
+    @assert(bitfield[6] == 0x00);
+    @assert(bitfield[7] == 0x00);
+    @assert(bitfield[8 + 0] == 1);
+    @assert(bitfield[8 + 1] == 2);
+    @assert(bitfield[8 + 2] == 4);
+    @assert(bitfield[8 + 3] == 8);
+    @assert(bitfield[8 + 4] == 16);
+    @assert(bitfield[8 + 5] == 32);
+    @assert(bitfield[8 + 6] == 64);
+    @assert(bitfield[8 + 7] == 128);
+}
+
+fn test_flip_nth_bit_with_swaps() void {
+    var bitfield = @zeros([8]u8); // Initialize a 2-word bitfield
+
+    const kwargs = .{
+        .byteSwap = true,
+        .bitSwap = false,
+    };
+
+    bitmanip.flip_nth_bit_with_swaps(&bitfield, 0, kwargs);
+    @assert(bitfield[3] == 0b00000001);
+    @assert(bitfield[2] == 0b00000000);
+    @assert(bitfield[1] == 0b00000000);
+    @assert(bitfield[0] == 0b00000000);
+
+    bitmanip.flip_nth_bit_with_swaps(&bitfield, 1, kwargs);
+    @assert(bitfield[3] == 0b00000011);
+    @assert(bitfield[2] == 0b00000000);
+    @assert(bitfield[1] == 0b00000000);
+    @assert(bitfield[0] == 0b00000000);
+
+    bitmanip.flip_nth_bit_with_swaps(&bitfield, 7, kwargs);
+    @assert(bitfield[3] == 0b10000011);
+    @assert(bitfield[2] == 0b00000000);
+    @assert(bitfield[1] == 0b00000000);
+    @assert(bitfield[0] == 0b00000000);
+
+    bitmanip.flip_nth_bit_with_swaps(&bitfield, 8, kwargs);
+    @assert(bitfield[3] == 0b10000011);
+    @assert(bitfield[2] == 0b00000001);
+    @assert(bitfield[1] == 0b00000000);
+    @assert(bitfield[0] == 0b00000000);
+
+    // Flip the same bit again to revert it back
+    bitmanip.flip_nth_bit_with_swaps(&bitfield, 8, kwargs);
+    @assert(bitfield[3] == 0b10000011);
+    @assert(bitfield[2] == 0b00000000);
+    @assert(bitfield[1] == 0b00000000);
+    @assert(bitfield[0] == 0b00000000);
+
+    bitmanip.flip_nth_bit_with_swaps(&bitfield, 1, kwargs);
+    @assert(bitfield[3] == 0b10000001);
+    @assert(bitfield[2] == 0b00000000);
+    @assert(bitfield[1] == 0b00000000);
+    @assert(bitfield[0] == 0b00000000);
+
+    bitmanip.flip_nth_bit_with_swaps(&bitfield, 15, kwargs);
+    @assert(bitfield[3] == 0b10000001);
+    @assert(bitfield[2] == 0b10000000);
+    @assert(bitfield[1] == 0b00000000);
+    @assert(bitfield[0] == 0b00000000);
+
+    bitmanip.flip_nth_bit_with_swaps(&bitfield, 16, kwargs);
+    @assert(bitfield[3] == 0b10000001);
+    @assert(bitfield[2] == 0b10000000);
+    @assert(bitfield[1] == 0b00000001);
+    @assert(bitfield[0] == 0b00000000);
+
+    bitmanip.flip_nth_bit_with_swaps(&bitfield, 30, kwargs);
+    @assert(bitfield[3] == 0b10000001);
+    @assert(bitfield[2] == 0b10000000);
+    @assert(bitfield[1] == 0b00000001);
+    @assert(bitfield[0] == 0b01000000);
+
+    bitmanip.flip_nth_bit_with_swaps(&bitfield, 32, kwargs);
+    @assert(bitfield[7] == 0b00000001);
+    @assert(bitfield[6] == 0b00000000);
+    @assert(bitfield[5] == 0b00000000);
+    @assert(bitfield[4] == 0b00000000);
+    @assert(bitfield[3] == 0b10000001);
+    @assert(bitfield[2] == 0b10000000);
+    @assert(bitfield[1] == 0b00000001);
+    @assert(bitfield[0] == 0b01000000);
+
+    bitmanip.flip_nth_bit_with_swaps(&bitfield, 32, kwargs);
+    @assert(bitfield[7] == 0b00000000);
+    @assert(bitfield[6] == 0b00000000);
+    @assert(bitfield[5] == 0b00000000);
+    @assert(bitfield[4] == 0b00000000);
+    @assert(bitfield[3] == 0b10000001);
+    @assert(bitfield[2] == 0b10000000);
+    @assert(bitfield[1] == 0b00000001);
+    @assert(bitfield[0] == 0b01000000);
+
+    bitmanip.flip_nth_bit_with_swaps(&bitfield, 41, kwargs);
+    @assert(bitfield[7] == 0b00000000);
+    @assert(bitfield[6] == 0b00000010);
+    @assert(bitfield[5] == 0b00000000);
+    @assert(bitfield[4] == 0b00000000);
+    @assert(bitfield[3] == 0b10000001);
+    @assert(bitfield[2] == 0b10000000);
+    @assert(bitfield[1] == 0b00000001);
+    @assert(bitfield[0] == 0b01000000);
+}
+
+fn test_set_nth_bit_with_swaps() void {
+    var bitfield = @zeros([8]u8); // Initialize a 2-word bitfield
+
+    const kwargs = .{
+        .byteSwap = true,
+        .bitSwap = false,
+    };
+
+    bitmanip.set_nth_bit_with_swaps(&bitfield, 0, false, kwargs);
+    @assert(bitfield[3] == 0b00000000);
+    @assert(bitfield[2] == 0b00000000);
+    @assert(bitfield[1] == 0b00000000);
+    @assert(bitfield[0] == 0b00000000);
+
+    bitmanip.set_nth_bit_with_swaps(&bitfield, 0, true, kwargs);
+    @assert(bitfield[3] == 0b00000001);
+    @assert(bitfield[2] == 0b00000000);
+    @assert(bitfield[1] == 0b00000000);
+    @assert(bitfield[0] == 0b00000000);
+
+    bitmanip.set_nth_bit_with_swaps(&bitfield, 0, true, kwargs);
+    @assert(bitfield[3] == 0b00000001);
+    @assert(bitfield[2] == 0b00000000);
+    @assert(bitfield[1] == 0b00000000);
+    @assert(bitfield[0] == 0b00000000);
+
+    bitmanip.set_nth_bit_with_swaps(&bitfield, 1, true, kwargs);
+    @assert(bitfield[3] == 0b00000011);
+    @assert(bitfield[2] == 0b00000000);
+    @assert(bitfield[1] == 0b00000000);
+    @assert(bitfield[0] == 0b00000000);
+
+    bitmanip.set_nth_bit_with_swaps(&bitfield, 7, true, kwargs);
+    @assert(bitfield[3] == 0b10000011);
+    @assert(bitfield[2] == 0b00000000);
+    @assert(bitfield[1] == 0b00000000);
+    @assert(bitfield[0] == 0b00000000);
+
+    bitmanip.set_nth_bit_with_swaps(&bitfield, 1, false, kwargs);
+    @assert(bitfield[3] == 0b10000001);
+    @assert(bitfield[2] == 0b00000000);
+    @assert(bitfield[1] == 0b00000000);
+    @assert(bitfield[0] == 0b00000000);
+
+    bitmanip.set_nth_bit_with_swaps(&bitfield, 8, true, kwargs);
+    @assert(bitfield[3] == 0b10000001);
+    @assert(bitfield[2] == 0b00000001);
+    @assert(bitfield[1] == 0b00000000);
+    @assert(bitfield[0] == 0b00000000);
+
+    bitmanip.set_nth_bit_with_swaps(&bitfield, 8, false, kwargs);
+    @assert(bitfield[3] == 0b10000001);
+    @assert(bitfield[2] == 0b00000000);
+    @assert(bitfield[1] == 0b00000000);
+    @assert(bitfield[0] == 0b00000000);
+
+    bitmanip.set_nth_bit_with_swaps(&bitfield, 16, false, kwargs);
+    @assert(bitfield[3] == 0b10000001);
+    @assert(bitfield[2] == 0b00000000);
+    @assert(bitfield[1] == 0b00000000);
+    @assert(bitfield[0] == 0b00000000);
+
+    bitmanip.set_nth_bit_with_swaps(&bitfield, 31, false, kwargs);
+    @assert(bitfield[3] == 0b10000001);
+    @assert(bitfield[2] == 0b00000000);
+    @assert(bitfield[1] == 0b00000000);
+    @assert(bitfield[0] == 0b00000000);
+
+    bitmanip.set_nth_bit_with_swaps(&bitfield, 17, true, kwargs);
+    @assert(bitfield[3] == 0b10000001);
+    @assert(bitfield[2] == 0b00000000);
+    @assert(bitfield[1] == 0b00000010);
+    @assert(bitfield[0] == 0b00000000);
+
+    bitmanip.set_nth_bit_with_swaps(&bitfield, 31, true, kwargs);
+    @assert(bitfield[3] == 0b10000001);
+    @assert(bitfield[2] == 0b00000000);
+    @assert(bitfield[1] == 0b00000010);
+    @assert(bitfield[0] == 0b10000000);
+
+    bitmanip.set_nth_bit_with_swaps(&bitfield, 32, true, kwargs);
+    @assert(bitfield[7] == 0b00000001);
+    @assert(bitfield[6] == 0b00000000);
+    @assert(bitfield[5] == 0b00000000);
+    @assert(bitfield[4] == 0b00000000);
+    @assert(bitfield[3] == 0b10000001);
+    @assert(bitfield[2] == 0b00000000);
+    @assert(bitfield[1] == 0b00000010);
+    @assert(bitfield[0] == 0b10000000);
+
+    bitmanip.set_nth_bit_with_swaps(&bitfield, 41, true, kwargs);
+    @assert(bitfield[7] == 0b00000001);
+    @assert(bitfield[6] == 0b00000010);
+    @assert(bitfield[5] == 0b00000000);
+    @assert(bitfield[4] == 0b00000000);
+    @assert(bitfield[3] == 0b10000001);
+    @assert(bitfield[2] == 0b00000000);
+    @assert(bitfield[1] == 0b00000010);
+    @assert(bitfield[0] == 0b10000000);
+
+    bitmanip.set_nth_bit_with_swaps(&bitfield, 32, false, kwargs);
+    @assert(bitfield[7] == 0b00000000);
+    @assert(bitfield[6] == 0b00000010);
+    @assert(bitfield[5] == 0b00000000);
+    @assert(bitfield[4] == 0b00000000);
+    @assert(bitfield[3] == 0b10000001);
+    @assert(bitfield[2] == 0b00000000);
+    @assert(bitfield[1] == 0b00000010);
+    @assert(bitfield[0] == 0b10000000);
+
+    bitmanip.set_nth_bit_with_swaps(&bitfield, 34, false, kwargs);
+    @assert(bitfield[7] == 0b00000000);
+    @assert(bitfield[6] == 0b00000010);
+    @assert(bitfield[5] == 0b00000000);
+    @assert(bitfield[4] == 0b00000000);
+    @assert(bitfield[3] == 0b10000001);
+    @assert(bitfield[2] == 0b00000000);
+    @assert(bitfield[1] == 0b00000010);
+    @assert(bitfield[0] == 0b10000000);
+}
+
+fn test_set_nth_bit_with_swaps_regression1() void {
+    var bitfield = @zeros([16]u8); // Initialize a 2-byte bitfield
+
+    const kwargs = .{
+        .byteSwap = true,
+        .bitSwap = true,
+    };
+
+    // byte 0: 0b01111110 == 0x7e
+    bitmanip.set_nth_bit_with_swaps(&bitfield, 64 + 1, true, kwargs);
+    bitmanip.set_nth_bit_with_swaps(&bitfield, 64 + 2, true, kwargs);
+    bitmanip.set_nth_bit_with_swaps(&bitfield, 64 + 3, true, kwargs);
+    bitmanip.set_nth_bit_with_swaps(&bitfield, 64 + 4, true, kwargs);
+    bitmanip.set_nth_bit_with_swaps(&bitfield, 64 + 5, true, kwargs);
+    bitmanip.set_nth_bit_with_swaps(&bitfield, 64 + 6, true, kwargs);
+
+    // byte 1: 0b01001100 == 0x4c
+    bitmanip.set_nth_bit_with_swaps(&bitfield, 64 + 8 + 1, true, kwargs); // 9
+    bitmanip.set_nth_bit_with_swaps(&bitfield, 64 + 8 + 4, true, kwargs); // 12
+    bitmanip.set_nth_bit_with_swaps(&bitfield, 64 + 8 + 5, true, kwargs); // 13
+
+    // byte 2: 0b10011100 == 0x9c
+    bitmanip.set_nth_bit_with_swaps(&bitfield, 64 + 16 + 0, true, kwargs); // 16
+    bitmanip.set_nth_bit_with_swaps(&bitfield, 64 + 16 + 3, true, kwargs); // 19
+    bitmanip.set_nth_bit_with_swaps(&bitfield, 64 + 16 + 4, true, kwargs); // 20
+    bitmanip.set_nth_bit_with_swaps(&bitfield, 64 + 16 + 5, true, kwargs); // 21
+
+    // byte 3: 0b10011001 == 0x99
+    bitmanip.set_nth_bit_with_swaps(&bitfield, 64 + 24 + 0, true, kwargs); // 24
+    bitmanip.set_nth_bit_with_swaps(&bitfield, 64 + 24 + 3, true, kwargs); // 27
+    bitmanip.set_nth_bit_with_swaps(&bitfield, 64 + 24 + 4, true, kwargs); // 28
+    bitmanip.set_nth_bit_with_swaps(&bitfield, 64 + 24 + 7, true, kwargs); // 31
+
+    // byte 4: 0b00111100 == 0x3c
+    bitmanip.set_nth_bit_with_swaps(&bitfield, 64 + 32 + 2, true, kwargs); // 34
+    bitmanip.set_nth_bit_with_swaps(&bitfield, 64 + 32 + 3, true, kwargs); // 35
+    bitmanip.set_nth_bit_with_swaps(&bitfield, 64 + 32 + 4, true, kwargs); // 36
+    bitmanip.set_nth_bit_with_swaps(&bitfield, 64 + 32 + 5, true, kwargs); // 37
+
+    // byte 5: 0b10011001 == 0x99
+    bitmanip.set_nth_bit_with_swaps(&bitfield, 64 + 40 + 0, true, kwargs); // 40
+    bitmanip.set_nth_bit_with_swaps(&bitfield, 64 + 40 + 3, true, kwargs); // 43
+    bitmanip.set_nth_bit_with_swaps(&bitfield, 64 + 40 + 4, true, kwargs); // 44
+    bitmanip.set_nth_bit_with_swaps(&bitfield, 64 + 40 + 7, true, kwargs); // 47
+
+    // byte 6: 0b00111001 == 0x39
+    bitmanip.set_nth_bit_with_swaps(&bitfield, 64 + 48 + 2, true, kwargs); // 50
+    bitmanip.set_nth_bit_with_swaps(&bitfield, 64 + 48 + 3, true, kwargs); // 51
+    bitmanip.set_nth_bit_with_swaps(&bitfield, 64 + 48 + 4, true, kwargs); // 52
+    bitmanip.set_nth_bit_with_swaps(&bitfield, 64 + 48 + 7, true, kwargs); // 55
+
+    // byte 7: 0b00110010 == 0x32
+    bitmanip.set_nth_bit_with_swaps(&bitfield, 64 + 56 + 2, true, kwargs); // 58
+    bitmanip.set_nth_bit_with_swaps(&bitfield, 64 + 56 + 3, true, kwargs); // 59
+    bitmanip.set_nth_bit_with_swaps(&bitfield, 64 + 56 + 6, true, kwargs); // 62
+
+    @assert(bitfield[0] == 0x00);
+    @assert(bitfield[1] == 0x00);
+    @assert(bitfield[2] == 0x00);
+    @assert(bitfield[3] == 0x00);
+    @assert(bitfield[4] == 0x00);
+    @assert(bitfield[5] == 0x00);
+    @assert(bitfield[6] == 0x00);
+    @assert(bitfield[7] == 0x00);
+    @assert(bitfield[8 + 0] == 0x99 and 0x99 == 0b10011001);
+    @assert(bitfield[8 + 1] == 0x9c and 0x9c == 0b10011100);
+    @assert(bitfield[8 + 2] == 0x4c and 0x4c == 0b01001100);
+    @assert(bitfield[8 + 3] == 0x7e and 0x7e == 0b01111110);
+    @assert(bitfield[8 + 4] == 0x32 and 0x32 == 0b00110010);
+    @assert(bitfield[8 + 5] == 0x39 and 0x39 == 0b00111001);
+    @assert(bitfield[8 + 6] == 0x99 and 0x99 == 0b10011001);
+    @assert(bitfield[8 + 7] == 0x3c and 0x3c == 0b00111100);
+}
+
+fn test_set_nth_bit_with_swaps_regression2() void {
+    var bitfield = @zeros([16]u8); // Initialize a 2-byte bitfield
+
+    const kwargs = .{
+        .byteSwap = true,
+        .bitSwap = false,
+    };
+
+    // byte 0
+    bitmanip.set_nth_bit_with_swaps(&bitfield, 64, true, kwargs);
+
+    // byte 1
+    bitmanip.set_nth_bit_with_swaps(&bitfield, 64 + 8 + 1, true, kwargs);
+
+    // byte 2
+    bitmanip.set_nth_bit_with_swaps(&bitfield, 64 + 16 + 2, true, kwargs);
+
+    // byte 3
+    bitmanip.set_nth_bit_with_swaps(&bitfield, 64 + 24 + 3, true, kwargs);
+
+    // byte 4
+    bitmanip.set_nth_bit_with_swaps(&bitfield, 64 + 32 + 4, true, kwargs);
+
+    // byte 5
+    bitmanip.set_nth_bit_with_swaps(&bitfield, 64 + 40 + 5, true, kwargs);
+
+    // byte 6
+    bitmanip.set_nth_bit_with_swaps(&bitfield, 64 + 48 + 6, true, kwargs);
+
+    // byte 7
+    bitmanip.set_nth_bit_with_swaps(&bitfield, 64 + 56 + 7, true, kwargs);
+
+    @assert(bitfield[0] == 0x00);
+    @assert(bitfield[1] == 0x00);
+    @assert(bitfield[2] == 0x00);
+    @assert(bitfield[3] == 0x00);
+    @assert(bitfield[4] == 0x00);
+    @assert(bitfield[5] == 0x00);
+    @assert(bitfield[6] == 0x00);
+    @assert(bitfield[7] == 0x00);
+    @assert(bitfield[8 + 3] == 1);
+    @assert(bitfield[8 + 2] == 2);
+    @assert(bitfield[8 + 1] == 4);
+    @assert(bitfield[8 + 0] == 8);
+    @assert(bitfield[8 + 7] == 16);
+    @assert(bitfield[8 + 6] == 32);
+    @assert(bitfield[8 + 5] == 64);
+    @assert(bitfield[8 + 4] == 128);
+}
+
 fn test_randomize() void {
     random.set_global_prng_seed(1);
     var bitfield = @zeros([2]u16); // Initialize a 2-byte bitfield
@@ -89,8 +559,14 @@ fn test_randomize() void {
     @assert(bitfield[1] != 0);
 }
 
-
 fn do_test() void {
     test_flip_nth_bit();
+    test_set_nth_bit();
+    test_set_nth_bit_regression1();
+    test_set_nth_bit_regression2();
+    test_flip_nth_bit_with_swaps();
+    test_set_nth_bit_with_swaps();
+    test_set_nth_bit_with_swaps_regression1();
+    test_set_nth_bit_with_swaps_regression2();
     test_randomize();
 }

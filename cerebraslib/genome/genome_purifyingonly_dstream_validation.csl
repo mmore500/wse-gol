@@ -1,0 +1,244 @@
+// memory layout ===============================================================
+// byte 0 FITNESS (f32, 4 bytes)
+// byte 1
+// byte 2
+// byte 3
+// byte 4 COUNTER (u32, 4 bytes)
+// byte 5
+// byte 6
+// byte 7
+// byte 8 BITFIELD (8 bytes)
+// byte 9
+// byte 10
+// byte 11
+// byte 12
+// byte 13
+// byte 14
+// byte 15
+// TOTAL: 4 words -> 16 bytes
+
+// TODO why can't this be 4 words?
+// TODO see https://github.com/mmore500/wse-async-ga/issues/4
+//! {
+//!     "dstream_algo": (
+//!         "dstream." + compconf_data.get(
+//!             "CEREBRASLIB_HSTRAT_DSTREAM_ALGO_NAME:comptime_string", "tilted_algo"
+//!         ),
+//!         pl.Categorical,
+//!     ),
+//!     "downstream_validate_exploded": (
+//!         {
+//!             "block": "pl.col('dstream_value') == pl.col('dstream_Tbar') // 33",
+//!             "checkerboard": "pl.col('dstream_value') == pl.col('dstream_Tbar') % 2",
+//!             "hopscotch": "pl.col('dstream_value') == 1 - (pl.col('dstream_Tbar') % 3).sign()",
+//!         }[
+//!             compconf_data.get("CEREBRASLIB_DSTREAM_VALIDATOR:comptime_string", "checkerboard")
+//!         ],
+//!         pl.Categorical,
+//!     ),
+//!     "downstream_validate_unpacked": (
+//!         f"""pl.col('dstream_T') == {
+//!             compconf_data.get("CEREBRASLIB_DSTREAM_EXPECTED_T:u32", 64)
+//!         }""",
+//!        pl.Categorical,
+//!     ),
+//!     "dstream_storage_bitoffset": (64, pl.UInt8),
+//!     "dstream_storage_bitwidth": (64, pl.UInt8),
+//!     "dstream_T_bitoffset": (32, pl.UInt8),
+//!     "dstream_T_bitwidth": (32, pl.UInt8),
+//!     "dstream_S": (64, pl.UInt8),
+//!     "nWav": (5, pl.UInt8),
+//! }
+
+// module imports =============================================================
+const math = @import_module("<math>");
+const random = @import_module("<random>");
+
+const compconf = @import_module("<compconf>");
+comptime { // access via get_value for logging...
+    const _ = compconf.get_value_or(
+        "CEREBRASLIB_HSTRAT_DSTREAM_ALGO_NAME",
+        "tilted_algo",
+    );
+} // ... raw string works around sdk v1.0.0 limitation
+const compconf_raw = @import_module("<compconf_raw>");
+const has_value = compconf.has_value("CEREBRASLIB_HSTRAT_DSTREAM_ALGO_NAME");
+const dstream_algo_name = (if (has_value)
+    compconf_raw.CEREBRASLIB_HSTRAT_DSTREAM_ALGO_NAME
+else
+    "tilted_algo");
+const dstream_algo = @import_module(
+    @strcat("<downstream/dstream/", dstream_algo_name, ">"),
+);
+const dstream_expected_T = compconf.get_value_or(
+    "CEREBRASLIB_DSTREAM_EXPECTED_T",
+    @as(u32, 64),
+);
+const validator = compconf.get_value_or(
+    "CEREBRASLIB_DSTREAM_VALIDATOR",
+    "checkerboard",
+);
+
+const bitmanip = @import_module("cerebraslib/bitmanip.csl");
+const opscalar = @import_module("cerebraslib/opscalar.csl");
+const tilted = @import_module("cerebraslib/tilted_sticky.csl");
+
+// module config specs ========================================================
+const gSize: u16 = 5;
+const genome_t = [gSize]u32;
+const genomePtr_t = [*]u32;
+const nTraitVals: u16 = 1;
+
+// internal functions =========================================================
+fn _apply_mutation(genome: genomePtr_t) void {
+    var mutated = calc_fitness_of(genome);
+    const scale = (mutated + 1.0) / 1024.0;
+
+    if (opscalar.p(0.3)) {
+        mutated -= math.abs(random.random_normal_f32()) * scale;
+    }
+    // mutate fitness value
+    @ptrcast(*f32, genome).* = mutated;
+}
+
+fn _step_instrumentation(genome: genomePtr_t) void {
+    // elapse generation in bitfield
+    const S = 64;
+    const T = @ptrcast([*]u32, genome)[1];
+    const site = dstream_algo.assign_storage_site(S, T);
+
+    const offset_bits: u16 = (4 + 4) * 8;
+    const target_bit = @as(u16, site) + offset_bits;
+
+    const value = if (validator == "block")
+        T / 33 == 1
+    else if (validator == "checkerboard")
+        T % 2 == 1
+    else if (validator == "hopscotch")
+        T % 3 == 0
+    else
+        false;
+
+    const genome_bytes = @ptrcast([*]u8, genome);
+    if (site != S) bitmanip.set_nth_bit_with_swaps(
+        genome_bytes,
+        target_bit,
+        value,
+        .{ .byteSwap = true, .bitSwap = true },
+    );
+
+    // elapse generation in counter
+    @ptrcast([*]u32, genome)[1] += 1;
+}
+
+// public API =================================================================
+fn elapse_inheritance_of(genome: genomePtr_t) void {
+    _apply_mutation(genome);
+}
+
+fn calc_fitness_of(genome: genomePtr_t) f32 {
+    return @ptrcast(*f32, genome).*;
+}
+
+fn get_trait_value(genome: genomePtr_t) u32 {
+    return 0;
+}
+
+fn initialize_one(genome: genomePtr_t) void {
+    @ptrcast(*f32, genome).* = 0.0;
+    @ptrcast([*]u32, genome)[1] = 0;
+    @ptrcast([*]u32, genome)[2] = 0;
+    @ptrcast([*]u32, genome)[3] = 0;
+    for (@range(u32, dstream_expected_T)) |_| {
+        _step_instrumentation(genome);
+    }
+}
+
+// debugging ==================================================================
+// bitmanip.set_nth_bit_bigendian(genome_bytes, 64 + 1, true);
+// bitmanip.set_nth_bit_bigendian(genome_bytes, 64 + 2, true);
+// bitmanip.set_nth_bit_bigendian(genome_bytes, 64 + 34, true);
+// bitmanip.set_nth_bit_bigendian(genome_bytes, 64 + 3, true);
+// bitmanip.set_nth_bit_bigendian(genome_bytes, 64 + 19, true);
+// bitmanip.set_nth_bit_bigendian(genome_bytes, 64 + 35, true);
+// bitmanip.set_nth_bit_bigendian(genome_bytes, 64 + 50, true);
+// bitmanip.set_nth_bit_bigendian(genome_bytes, 64 + 4, true);
+// bitmanip.set_nth_bit_bigendian(genome_bytes, 64 + 12, true);
+// bitmanip.set_nth_bit_bigendian(genome_bytes, 64 + 20, true);
+// bitmanip.set_nth_bit_bigendian(genome_bytes, 64 + 27, true);
+// bitmanip.set_nth_bit_bigendian(genome_bytes, 64 + 36, true);
+// bitmanip.set_nth_bit_bigendian(genome_bytes, 64 + 43, true);
+// bitmanip.set_nth_bit_bigendian(genome_bytes, 64 + 51, true);
+// bitmanip.set_nth_bit_bigendian(genome_bytes, 64 + 58, true);
+// bitmanip.set_nth_bit_bigendian(genome_bytes, 64 + 5, true);
+// bitmanip.set_nth_bit_bigendian(genome_bytes, 64 + 9, true);
+// bitmanip.set_nth_bit_bigendian(genome_bytes, 64 + 13, true);
+// bitmanip.set_nth_bit_bigendian(genome_bytes, 64 + 16, true);
+// bitmanip.set_nth_bit_bigendian(genome_bytes, 64 + 21, true);
+// bitmanip.set_nth_bit_bigendian(genome_bytes, 64 + 24, true);
+// bitmanip.set_nth_bit_bigendian(genome_bytes, 64 + 28, true);
+// bitmanip.set_nth_bit_bigendian(genome_bytes, 64 + 31, true);
+// bitmanip.set_nth_bit_bigendian(genome_bytes, 64 + 37, true);
+// bitmanip.set_nth_bit_bigendian(genome_bytes, 64 + 40, true);
+// bitmanip.set_nth_bit_bigendian(genome_bytes, 64 + 44, true);
+// bitmanip.set_nth_bit_bigendian(genome_bytes, 64 + 47, true);
+// bitmanip.set_nth_bit_bigendian(genome_bytes, 64 + 52, true);
+// bitmanip.set_nth_bit_bigendian(genome_bytes, 64 + 55, true);
+// bitmanip.set_nth_bit_bigendian(genome_bytes, 64 + 59, true);
+// bitmanip.set_nth_bit_bigendian(genome_bytes, 64 + 62, true);
+// bitmanip.set_nth_bit_bigendian(genome_bytes, 64 + 6, true);
+
+// _swap_bytes(&genome_bytes[9], &genome_bytes[13]);
+// _swap_bytes(&genome_bytes[10], &genome_bytes[12]);
+
+// bitmanip.set_nth_bit(genome_bytes, 64 + 24 + 1, true);
+// bitmanip.set_nth_bit(genome_bytes, 64 + 24 + 2, true);
+// bitmanip.set_nth_bit(genome_bytes, 64 + 24 + 3, true);
+// bitmanip.set_nth_bit(genome_bytes, 64 + 24 + 4, true);
+// bitmanip.set_nth_bit(genome_bytes, 64 + 24 + 5, true);
+// bitmanip.set_nth_bit(genome_bytes, 64 + 24 + 6, true);
+
+// bitmanip.set_nth_bit(genome_bytes, 64 + 8 + 9, true);
+// bitmanip.set_nth_bit(genome_bytes, 64 + 8 + 12, true);
+// bitmanip.set_nth_bit(genome_bytes, 64 + 8 + 13, true);
+
+// bitmanip.set_nth_bit(genome_bytes, 64 - 8 + 16, true);
+// bitmanip.set_nth_bit(genome_bytes, 64 - 8 + 19, true);
+// bitmanip.set_nth_bit(genome_bytes, 64 - 8 + 20, true);
+// bitmanip.set_nth_bit(genome_bytes, 64 - 8 + 21, true);
+
+// bitmanip.set_nth_bit(genome_bytes, 64 - 24 + 24, true);
+// bitmanip.set_nth_bit(genome_bytes, 64 - 24 + 27, true);
+// bitmanip.set_nth_bit(genome_bytes, 64 - 24 + 28, true);
+// bitmanip.set_nth_bit(genome_bytes, 64 - 24 + 31, true);
+
+// bitmanip.set_nth_bit(genome_bytes, 64 + 24 + 34, true);
+// bitmanip.set_nth_bit(genome_bytes, 64 + 24 + 35, true);
+// bitmanip.set_nth_bit(genome_bytes, 64 + 24 + 36, true);
+// bitmanip.set_nth_bit(genome_bytes, 64 + 24 + 37, true);
+
+// bitmanip.set_nth_bit(genome_bytes, 64 + 8 + 40, true);
+// bitmanip.set_nth_bit(genome_bytes, 64 + 8 + 43, true);
+// bitmanip.set_nth_bit(genome_bytes, 64 + 8 + 44, true);
+// bitmanip.set_nth_bit(genome_bytes, 64 + 8 + 47, true);
+
+// bitmanip.set_nth_bit(genome_bytes, 64 - 8 + 50, true);
+// bitmanip.set_nth_bit(genome_bytes, 64 - 8 + 51, true);
+// bitmanip.set_nth_bit(genome_bytes, 64 - 8 + 52, true);
+// bitmanip.set_nth_bit(genome_bytes, 64 - 8 + 55, true);
+
+// bitmanip.set_nth_bit(genome_bytes, 64 - 24 + 58, true);
+// bitmanip.set_nth_bit(genome_bytes, 64 - 24 + 59, true);
+// bitmanip.set_nth_bit(genome_bytes, 64 - 24 + 62, true);
+
+// _swap_bytes(&genome_bytes[8 + 1], &genome_bytes[8 + 4 + 1]);
+// _swap_bytes(&genome_bytes[8 + 2], &genome_bytes[8 + 4]);
+
+// genome_bytes[8 + 0] = 0x99;
+// genome_bytes[8 + 1] = 0x9c;
+// genome_bytes[8 + 2] = 0x4c;
+// genome_bytes[8 + 3] = 0x7e;
+// genome_bytes[8 + 4] = 0x32;
+// genome_bytes[8 + 5] = 0x39;
+// genome_bytes[8 + 6] = 0x99;
+// genome_bytes[8 + 7] = 0x3c;
