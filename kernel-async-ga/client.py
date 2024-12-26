@@ -357,7 +357,7 @@ while nonBlock:
 log("fossils ====================================================")
 log(f" - {len(fossils)=}")
 
-max_fossil_sets = os.environ.get("ASYNC_GA_MAX_FOSSIL_SETS", 2**32 - 1)
+max_fossil_sets = int(os.environ.get("ASYNC_GA_MAX_FOSSIL_SETS", 2**32 - 1))
 log(f" - {max_fossil_sets=}")
 fossils = fossils[:max_fossil_sets]
 
