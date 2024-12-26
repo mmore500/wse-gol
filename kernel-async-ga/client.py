@@ -5,6 +5,7 @@ import atexit
 from collections import Counter
 import itertools as it
 import json
+import multiprocessing
 import os
 import pathlib
 import uuid
@@ -69,6 +70,9 @@ def hexify_genome_data(
             print_(f"{genome_string=}")
 
     return genome_strings
+
+def hexify_genome_data_silent(data: "np.ndarray") -> typing.List[str]:
+    return hexify_genome_data(data, verbose=False)
 
 
 print_("- setting up temp dir")
@@ -350,10 +354,12 @@ if len(fossils):
     print_("- example hexification")
     hexify_genome_data(fossils[0], verbose=True)
 
-fossils = [
-    hexify_genome_data(genome_data, verbose=False)
-    for genome_data in tqdm(fossils)
-]
+with multiprocessing.Pool() as pool:
+    # Map our function over fossils in parallel, and use tqdm for a progress bar
+    work = pool.imap(hexify_genome_data, fossils)
+    fossils = [*tqdm(work, total=len(fossils), desc="hexing fossils")]
+
+print(f" - {len(fossils)=}")
 
 if fossils:
     fossils = np.array(fossils)
