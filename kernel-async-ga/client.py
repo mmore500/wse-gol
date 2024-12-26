@@ -346,7 +346,6 @@ while nonBlock:
     print("3", end="", flush=True)
     should_break = (num_complete == cycle_counts.size)
     print(f"({num_complete/cycle_counts.size * 100}%)", end="", flush=True)
-    print(f"{should_break=}", flush=True)
     if should_break:
         print("!", flush=True)
         break
