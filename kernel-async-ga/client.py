@@ -114,10 +114,10 @@ def write_parquet_verbose(df: pl.DataFrame, file_name: str) -> None:
     df.write_parquet(tmp_file, compression="lz4")
     print("- write_parquet complete")
 
-    file_size_mb = os.path.getsize(file_name) / (1024 * 1024)
+    file_size_mb = os.path.getsize(tmp_file) / (1024 * 1024)
     print(f"- saved file size: {file_size_mb:.2f} MB")
 
-    lazy_frame = pl.scan_parquet(file_name)
+    lazy_frame = pl.scan_parquet(tmp_file)
     print("- LazyFrame describe:")
     print(lazy_frame.describe())
 
