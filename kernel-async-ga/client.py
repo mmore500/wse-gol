@@ -11,7 +11,6 @@ import uuid
 import shutil
 import subprocess
 import sys
-import textwrap
 import typing
 
 
@@ -50,14 +49,26 @@ def hexify_genome_data(
         print_("--------------------------------------------------- genome hex string")
         print_(f"{genome_hex[:100]=}", len(genome_hex))
 
-    genome_hexes = textwrap.wrap(genome_hex, nWav * wavSize // 4)
-    assert len(genome_hexes) == nRow * nCol
+    genome_bytes = bytearray(genome_hex, "ascii")
+    if verbose:
+        print_("--------------------------------------------------- genome bytes")
+        print_(f"{genome_bytes[:100]=}", len(genome_bytes))
+
+    genome_chars = np.frombuffer(genome_bytes, dtype="S1").astype(str)
+    if verbose:
+        print_("--------------------------------------------------- genome chars")
+        print_(f"{genome_chars[:100]=}", len(genome_chars))
+
+    chunk_size = nWav * wavSize // 4
+    reshaped = genome_chars.reshape(-1, chunk_size)
+    genome_strings = np.apply_along_axis("".join, 1, reshaped)
+    assert len(genome_strings) == nRow * nCol
     if verbose:
         print_("------------------------------------------------ genome hex strings")
-        for genome_hex_ in genome_hexes[:10]:
-            print_(f"{genome_hex_=}")
+        for genome_string in genome_strings[:10]:
+            print_(f"{genome_string=}")
 
-    return genome_hexes
+    return genome_strings
 
 
 print_("- setting up temp dir")
