@@ -15,7 +15,7 @@ cd "$(dirname "$0")"
 
 echo "SLURM_JOB_ID ${SLURM_JOB_ID:-}"
 
-WSE_ASYNC_GA_REVISION="9899c44dd0db48df2d0d80448ed59e36ea5380eb"
+WSE_ASYNC_GA_REVISION="f573313a10f8c1d2db58899b805b00904a734045"
 echo "WSE_ASYNC_GA_REVISION ${WSE_ASYNC_GA_REVISION}"
 
 WORKDIR="${HOME}/scratch/2024-12-25/lex11+async-ga"
@@ -55,7 +55,7 @@ echo "ASYNC_GA_NCOL_SUBGRID ${ASYNC_GA_NCOL_SUBGRID}"
 export ASYNC_GA_NROW_SUBGRID=0
 echo "ASYNC_GA_NROW_SUBGRID ${ASYNC_GA_NROW_SUBGRID}"
 
-export ASYNC_GA_NCYCLE_AT_LEAST=100000
+export ASYNC_GA_NCYCLE_AT_LEAST=1000000
 echo "ASYNC_GA_NCYCLE_AT_LEAST ${ASYNC_GA_NCYCLE_AT_LEAST}"
 
 NREP=1
@@ -125,8 +125,8 @@ cat > "${SBATCH_FILE}" << EOF
 #!/bin/bash
 #SBATCH --gres=cs:cerebras:1
 #SBATCH --ntasks=1
-#SBATCH --cpus-per-task=56
-#SBATCH --mem=128G
+#SBATCH --cpus-per-task=512
+#SBATCH --mem=256G
 #SBATCH --time=0:30:00
 #SBATCH --output="/jet/home/%u/joblog/%j"
 #SBATCH --exclude=sdf-2
@@ -183,7 +183,7 @@ cd "${WORKDIR}"
 echo "PWD \${PWD}"
 
 echo "execute kernel program -------------------------------------------------"
-export ASYNC_GA_MAX_FOSSIL_SETS=100
+export ASYNC_GA_MAX_FOSSIL_SETS=1000
 echo "ASYNC_GA_MAX_FOSSIL_SETS \${ASYNC_GA_MAX_FOSSIL_SETS}"
 ./${SLUG}/kernel-async-ga/execute.sh
 # clean up and save space
