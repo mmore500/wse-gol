@@ -268,7 +268,7 @@ log("- runner launch complete")
 log(f"- {nonBlock=}, if True waiting for first kernel to finish...")
 fossils = []
 while nonBlock:
-    print("1", flush=True)
+    print("1", end="", flush=True)
     memcpy_dtype = MemcpyDataType.MEMCPY_32BIT
     out_tensors = np.zeros((nCol, nRow, nWav), np.uint32)
 
@@ -357,7 +357,7 @@ while nonBlock:
 log("fossils ====================================================")
 log(f" - {len(fossils)=}")
 
-max_fossil_sets = os.environ("ASYNC_GA_MAX_FOSSIL_SETS", 2**32 - 1)
+max_fossil_sets = os.environ.get("ASYNC_GA_MAX_FOSSIL_SETS", 2**32 - 1)
 log(f" - {max_fossil_sets=}")
 fossils = fossils[:max_fossil_sets]
 
