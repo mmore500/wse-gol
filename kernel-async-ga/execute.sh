@@ -9,7 +9,7 @@ echo "ASYNC_GA_EXECUTE_FLAGS ${ASYNC_GA_EXECUTE_FLAGS:-}"
 
 echo "setup LOCAL -------------------------------------------------------------"
 echo "LOCAL ${LOCAL:-}"
-export LOCAL="${LOCAL:-local}/$(uuidgen)"
+export LOCAL="${LOCAL:-local}/bio240020p/$(uuidgen)"
 echo "LOCAL ${LOCAL}"
 mkdir -p "${LOCAL}"
 touch "${LOCAL}/.touch"
