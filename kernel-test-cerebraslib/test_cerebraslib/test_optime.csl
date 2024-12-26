@@ -92,7 +92,7 @@ fn test_has_elapsed_tsc() void {
     }
     @assert(count == 0);
 
-    while (!optime.has_elapsed_tsc(2, &tsc_start, &tsc_end)) {
+    while (!optime.has_elapsed_tsc(2000, &tsc_start, &tsc_end)) {
         count += 1;
         time.get_timestamp(&tsc_end);
     }
