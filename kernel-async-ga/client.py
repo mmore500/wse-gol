@@ -282,10 +282,13 @@ while nonBlock:
     print("4", end="", flush=True)
 
     cycle_counts = out_tensors.ravel().copy()
-    should_break = np.any(cycle_counts >= nCycleAtLeast)
+    num_complete = np.sum(cycle_counts >= nCycleAtLeast)
     print("5", end="", flush=True)
+
+    should_break = num_complete > 0
+    print(f"({num_complete/cycle_counts.size * 100}%)", end="", flush=True)
     if should_break:
-        print()
+        print("!")
         break
     else:
         print("|", end="", flush=True)
@@ -312,10 +315,13 @@ while nonBlock:
     print("2", end="", flush=True)
 
     cycle_counts = out_tensors.ravel().copy()
-    should_break = np.all(cycle_counts >= nCycleAtLeast)
+    num_complete = np.sum(cycle_counts >= nCycleAtLeast)
     print("3", end="", flush=True)
+    should_break = num_complete == cycle_counts.size
+    print(f"({num_complete/cycle_counts.size * 100}%)", end="", flush=True)
+
     if should_break:
-        print()
+        print("!")
         break
     else:
         print("|", end="", flush=True)
