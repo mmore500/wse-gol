@@ -58,7 +58,7 @@ def hexify_genome_data(
 
 print("- setting up temp dir")
 # need to add polars to Cerebras python
-temp_dir = f"tmp/{uuid.uuid4()}"
+temp_dir = f"/local/tmp/{uuid.uuid4()}"
 os.makedirs(temp_dir, exist_ok=True)
 atexit.register(shutil.rmtree, temp_dir, ignore_errors=True)
 print(f"  - {temp_dir=}")
@@ -78,6 +78,7 @@ for attempt in range(4):
                 "TMPDIR": temp_dir,
             },
         )
+        print("- pip install succeeded!")
         break
     except subprocess.CalledProcessError as e:
         print(e)
@@ -109,7 +110,8 @@ def write_parquet_verbose(df: pl.DataFrame, file_name: str) -> None:
     print(f"saving df to {file_name=}")
     print(f"- {df.shape=}")
 
-    df.write_parquet(file_name, compression="lz4")
+    tmp_file = "/local/tmp.pqt"
+    df.write_parquet(tmp_file, compression="lz4")
     print("- write_parquet complete")
 
     file_size_mb = os.path.getsize(file_name) / (1024 * 1024)
@@ -125,6 +127,10 @@ def write_parquet_verbose(df: pl.DataFrame, file_name: str) -> None:
         f"Row count mismatch between original and lazy frames: "
         f"{original_row_count=}, {lazy_row_count=}"
     )
+
+    shutil.copy(tmp_file, file_name)
+    print(f"- copy {tmp_file} to destination {file_name} complete")
+
     print("- verbose save complete!")
 
 # adapted from https://stackoverflow.com/a/31347222/17332200
