@@ -127,7 +127,7 @@ cat > "${SBATCH_FILE}" << EOF
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=56
 #SBATCH --mem=128G
-#SBATCH --time=0:15:00
+#SBATCH --time=0:30:00
 #SBATCH --output="/jet/home/%u/joblog/%j"
 #SBATCH --exclude=sdf-2
 
