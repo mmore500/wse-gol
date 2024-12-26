@@ -5,6 +5,7 @@ import atexit
 from collections import Counter
 import itertools as it
 import json
+import logging
 import multiprocessing
 import os
 import pathlib
@@ -14,9 +15,16 @@ import subprocess
 import sys
 import typing
 
+logging.basicConfig(
+    datefmt="%Y-%m-%d %H:%M:%S",
+    format="%(asctime)s %(levelname)-8s %(message)s",
+    level=logging.INFO,
+)
 
-def print_(*args, **kwargs) -> None:
-    return print(*args, **kwargs, flush=True)
+def log(msg, *args, **kwargs):
+    msg = str(msg)
+    msg = msg.replace("\n", "\n" + " " * 29)
+    logging.info(msg, *args, **kwargs)
 
 
 def removeprefix(text: str, prefix: str) -> str:
@@ -31,43 +39,43 @@ def hexify_genome_data(
 ) -> typing.List[str]:
     if verbose:
         for word in range(nWav):
-            print_(f"---------------------------------------------- genome word {word}")
+            log(f"---------------------------------------------- genome word {word}")
             values = (
                 inner[word] for outer in raw_genome_data for inner in outer
             )
-            print_([*it.islice(values, 10)])
+            log(str([*it.islice(values, 10)]))
 
     shape = raw_genome_data.shape
     genome_ints = raw_genome_data.astype(">u4").reshape(-1, shape[-1])
     assert len(genome_ints) == nRow * nCol
     if verbose:
-        print_("------------------------------------------------ genome u32 ints")
+        log("------------------------------------------------ genome u32 ints")
         for genome_int in genome_ints[:10]:
-            print_(f"{genome_int=}")
+            log(f"{len(genome_ints)=} {genome_int=}")
 
     genome_hex = genome_ints.tobytes().hex()
     if verbose:
-        print_("--------------------------------------------------- genome hex string")
-        print_(f"{genome_hex[:100]=}", len(genome_hex))
+        log("------------------------------------------- genome hex string")
+        log(f"{len(genome_hex)=} {genome_hex[:100]=}")
 
     genome_bytes = bytearray(genome_hex, "ascii")
     if verbose:
-        print_("--------------------------------------------------- genome bytes")
-        print_(f"{genome_bytes[:100]=}", len(genome_bytes))
+        log("------------------------------------------- genome bytes")
+        log(f"{len(genome_bytes)=} {genome_bytes[:100]=}")
 
     genome_chars = np.frombuffer(genome_bytes, dtype="S1").astype(str)
     if verbose:
-        print_("--------------------------------------------------- genome chars")
-        print_(f"{genome_chars[:100]=}", len(genome_chars))
+        log("------------------------------------------- genome chars")
+        log(f"{len(genome_chars)=} {genome_chars[:100]=}")
 
     chunk_size = nWav * wavSize // 4
     reshaped = genome_chars.reshape(-1, chunk_size)
     genome_strings = np.apply_along_axis("".join, 1, reshaped)
     assert len(genome_strings) == nRow * nCol
     if verbose:
-        print_("------------------------------------------------ genome hex strings")
+        log("------------------------------------------------ genome hex strings")
         for genome_string in genome_strings[:10]:
-            print_(f"{genome_string=}")
+            log(f"{genome_string=}")
 
     return genome_strings
 
@@ -75,13 +83,13 @@ def hexify_genome_data_silent(data: "np.ndarray") -> typing.List[str]:
     return hexify_genome_data(data, verbose=False)
 
 
-print_("- setting up temp dir")
+log("- setting up temp dir")
 # need to add polars to Cerebras python
 temp_dir = f"/local/tmp/{uuid.uuid4()}"
 os.makedirs(temp_dir, exist_ok=True)
 atexit.register(shutil.rmtree, temp_dir, ignore_errors=True)
-print_(f"  - {temp_dir=}")
-print_("- installing polars")
+log(f"  - {temp_dir=}")
+log("- installing polars")
 for attempt in range(4):
     try:
         subprocess.check_call(
@@ -97,48 +105,48 @@ for attempt in range(4):
                 "TMPDIR": temp_dir,
             },
         )
-        print_("- pip install succeeded!")
+        log("- pip install succeeded!")
         break
     except subprocess.CalledProcessError as e:
-        print_(e)
-        print_(f"retrying {attempt=}...")
+        log(e)
+        log(f"retrying {attempt=}...")
 else:
     raise e
-print_(f"- extending sys path with temp dir {temp_dir=}")
+log(f"- extending sys path with temp dir {temp_dir=}")
 sys.path.append(temp_dir)
 
-print_("- importing third-party dependencies")
+log("- importing third-party dependencies")
 import numpy as np
-print_("  - numpy")
+log("  - numpy")
 import polars as pl
-print_("  - polars")
+log("  - polars")
 from scipy import stats as sps
-print_("  - scipy")
+log("  - scipy")
 from tqdm import tqdm
-print_("  - tqdm")
+log("  - tqdm")
 
-print_("- importing cerebras depencencies")
+log("- importing cerebras depencencies")
 from cerebras.sdk.runtime.sdkruntimepybind import (
     MemcpyDataType,
     MemcpyOrder,
     SdkRuntime,
 )  # pylint: disable=no-name-in-module
 
-print_("- defining helper functions")
+log("- defining helper functions")
 def write_parquet_verbose(df: pl.DataFrame, file_name: str) -> None:
-    print_(f"saving df to {file_name=}")
-    print_(f"- {df.shape=}")
+    log(f"saving df to {file_name=}")
+    log(f"- {df.shape=}")
 
     tmp_file = "/local/tmp.pqt"
     df.write_parquet(tmp_file, compression="lz4")
-    print_("- write_parquet complete")
+    log("- write_parquet complete")
 
     file_size_mb = os.path.getsize(tmp_file) / (1024 * 1024)
-    print_(f"- saved file size: {file_size_mb:.2f} MB")
+    log(f"- saved file size: {file_size_mb:.2f} MB")
 
     lazy_frame = pl.scan_parquet(tmp_file)
-    print_("- LazyFrame describe:")
-    print_(lazy_frame.describe())
+    log("- LazyFrame describe:")
+    log(lazy_frame.describe())
 
     original_row_count = df.shape[0]
     lazy_row_count = lazy_frame.select(pl.count()).collect().item()
@@ -148,9 +156,9 @@ def write_parquet_verbose(df: pl.DataFrame, file_name: str) -> None:
     )
 
     shutil.copy(tmp_file, file_name)
-    print_(f"- copy {tmp_file} to destination {file_name} complete")
+    log(f"- copy {tmp_file} to destination {file_name} complete")
 
-    print_("- verbose save complete!")
+    log("- verbose save complete!")
 
 # adapted from https://stackoverflow.com/a/31347222/17332200
 def add_bool_arg(parser, name, default=False):
@@ -159,32 +167,32 @@ def add_bool_arg(parser, name, default=False):
     group.add_argument("--no-" + name, dest=name, action="store_false")
     parser.set_defaults(**{name: default})
 
-print_("- reading env variables")
+log("- reading env variables")
 # number of rows, columns, and genome words
 nCol = int(os.getenv("ASYNC_GA_NCOL", 3))
 nRow = int(os.getenv("ASYNC_GA_NROW", 3))
 nWav = int(os.getenv("ASYNC_GA_NWAV", -1))
 nTrait = int(os.getenv("ASYNC_GA_NTRAIT", 1))
-print_(f"{nCol=}, {nRow=}, {nWav=}, {nTrait=}")
+log(f"{nCol=}, {nRow=}, {nWav=}, {nTrait=}")
 
-print_("- setting global variables")
+log("- setting global variables")
 wavSize = 32  # number of bits in a wavelet
 tscSizeWords = 3  # number of 16-bit values in 48-bit timestamp values
 tscSizeWords += tscSizeWords % 2  # make even multiple of 32-bit words
 tscTicksPerSecond = 850 * 10**6  # 850 MHz
 
-print_("- configuring argparse")
+log("- configuring argparse")
 parser = argparse.ArgumentParser()
 parser.add_argument("--name", help="the test compile output dir", default="out")
 add_bool_arg(parser, "suptrace", default=True)
 parser.add_argument("--cmaddr", help="IP:port for CS system")
-print_("- parsing arguments")
+log("- parsing arguments")
 args = parser.parse_args()
 
-print_("args =================================================================")
-print_(args)
+log("args =======================================================")
+log(args)
 
-print_("metadata =============================================================")
+log("metadata ===================================================")
 with open(f"{args.name}/out.json", encoding="utf-8") as json_file:
     compile_data = json.load(json_file)
 
@@ -204,19 +212,19 @@ tournSize = (
 with open(f"compconf.json", encoding="utf-8") as json_file:
     compconf_data = json.load(json_file)
 
-print_(f" - {compconf_data=}")
+log(f" - {compconf_data=}")
 
 genomeFlavor = compconf_data["ASYNC_GA_GENOME_FLAVOR:comptime_string"]
-print_(f" - {genomeFlavor=}")
+log(f" - {genomeFlavor=}")
 genomePath = f"/cerebraslib/genome/{genomeFlavor}.csl"
-print (" - reading genome data from", genomePath)
+log(f" - reading genome data from {genomePath}")
 genomeDataRaw = "".join(
     removeprefix(line, "//!").strip()
     for line in pathlib.Path(genomePath).read_text().split("\n")
     if line.startswith("//!")
 ) or "{}"
 genomeData = eval(genomeDataRaw, {"compconf_data": compconf_data, "pl": pl})
-print (f" - {genomeData=}")
+log(f" - {genomeData=}")
 
 assert nWav in (genomeData["nWav"][0], -1)
 nWav = genomeData["nWav"][0]
@@ -239,28 +247,28 @@ metadata = {
     "replicate": (str(uuid.uuid4()), pl.Categorical),
     **genomeData,
 }
-print_(metadata)
+log(metadata)
 
-print_("do run ===============================================================")
+log("do run =====================================================")
 # Path to ELF and simulation output files
 runner = SdkRuntime(
     "out", cmaddr=args.cmaddr, suppress_simfab_trace=args.suptrace
 )
-print_("- SdkRuntime created")
+log("- SdkRuntime created")
 
 runner.load()
-print_("- runner loaded")
+log("- runner loaded")
 
 runner.run()
-print_("- runner run ran")
+log("- runner run ran")
 
 runner.launch("dolaunch", nonblock=False)
-print_("- runner launch complete")
+log("- runner launch complete")
 
-print_(f"- {nonBlock=}, if True waiting for first kernel to finish...")
+log(f"- {nonBlock=}, if True waiting for first kernel to finish...")
 fossils = []
 while nonBlock:
-    print_("1", end="")
+    print("1", flush=True)
     memcpy_dtype = MemcpyDataType.MEMCPY_32BIT
     out_tensors = np.zeros((nCol, nRow, nWav), np.uint32)
 
@@ -277,11 +285,11 @@ while nonBlock:
         order=MemcpyOrder.ROW_MAJOR,
         nonblock=False,
     )
-    print_("2", end="")
+    print("2", end="", flush=True)
 
     genome_data = out_tensors.copy()
     fossils.append(genome_data)
-    print_("3", end="")
+    print("3", end="", flush=True)
 
     memcpy_dtype = MemcpyDataType.MEMCPY_32BIT
     out_tensors = np.zeros((nCol, nRow, 1), np.uint32)
@@ -298,24 +306,24 @@ while nonBlock:
         order=MemcpyOrder.ROW_MAJOR,
         nonblock=False,
     )
-    print_("4", end="")
+    print("4", end="", flush=True)
 
     cycle_counts = out_tensors.ravel().copy()
     num_complete = np.sum(cycle_counts >= nCycleAtLeast)
-    print_("5", end="")
+    print("5", end="", flush=True)
 
     should_break = num_complete > 0
-    print_(f"({num_complete/cycle_counts.size * 100}%)", end="")
+    print(f"({num_complete/cycle_counts.size * 100}%)", end="", flush=True)
     if should_break:
-        print_("!")
+        print("!", flush=True)
         break
     else:
-        print_("|", end="")
+        print("|", end="", flush=True)
         continue
 
-print_(f"- {nonBlock=}, if True waiting for last kernel to finish...")
+log(f"- {nonBlock=}, if True waiting for last kernel to finish...")
 while nonBlock:
-    print_("1", end="")
+    print("1", end="", flush=True)
     memcpy_dtype = MemcpyDataType.MEMCPY_32BIT
     out_tensors = np.zeros((nCol, nRow, 1), np.uint32)
     runner.memcpy_d2h(
@@ -331,27 +339,27 @@ while nonBlock:
         order=MemcpyOrder.ROW_MAJOR,
         nonblock=False,
     )
-    print_("2", end="")
+    print("2", end="", flush=True)
 
     cycle_counts = out_tensors.ravel().copy()
     num_complete = np.sum(cycle_counts >= nCycleAtLeast)
-    print_("3", end="")
+    print("3", end="", flush=True)
     should_break = (num_complete == cycle_counts.size)
-    print_(f"({num_complete/cycle_counts.size * 100}%)", end="")
-    print_(f"{should_break=}")
+    print(f"({num_complete/cycle_counts.size * 100}%)", end="", flush=True)
+    print(f"{should_break=}", flush=True)
     if should_break:
-        print_("!")
+        print("!", flush=True)
         break
     else:
-        print_("|", end="")
+        print("|", end="", flush=True)
         continue
 
-print_("fossils ==============================================================")
-print_(f" - {len(fossils)=}")
+log("fossils ====================================================")
+log(f" - {len(fossils)=}")
 
 if len(fossils):
-    print_(f"- {fossils[0].shape=}")
-    print_("- example hexification")
+    log(f"- {fossils[0].shape=}")
+    log("- example hexification")
     hexify_genome_data(fossils[0], verbose=True)
 
 with multiprocessing.Pool() as pool:
@@ -359,7 +367,7 @@ with multiprocessing.Pool() as pool:
     work = pool.imap(hexify_genome_data, fossils)
     fossils = [*tqdm(work, total=len(fossils), desc="hexing fossils")]
 
-print(f" - {len(fossils)=}")
+log(f" - {len(fossils)=}")
 
 if fossils:
     fossils = np.array(fossils)
@@ -392,7 +400,7 @@ if fossils:
 
 del fossils
 
-print_("whoami ===============================================================")
+log("whoami =====================================================")
 memcpy_dtype = MemcpyDataType.MEMCPY_32BIT
 out_tensors = np.zeros((nCol, nRow), np.uint32)
 
@@ -410,9 +418,9 @@ runner.memcpy_d2h(
     nonblock=False,
 )
 whoami_data = out_tensors.copy()
-print_(whoami_data[:20,:20])
+log(whoami_data[:20,:20])
 
-print_("whereami x ===========================================================")
+log("whereami x =================================================")
 memcpy_dtype = MemcpyDataType.MEMCPY_32BIT
 out_tensors = np.zeros((nCol, nRow), np.uint32)
 
@@ -430,9 +438,9 @@ runner.memcpy_d2h(
     nonblock=False,
 )
 whereami_x_data = out_tensors.copy()
-print_(whereami_x_data[:20,:20])
+log(whereami_x_data[:20,:20])
 
-print_("whereami y ===========================================================")
+log("whereami y =================================================")
 memcpy_dtype = MemcpyDataType.MEMCPY_32BIT
 out_tensors = np.zeros((nCol, nRow), np.uint32)
 
@@ -450,9 +458,9 @@ runner.memcpy_d2h(
     nonblock=False,
 )
 whereami_y_data = out_tensors.copy()
-print_(whereami_y_data[:20,:20])
+log(whereami_y_data[:20,:20])
 
-print_("trait data ===========================================================")
+log("trait data =================================================")
 memcpy_dtype = MemcpyDataType.MEMCPY_32BIT
 out_tensors = np.zeros((nCol, nRow, nTrait), np.uint32)
 runner.memcpy_d2h(
@@ -469,7 +477,7 @@ runner.memcpy_d2h(
     nonblock=False,
 )
 traitCounts_data = out_tensors.copy()
-print_("traitCounts_data", Counter(traitCounts_data.ravel()))
+log(f"traitCounts_data {Counter(traitCounts_data.ravel())}")
 
 memcpy_dtype = MemcpyDataType.MEMCPY_32BIT
 out_tensors = np.zeros((nCol, nRow, nTrait), np.uint32)
@@ -487,7 +495,7 @@ runner.memcpy_d2h(
     nonblock=False,
 )
 traitCycles_data = out_tensors.copy()
-print_("traitCycles_data", Counter(traitCycles_data.ravel()))
+log(f"traitCycles_data {Counter(traitCycles_data.ravel())}")
 
 memcpy_dtype = MemcpyDataType.MEMCPY_32BIT
 out_tensors = np.zeros((nCol, nRow, nTrait), np.uint32)
@@ -505,7 +513,7 @@ runner.memcpy_d2h(
     nonblock=False,
 )
 traitValues_data = out_tensors.copy()
-print_("traitValues_data", str(Counter(traitValues_data.ravel()))[:500])
+log(f"traitValues_data {str(Counter(traitValues_data.ravel()))[:500]}")
 
 # save trait data values to a file
 df = pl.DataFrame({
@@ -522,10 +530,7 @@ df = pl.DataFrame({
 
 
 for trait, group in df.group_by("trait value"):
-    print_(
-        f"trait {trait} total count is",
-        group["trait count"].sum()
-    )
+    log(f"trait {trait} total count is {group['trait count'].sum()}")
 
 write_parquet_verbose(
     df,
@@ -537,7 +542,7 @@ write_parquet_verbose(
 )
 del df, traitCounts_data, traitCycles_data, traitValues_data
 
-print_("fitness =============================================================")
+log("fitness ===================================================")
 memcpy_dtype = MemcpyDataType.MEMCPY_32BIT
 out_tensors = np.zeros((nCol, nRow), np.float32)
 
@@ -555,9 +560,9 @@ runner.memcpy_d2h(
     nonblock=False,
 )
 fitness_data = out_tensors.copy()
-print_(fitness_data[:20,:20])
+log(fitness_data[:20,:20])
 
-print_("genome values ========================================================")
+log("genome values ==============================================")
 memcpy_dtype = MemcpyDataType.MEMCPY_32BIT
 out_tensors = np.zeros((nCol, nRow, nWav), np.uint32)
 
@@ -600,7 +605,7 @@ write_parquet_verbose(
 )
 del df, fitness_data, genome_hex
 
-print_("cycle counter =======================================================")
+log("cycle counter =============================================")
 memcpy_dtype = MemcpyDataType.MEMCPY_32BIT
 out_tensors = np.zeros((nCol, nRow), np.uint32)
 
@@ -618,10 +623,10 @@ runner.memcpy_d2h(
     nonblock=False,
 )
 cycle_counts = out_tensors.ravel().copy()
-print_(cycle_counts[:100])
+log(cycle_counts[:100])
 
 
-print_("recv counter N ========================================================")
+log("recv counter N ==============================================")
 memcpy_dtype = MemcpyDataType.MEMCPY_32BIT
 out_tensors = np.zeros((nCol, nRow), np.uint32)
 
@@ -639,9 +644,9 @@ runner.memcpy_d2h(
     nonblock=False,
 )
 recvN = out_tensors.copy()
-print_(recvN[:20,:20])
+log(recvN[:20,:20])
 
-print_("recv counter S ========================================================")
+log("recv counter S ==============================================")
 memcpy_dtype = MemcpyDataType.MEMCPY_32BIT
 out_tensors = np.zeros((nCol, nRow), np.uint32)
 
@@ -659,9 +664,9 @@ runner.memcpy_d2h(
     nonblock=False,
 )
 recvS = out_tensors.copy()
-print_(recvS[:20,:20])
+log(recvS[:20,:20])
 
-print_("recv counter E ========================================================")
+log("recv counter E ==============================================")
 memcpy_dtype = MemcpyDataType.MEMCPY_32BIT
 out_tensors = np.zeros((nCol, nRow), np.uint32)
 
@@ -679,9 +684,9 @@ runner.memcpy_d2h(
     nonblock=False,
 )
 recvE = out_tensors.copy()
-print_(recvE[:20,:20])
+log(recvE[:20,:20])
 
-print_("recv counter W ========================================================")
+log("recv counter W ==============================================")
 memcpy_dtype = MemcpyDataType.MEMCPY_32BIT
 out_tensors = np.zeros((nCol, nRow), np.uint32)
 
@@ -699,14 +704,14 @@ runner.memcpy_d2h(
     nonblock=False,
 )
 recvW = out_tensors.copy()
-print_(recvW[:20,:20])
+log(recvW[:20,:20])
 
-print_("recv counter sum =====================================================")
+log("recv counter sum ===========================================")
 recvSum = [*map(sum, zip(recvN.ravel(), recvS.ravel(), recvE.ravel(), recvW.ravel()))]
-print_(recvSum[:100])
-print_(f"{np.mean(recvSum)=} {np.std(recvSum)=} {sps.sem(recvSum)=}")
+log(recvSum[:100])
+log(f"{np.mean(recvSum)=} {np.std(recvSum)=} {sps.sem(recvSum)=}")
 
-print_("send counter N ========================================================")
+log("send counter N ==============================================")
 memcpy_dtype = MemcpyDataType.MEMCPY_32BIT
 out_tensors = np.zeros((nCol, nRow), np.uint32)
 
@@ -724,9 +729,9 @@ runner.memcpy_d2h(
     nonblock=False,
 )
 sendN = out_tensors.copy()
-print_(sendN[:20,:20])
+log(sendN[:20,:20])
 
-print_("send counter S ========================================================")
+log("send counter S ==============================================")
 memcpy_dtype = MemcpyDataType.MEMCPY_32BIT
 out_tensors = np.zeros((nCol, nRow), np.uint32)
 
@@ -744,9 +749,9 @@ runner.memcpy_d2h(
     nonblock=False,
 )
 sendS = out_tensors.copy()
-print_(sendS[:20,:20])
+log(sendS[:20,:20])
 
-print_("send counter E ========================================================")
+log("send counter E ==============================================")
 memcpy_dtype = MemcpyDataType.MEMCPY_32BIT
 out_tensors = np.zeros((nCol, nRow), np.uint32)
 
@@ -764,9 +769,9 @@ runner.memcpy_d2h(
     nonblock=False,
 )
 sendE = out_tensors.copy()
-print_(sendE[:20,:20])
+log(sendE[:20,:20])
 
-print_("send counter W ========================================================")
+log("send counter W ==============================================")
 memcpy_dtype = MemcpyDataType.MEMCPY_32BIT
 out_tensors = np.zeros((nCol, nRow), np.uint32)
 
@@ -784,14 +789,14 @@ runner.memcpy_d2h(
     nonblock=False,
 )
 sendW = out_tensors.copy()
-print_(sendW[:20,:20])
+log(sendW[:20,:20])
 
-print_("send counter sum =====================================================")
+log("send counter sum ===========================================")
 sendSum = [*map(sum, zip(sendN.ravel(), sendS.ravel(), sendE.ravel(), sendW.ravel()))]
-print_(sendSum[:100])
-print_(f"{np.mean(sendSum)=} {np.std(sendSum)=} {sps.sem(sendSum)=}")
+log(sendSum[:100])
+log(f"{np.mean(sendSum)=} {np.std(sendSum)=} {sps.sem(sendSum)=}")
 
-print_("tscControl values ====================================================")
+log("tscControl values ==========================================")
 memcpy_dtype = MemcpyDataType.MEMCPY_32BIT
 out_tensors = np.zeros((nCol, nRow, tscSizeWords // 2), np.uint32)
 
@@ -815,9 +820,9 @@ tscControl_bytes = [
 tscControl_ints = [
     int.from_bytes(genome, byteorder="little") for genome in tscControl_bytes
 ]
-print_(tscControl_ints[:100])
+log(tscControl_ints[:100])
 
-print_("tscStart values ======================================================")
+log("tscStart values ============================================")
 memcpy_dtype = MemcpyDataType.MEMCPY_32BIT
 out_tensors = np.zeros((nCol, nRow, tscSizeWords // 2), np.uint32)
 
@@ -841,9 +846,9 @@ tscStart_bytes = [
 tscStart_ints = [
     int.from_bytes(genome, byteorder="little") for genome in tscStart_bytes
 ]
-print_(tscStart_ints[:100])
+log(tscStart_ints[:100])
 
-print_("tscEnd values ========================================================")
+log("tscEnd values ==============================================")
 memcpy_dtype = MemcpyDataType.MEMCPY_32BIT
 out_tensors = np.zeros((nCol, nRow, tscSizeWords // 2), np.uint32)
 
@@ -867,35 +872,35 @@ tscEnd_bytes = [
 tscEnd_ints = [
     int.from_bytes(genome, byteorder="little") for genome in tscEnd_bytes
 ]
-print_(tscEnd_ints[:100])
+log(tscEnd_ints[:100])
 
-print_("tsc diffs ============================================================")
-print_("--------------------------------------------------------------- ticks")
+log("tsc diffs ==================================================")
+log("--------------------------------------------------------- ticks")
 tsc_ticks = [end - start for start, end in zip(tscStart_ints, tscEnd_ints)]
-print_(tsc_ticks[:100])
-print_(f"{np.mean(tsc_ticks)=} {np.std(tsc_ticks)=} {sps.sem(tsc_ticks)=}")
+log(tsc_ticks[:100])
+log(f"{np.mean(tsc_ticks)=} {np.std(tsc_ticks)=} {sps.sem(tsc_ticks)=}")
 
-print_("-------------------------------------------------------------- seconds")
+log("------------------------------------------------------ seconds")
 tsc_sec = [diff / tscTicksPerSecond for diff in tsc_ticks]
-print_(tsc_sec[:100])
-print_(f"{np.mean(tsc_sec)=} {np.std(tsc_sec)=} {sps.sem(tsc_sec)=}")
+log(tsc_sec[:100])
+log(f"{np.mean(tsc_sec)=} {np.std(tsc_sec)=} {sps.sem(tsc_sec)=}")
 
-print_("---------------------------------------------------- seconds per cycle")
+log("-------------------------------------------- seconds per cycle")
 tsc_cysec = [sec / ncy for (sec, ncy) in zip(tsc_sec, cycle_counts)]
-print_(tsc_cysec[:100])
-print_(f"{np.mean(tsc_cysec)=} {np.std(tsc_cysec)=} {sps.sem(tsc_cysec)=}")
+log(tsc_cysec[:100])
+log(f"{np.mean(tsc_cysec)=} {np.std(tsc_cysec)=} {sps.sem(tsc_cysec)=}")
 
-print_("---------------------------------------------------------- cycle hertz")
+log("-------------------------------------------------- cycle hertz")
 tsc_cyhz = [1 / cysec for cysec in tsc_cysec]
-print_(tsc_cyhz[:100])
-print_(f"{np.mean(tsc_cyhz)=} {np.std(tsc_cyhz)=} {sps.sem(tsc_cyhz)=}")
+log(tsc_cyhz[:100])
+log(f"{np.mean(tsc_cyhz)=} {np.std(tsc_cyhz)=} {sps.sem(tsc_cyhz)=}")
 
-print_("--------------------------------------------------------- ns per cycle")
+log("------------------------------------------------- ns per cycle")
 tsc_cyns = [cysec * 1e9 for cysec in tsc_cysec]
-print_(tsc_cyns[:100])
-print_(f"{np.mean(tsc_cyns)=} {np.std(tsc_cyns)=} {sps.sem(tsc_cyns)=}")
+log(tsc_cyns[:100])
+log(f"{np.mean(tsc_cyns)=} {np.std(tsc_cyns)=} {sps.sem(tsc_cyns)=}")
 
-print_("perf ================================================================")
+log("perf ======================================================")
 # save performance metrics to a file
 df = pl.DataFrame({
     "tsc ticks": pl.Series(tsc_ticks, dtype=pl.UInt64),
@@ -938,4 +943,4 @@ del df, tsc_ticks, tsc_sec, tsc_cysec, tsc_cyhz, tsc_cyns, tscStart_ints, tscEnd
 runner.stop()
 
 # Ensure that the result matches our expectation
-print_("SUCCESS!")
+log("SUCCESS!")
