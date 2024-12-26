@@ -320,7 +320,7 @@ while nonBlock:
     should_break = (num_complete == cycle_counts.size)
     print(f"({num_complete/cycle_counts.size * 100}%)", end="", flush=True)
     print(f"{should_break=}")
-    if should_break:
+    if True:  # if should_break: TODO fixme
         print("!")
         break
     else:
