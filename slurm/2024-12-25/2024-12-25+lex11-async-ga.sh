@@ -55,7 +55,7 @@ echo "ASYNC_GA_NCOL_SUBGRID ${ASYNC_GA_NCOL_SUBGRID}"
 export ASYNC_GA_NROW_SUBGRID=0
 echo "ASYNC_GA_NROW_SUBGRID ${ASYNC_GA_NROW_SUBGRID}"
 
-export ASYNC_GA_NCYCLE_AT_LEAST=1000
+export ASYNC_GA_NCYCLE_AT_LEAST=100000
 echo "ASYNC_GA_NCYCLE_AT_LEAST ${ASYNC_GA_NCYCLE_AT_LEAST}"
 
 NREP=1
@@ -125,7 +125,7 @@ cat > "${SBATCH_FILE}" << EOF
 #!/bin/bash
 #SBATCH --gres=cs:cerebras:1
 #SBATCH --ntasks=1
-#SBATCH --cpus-per-task=1
+#SBATCH --cpus-per-task=56
 #SBATCH --mem=128G
 #SBATCH --time=0:15:00
 #SBATCH --output="/jet/home/%u/joblog/%j"
