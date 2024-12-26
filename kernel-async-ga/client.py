@@ -241,7 +241,7 @@ print("- runner launch complete")
 print(f"- {nonBlock=}, if True waiting for first kernel to finish...")
 fossils = []
 while nonBlock:
-    print(".", end="", flush=True)
+    print("1", end="", flush=True)
     memcpy_dtype = MemcpyDataType.MEMCPY_32BIT
     out_tensors = np.zeros((nCol, nRow, nWav), np.uint32)
 
@@ -258,8 +258,11 @@ while nonBlock:
         order=MemcpyOrder.ROW_MAJOR,
         nonblock=False,
     )
+    print("2", end="", flush=True)
+
     genome_data = out_tensors.copy()
-    fossils.append(hexify_genome_data(genome_data, verbose=False))
+    fossils.append(genome_data)
+    print("3", end="", flush=True)
 
     memcpy_dtype = MemcpyDataType.MEMCPY_32BIT
     out_tensors = np.zeros((nCol, nRow, 1), np.uint32)
@@ -276,14 +279,21 @@ while nonBlock:
         order=MemcpyOrder.ROW_MAJOR,
         nonblock=False,
     )
+    print("4", end="", flush=True)
+
     cycle_counts = out_tensors.ravel().copy()
-    if np.any(cycle_counts >= nCycleAtLeast):
+    should_break = np.any(cycle_counts >= nCycleAtLeast)
+    print("5", end="", flush=True)
+    if should_break:
         print()
         break
+    else:
+        print("|", end="", flush=True)
+        continue
 
 print(f"- {nonBlock=}, if True waiting for last kernel to finish...")
 while nonBlock:
-    print(",", end="", flush=True)
+    print("1", end="", flush=True)
     memcpy_dtype = MemcpyDataType.MEMCPY_32BIT
     out_tensors = np.zeros((nCol, nRow, 1), np.uint32)
     runner.memcpy_d2h(
@@ -299,13 +309,25 @@ while nonBlock:
         order=MemcpyOrder.ROW_MAJOR,
         nonblock=False,
     )
+    print("2", end="", flush=True)
+
     cycle_counts = out_tensors.ravel().copy()
-    if np.all(cycle_counts >= nCycleAtLeast):
+    should_break = np.all(cycle_counts >= nCycleAtLeast)
+    print("3", end="", flush=True)
+    if should_break:
         print()
         break
+    else:
+        print("|", end="", flush=True)
+        continue
 
 print("fossils ==============================================================")
 print(f" - {len(fossils)=}")
+
+fossils = [
+    hexify_genome_data(genome_data, verbose=False)
+    for genome_data in tqdm(fossils)
+]
 
 if fossils:
     fossils = np.array(fossils)
