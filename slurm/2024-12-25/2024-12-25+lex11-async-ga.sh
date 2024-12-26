@@ -183,6 +183,8 @@ cd "${WORKDIR}"
 echo "PWD \${PWD}"
 
 echo "execute kernel program -------------------------------------------------"
+export ASYNC_GA_MAX_FOSSIL_SETS=100
+echo "ASYNC_GA_MAX_FOSSIL_SETS \${ASYNC_GA_MAX_FOSSIL_SETS}"
 ./${SLUG}/kernel-async-ga/execute.sh
 # clean up and save space
 find "${SLUG}" -name "*.elf" -type f -exec rm {} +
