@@ -125,7 +125,7 @@ cat > "${SBATCH_FILE}" << EOF
 #!/bin/bash
 #SBATCH --gres=cs:cerebras:1
 #SBATCH --ntasks=1
-#SBATCH --cpus-per-task=512
+#SBATCH --cpus-per-task=200
 #SBATCH --mem=256G
 #SBATCH --time=0:30:00
 #SBATCH --output="/jet/home/%u/joblog/%j"
