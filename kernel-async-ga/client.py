@@ -317,9 +317,9 @@ while nonBlock:
     cycle_counts = out_tensors.ravel().copy()
     num_complete = np.sum(cycle_counts >= nCycleAtLeast)
     print("3", end="", flush=True)
-    should_break = num_complete == cycle_counts.size
+    should_break = (num_complete == cycle_counts.size)
     print(f"({num_complete/cycle_counts.size * 100}%)", end="", flush=True)
-
+    print(f"{should_break=}")
     if should_break:
         print("!")
         break
