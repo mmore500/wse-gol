@@ -324,6 +324,11 @@ while nonBlock:
 print("fossils ==============================================================")
 print(f" - {len(fossils)=}")
 
+if len(fossils):
+    print(f"- {fossils[0].shape=}")
+    print("- example hexification")
+    hexify_genome_data(fossils[0], verbose=True)
+
 fossils = [
     hexify_genome_data(genome_data, verbose=False)
     for genome_data in tqdm(fossils)
