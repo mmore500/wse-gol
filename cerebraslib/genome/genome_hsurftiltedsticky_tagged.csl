@@ -32,9 +32,10 @@ const nTraitVals: u16 = 1;
 
 // internal functions =========================================================
 fn _step_instrumentation(genome: genomePtr_t) void {
+    const genome_ptr = @ptrcast([*]u16, genome);
     // elapse generation in bitfield
     if (opscalar.unifbool()) {
-        const rank = @as(u32, @ptrcast([*]u16, genome)[1]);
+        const rank = @as(u32, genome_ptr[1]);
         const site = tilted.pick_deposition_site(rank, 64);
 
         const offset_bits: u16 = 4 * 8;
@@ -44,7 +45,7 @@ fn _step_instrumentation(genome: genomePtr_t) void {
     }
 
     // elapse generation in counter
-    @ptrcast([*]u16, genome)[1] += 1;
+    genome_ptr[1] += 1;
 }
 
 // public API =================================================================
@@ -61,6 +62,7 @@ fn get_trait_value(genome: genomePtr_t) u32 {
 fn initialize_one(genome: genomePtr_t) void {
     const gHalfWords: u16 = gSize * 2;
     bitmanip.randomize(@ptrcast([*]u16, genome), gHalfWords);
-    @ptrcast([*]u16, genome)[1] = 0;
+    const genome_ptr = @ptrcast([*]u16, genome);
+    genome_ptr[1] = 0;
     // tag bits left randomized
 }

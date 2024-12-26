@@ -59,15 +59,18 @@ fn _apply_mutation(genome: genomePtr_t) void {
 }
 
 fn _ptr_netbencount(genome: genomePtr_t) *i16 {
-    return &@ptrcast([*]i16, genome)[0];
+    const genome_ptr = @ptrcast([*]i16, genome);
+    return &genome_ptr[0];
 }
 
 fn _ptr_delcount(genome: genomePtr_t) *u8 {
-    return &@ptrcast([*]u8, genome)[3];
+    const genome_ptr = @ptrcast([*]u8, genome);
+    return &genome_ptr[3];
 }
 
 fn _ptr_mutator(genome: genomePtr_t) *u8 {
-    return &@ptrcast([*]u8, genome)[2];
+    const genome_ptr = @ptrcast([*]u8, genome);
+    return &genome_ptr[2];
 }
 
 // public API =================================================================

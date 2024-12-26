@@ -55,19 +55,23 @@ fn _apply_mutation(genome: genomePtr_t) void {
 }
 
 fn _ptr_netbencount(genome: genomePtr_t) *i32 {
-    return &@ptrcast([*]i32, genome)[0];
+    const genome_ptr = @ptrcast([*]i32, genome);
+    return &genome_ptr[0];
 }
 
 fn _ptr_delcount(genome: genomePtr_t) *u16 {
-    return &@ptrcast([*]u16, genome)[2];
+    const genome_ptr = @ptrcast([*]u16, genome);
+    return &genome_ptr[2];
 }
 
 fn _ptr_mutator(genome: genomePtr_t) *u8 {
-    return &@ptrcast([*]u8, genome)[6];
+    const genome_ptr = @ptrcast([*]u8, genome);
+    return &genome_ptr[6];
 }
 
 fn _ptr_counter(genome: genomePtr_t) *u32 {
-    return &@ptrcast([*]u32, genome)[2];
+    const genome_ptr = @ptrcast([*]u32, genome);
+    return &genome_ptr[2];
 }
 
 fn _step_instrumentation(genome: genomePtr_t) void {
