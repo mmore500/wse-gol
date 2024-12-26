@@ -16,7 +16,7 @@ import typing
 
 
 def print_(*args, **kwargs) -> None:
-    return print_(*args, **kwargs, flush=True)
+    return print(*args, **kwargs, flush=True)
 
 
 def removeprefix(text: str, prefix: str) -> str:
