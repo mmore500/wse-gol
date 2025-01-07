@@ -3,7 +3,7 @@ const random = @import_module("<random>");
 const dstream_algo = @import_module("<downstream/dstream/steady_algo>");
 
 const bitlogger = @import_module(
-    "cerebraslib/bitlogger_impl.csl",
+    "cerebraslib/bitlogger.csl",
     .{
         .numBits = 64,
         .dstreamAlgoName = "steady_algo",

@@ -1,0 +1,25 @@
+// module imports =============================================================
+const compconf = @import_module("<compconf>");
+comptime { // access via get_value for logging...
+    const _ = compconf.get_value_or(
+        "CEREBRASLIB_TRAITLOGGER_DSTREAM_ALGO_NAME",
+        "steady_algo",
+    );
+} // ... raw string works around sdk v1.0.0 limitation
+const compconf_raw = @import_module("<compconf_raw>");
+const has_value = compconf.has_value("CEREBRASLIB_TRAITLOGGER_DSTREAM_ALGO_NAME");
+const dstream_algo_name = (if (has_value)
+    compconf_raw.CEREBRASLIB_TRAITLOGGER_DSTREAM_ALGO_NAME
+else
+    "steady_algo");
+
+const num_bits = compconf.get_value_or(
+    "CEREBRASLIB_TRAITLOGGER_NUM_BITS",
+    256,
+);
+
+// configure implementation ===================================================
+const logger = @import_module("cerebraslib/bitlogger.csl", .{
+    .numBits = num_bits,
+    .dstreamAlgoName = dstream_algo_name,
+});
