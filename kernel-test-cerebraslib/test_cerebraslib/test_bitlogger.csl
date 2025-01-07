@@ -1,5 +1,3 @@
-const random = @import_module("<random>");
-
 const dstream_algo = @import_module("<downstream/dstream/steady_algo>");
 
 const bitlogger = @import_module(
