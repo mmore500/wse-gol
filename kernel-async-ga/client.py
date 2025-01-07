@@ -97,7 +97,7 @@ for attempt in range(4):
                 "pip",
                 "install",
                 f"--target={temp_dir}",
-                f"--no-cache-dir",
+                "--no-cache-dir",
                 "polars==1.6.0",
             ],
             env={
@@ -209,7 +209,7 @@ tournSize = (
     / float(compile_data["params"]["tournSizeDenominator"])
 )
 
-with open(f"compconf.json", encoding="utf-8") as json_file:
+with open("compconf.json", encoding="utf-8") as json_file:
     compconf_data = json.load(json_file)
 
 log(f" - {compconf_data=}")
