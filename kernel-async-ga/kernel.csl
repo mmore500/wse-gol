@@ -66,6 +66,7 @@ const population = @import_module("cerebraslib/population.csl", .{
   .initFun = genome_.initialize_one,
   .traitFun = genome_.get_trait_value,
 });
+const wildtypelogger = @import_module("cerebraslib/traitlogger.csl");
 const ctrl = @import_module("cerebraslib/ctrl.csl");
 const optime = @import_module("cerebraslib/optime.csl");
 
@@ -551,6 +552,7 @@ task cycleTask(_: u16) void {
   for(@range(u16, population.gSize)) |i| {
     genome[i] = genome_ptr[i];
   }
+  wildtypelogger.logger.update(population._get_ith_trait_value(0) == 0);
 
   // trigger next cycle
   // --------------------------------------------------------------------------
