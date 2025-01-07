@@ -1,0 +1,10 @@
+const traitlogger = @import_module("cerebraslib/traitlogger.csl");
+
+fn test_smoke() void {
+    traitlogger.logger.reset();
+    traitlogger.logger.update(true);
+}
+
+fn do_test() void {
+    test_smoke();
+}
