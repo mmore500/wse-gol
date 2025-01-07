@@ -214,6 +214,13 @@ with open(f"compconf.json", encoding="utf-8") as json_file:
 
 log(f" - {compconf_data=}")
 
+traitLoggerNumBits = int(compconf_data["CEREBRASLIB_TRAITLOGGER_NUM_BITS:u32"])
+assert bin(traitLoggerNumBits)[2:].count("1") == 1
+traitLoggerDstreamAlgoName = compconf_data[
+    "CEREBRASLIB_TRAITLOGGER_DSTREAM_ALGO_NAME:comptime_string"
+]
+log(f" - {traitLoggerNumBits=} {traitLoggerDstreamAlgoName=}")
+
 genomeFlavor = compconf_data["ASYNC_GA_GENOME_FLAVOR:comptime_string"]
 log(f" - {genomeFlavor=}")
 genomePath = f"/cerebraslib/genome/{genomeFlavor}.csl"
@@ -544,6 +551,58 @@ write_parquet_verbose(
     "+ext=.pqt",
 )
 del df, traitCounts_data, traitCycles_data, traitValues_data
+
+log("wildtype traitlogs ==============================================")
+memcpy_dtype = MemcpyDataType.MEMCPY_32BIT
+traitLoggerNumWavs = traitLoggerNumBits // wavSize + 1  # +1 for dstream_T
+out_tensors = np.zeros((nCol, nRow, traitLoggerNumWavs), np.uint32)
+
+runner.memcpy_d2h(
+    out_tensors.ravel(),
+    runner.get_id("wildtypeLoggerRecord"),
+    0,  # x0
+    0,  # y0
+    nCol,  # width
+    nRow,  # height
+    traitLoggerNumWavs,  # num elements
+    streaming=False,
+    data_type=memcpy_dtype,
+    order=MemcpyOrder.ROW_MAJOR,
+    nonblock=False,
+)
+raw_binary_data = out_tensors.copy()
+record_hex = hexify_binary_data(
+    raw_binary_data.view(np.uint32), nWav=traitLoggerNumWavs, verbose=True
+)
+
+# save genome values to a file
+df = pl.DataFrame({
+    "data_hex": pl.Series(record_hex, dtype=pl.Utf8),
+    "tile": pl.Series(whoami_data.ravel(), dtype=pl.UInt32),
+    "row": pl.Series(whereami_y_data.ravel(), dtype=pl.UInt16),
+    "col": pl.Series(whereami_x_data.ravel(), dtype=pl.UInt16),
+}).with_columns([
+    pl.lit(value, dtype=dtype).alias(key)
+    for key, (value, dtype) in metadata.items()
+]).with_columns(
+    dstream_algo=pl.lit(traitLoggerDstreamAlgoName, dtype=pl.Categorical),
+    dstream_storage_bitoffset=pl.lit(0, dtype=pl.UInt16),
+    dstream_storage_bitwidth=pl.lit(traitLoggerNumBits, dtype=pl.UInt16),
+    dstream_S=pl.lit(traitLoggerNumBits, dtype=pl.UInt16),
+    dstream_T_bitoffset=pl.lit(traitLoggerNumBits, dtype=pl.UInt16),
+    dstream_T_bitwidth=pl.lit(32, dtype=pl.UInt16),
+    trait_value=pl.lit(0, dtype=pl.UInt16),
+)
+
+write_parquet_verbose(
+    df,
+    "a=traitloggerRecord"
+    f"+flavor={genomeFlavor}"
+    f"+seed={globalSeed}"
+    f"+ncycle={nCycleAtLeast}"
+    "+ext=.pqt",
+)
+del df, raw_binary_data, record_hex
 
 log("fitness ===================================================")
 memcpy_dtype = MemcpyDataType.MEMCPY_32BIT
