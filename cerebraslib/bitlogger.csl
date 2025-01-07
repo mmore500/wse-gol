@@ -1,6 +1,7 @@
 // module params ==============================================================
 param numBits: u16;
 param dstreamAlgoName: comptime_string;
+param symbolName: comptime_string;
 
 // module imports =============================================================
 const dstream_algo = @import_module(
@@ -15,6 +16,7 @@ const numHalfWords = numBits >> 4;
 var dstream_T: u32 = 0;
 var recordBuffer = @zeros([numHalfWords + 2]u16);  // +2 are u32 last seen T
 var pendingBuffer = @zeros([numHalfWords]u16);
+var ptr_recordBuffer : [*]u16 = &recordBuffer;
 
 const recordDsd = @get_dsd(mem1d_dsd, .{
     .tensor_access = |i|{numHalfWords} -> recordBuffer[i],
@@ -72,4 +74,10 @@ fn reset() void {
     const last_seen_T_ptr = _last_seen_T_ptr();
     last_seen_T_ptr.* = 0;
     dstream_T = 0;
+}
+
+comptime {  // symbols let memcpy gather end-state data from device to host
+    if (@strlen(symbolName) > 0) {
+        @export_symbol(ptr_recordBuffer, symbolName);
+    }
 }

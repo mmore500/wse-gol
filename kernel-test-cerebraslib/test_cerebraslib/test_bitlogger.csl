@@ -5,6 +5,7 @@ const bitlogger = @import_module(
     .{
         .numBits = 64,
         .dstreamAlgoName = "steady_algo",
+        .symbolName = "",
     },
 );
 const opscalar = @import_module("cerebraslib/opscalar.csl");

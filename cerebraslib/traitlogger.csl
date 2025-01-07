@@ -1,3 +1,5 @@
+param symbolName: comptime_string;
+
 // module imports =============================================================
 const compconf = @import_module("<compconf>");
 comptime { // access via get_value for logging...
@@ -15,4 +17,5 @@ const num_bits = compconf.get_value("CEREBRASLIB_TRAITLOGGER_NUM_BITS", u16);
 const logger = @import_module("cerebraslib/bitlogger.csl", .{
     .numBits = num_bits,
     .dstreamAlgoName = dstream_algo_name,
+    .symbolName = symbolName,
 });
