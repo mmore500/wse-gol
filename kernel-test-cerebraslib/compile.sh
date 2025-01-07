@@ -36,6 +36,9 @@ echo "${num_tests} tests detected"
 
 echo "Compiling ${num_tests} tests"
 
+export COMPCONFENV_CEREBRASLIB_TRAITLOGGER_NUM_BITS__u32="256"
+export COMPCONFENV_CEREBRASLIB_TRAITLOGGER_DSTREAM_ALGO_NAME__comptime_string="steady_algo"
+
 for test_module_path in ${test_module_paths}; do
     cp "${test_module_path}" "cerebraslib/current_compilation_target.csl"
     test_basename="$(basename -- "${test_module_path}")"

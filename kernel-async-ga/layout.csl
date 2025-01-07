@@ -73,5 +73,6 @@ layout {
   @export_name("tscControlBuffer", [*]u32, true);
   @export_name("tscEndBuffer", [*]u32, true);
   @export_name("tscStartBuffer", [*]u32, true);
+  @export_name("wildtypeLoggerRecord", [*]u16, true);
   @export_name("dolaunch", fn()void);
 }

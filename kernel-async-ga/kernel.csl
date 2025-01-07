@@ -59,13 +59,16 @@ const genome_ = @import_module(
 comptime { @comptime_assert(genome_.gSize % 2 == 1); }
 
 const nTraitVals = genome_.nTraitVals;
-const population_ = @import_module("cerebraslib/population.csl", .{
+const population = @import_module("cerebraslib/population.csl", .{
   .gSize = genome_.gSize, .popSize = popSize, .tournamentSize = tournSize,
   .fitFun = genome_.calc_fitness_of,
   .inheritFun = genome_.elapse_inheritance_of,
   .initFun = genome_.initialize_one,
   .traitFun = genome_.get_trait_value,
 });
+const wildtypeLogger = @import_module(
+  "cerebraslib/traitlogger.csl", .{ .symbolName = "wildtypeLoggerRecord" }
+);
 const ctrl = @import_module("cerebraslib/ctrl.csl");
 const optime = @import_module("cerebraslib/optime.csl");
 
@@ -101,7 +104,7 @@ var ptr_traitCycles: [*]u32 = &traitCycles;
 var traitValues = @zeros([nTraitVals]u32);
 var ptr_traitValues: [*]u32 = &traitValues;
 
-var genome = @zeros([population_.gSize]u32);  // samples 0th population element
+var genome = @zeros([population.gSize]u32);  // samples 0th population element
 var ptr_genome : [*]u32 = &genome;  // (which is convenient)
 
 var fitness = @zeros([1]f32);  // samples 0th population element (convenient)
@@ -175,7 +178,7 @@ const q_in_W: i16 = 7;
 // asynchronously send genomes sampled from population to neighbors
 ///////////////////////////////////////////////////////////////////////////////
 const sendNumGenomes: u16 = 1;  // how many genomes to batch sending together?
-const sendBufSize: u16 = sendNumGenomes * population_.gSize;
+const sendBufSize: u16 = sendNumGenomes * population.gSize;
 
 // send NORTH =================================================================
 var sendFlag_N: u8; // need refill? initialized at startup
@@ -199,7 +202,7 @@ fn doDispatchSend_N(comptime thread: u8) void {
 
 fn tryDispatchSend_N(thread: u8) bool {
   if (busyThreads[thread] == 1) { return false; }
-  population_.emigrate_genomes(sendBufDsd_N, sendNumGenomes);
+  population.emigrate_genomes(sendBufDsd_N, sendNumGenomes);
   busyThreads[thread] = 1;  // mark thread as busy
   sendThread_N = thread;
   switch (thread) {
@@ -242,7 +245,7 @@ fn doDispatchSend_S(comptime thread: u8) void {
 
 fn tryDispatchSend_S(thread: u8) bool {
   if (busyThreads[thread] == 1) { return false; }
-  population_.emigrate_genomes(sendBufDsd_S, sendNumGenomes);
+  population.emigrate_genomes(sendBufDsd_S, sendNumGenomes);
   busyThreads[thread] = 1;  // mark thread as busy
   sendThread_S = thread;
   switch (thread) {
@@ -285,7 +288,7 @@ fn doDispatchSend_E(comptime thread: u8) void {
 
 fn tryDispatchSend_E(thread: u8) bool {
   if (busyThreads[thread] == 1) { return false; }
-  population_.emigrate_genomes(sendBufDsd_E, sendNumGenomes);
+  population.emigrate_genomes(sendBufDsd_E, sendNumGenomes);
   busyThreads[thread] = 1;  // mark thread as busy
   sendThread_E = thread;
   switch (thread) {
@@ -329,7 +332,7 @@ fn doDispatchSend_W(comptime thread: u8) void {
 
 fn tryDispatchSend_W(thread: u8) bool {
   if (busyThreads[thread] == 1) { return false; }
-  population_.emigrate_genomes(sendBufDsd_W, sendNumGenomes);
+  population.emigrate_genomes(sendBufDsd_W, sendNumGenomes);
   busyThreads[thread] = 1;  // mark thread as busy
   sendThread_W = thread;
   switch (thread) {
@@ -358,7 +361,7 @@ fn dispatchSend_W() bool {
 // which are then harvested from buffer & immigrated into the population
 ///////////////////////////////////////////////////////////////////////////////
 const recvNumGenomes: u16 = 4;  // how many genomes to batch together?
-const recvBufSize: u16 = recvNumGenomes * population_.gSize;
+const recvBufSize: u16 = recvNumGenomes * population.gSize;
 
 // recv NORTH =================================================================
 var recvFlag_N: u8 = 0;  // need harvest? init 0 (naked dispatchRecv on startup)
@@ -501,25 +504,25 @@ task cycleTask(_: u16) void {
   // note: never-filled recv requests on PE array edges ok
   // --------------------------------------------------------------------------
   if (recvFlag_N == 1) {  // has open recv request been filled?
-    population_.immigrate_genomes(recvBufDsd_N, recvNumGenomes);
+    population.immigrate_genomes(recvBufDsd_N, recvNumGenomes);
     recvFlag_N = 0; dispatchRecv_N();
   }
   if (recvFlag_S == 1) {
-    population_.immigrate_genomes(recvBufDsd_S, recvNumGenomes);
+    population.immigrate_genomes(recvBufDsd_S, recvNumGenomes);
     recvFlag_S = 0; dispatchRecv_S();
   }
   if (recvFlag_E == 1) {
-    population_.immigrate_genomes(recvBufDsd_E, recvNumGenomes);
+    population.immigrate_genomes(recvBufDsd_E, recvNumGenomes);
     recvFlag_E = 0; dispatchRecv_E();
   }
   if (recvFlag_W == 1) {
-    population_.immigrate_genomes(recvBufDsd_W, recvNumGenomes);
+    population.immigrate_genomes(recvBufDsd_W, recvNumGenomes);
     recvFlag_W = 0; dispatchRecv_W();
   }
 
   // apply replication/selection to population
   // --------------------------------------------------------------------------
-  population_.do_generation();
+  population.do_generation();
 
   // handle send flags, load send buffer from pop and start next async send
   // --------------------------------------------------------------------------
@@ -544,13 +547,14 @@ task cycleTask(_: u16) void {
   // update telemetry
   // --------------------------------------------------------------------------
   for (@range(u16, popSize)) |i| {  // will record last cycle traits were seen
-    traitCycles[population_._get_ith_trait_value(i)] = cycleCounter[0];
+    traitCycles[population._get_ith_trait_value(i)] = cycleCounter[0];
   }
   // sample 0th element of population for telemetry
-  const genome_ptr = population_._get_ith_genome(0);
-  for(@range(u16, population_.gSize)) |i| {
+  const genome_ptr = population._get_ith_genome(0);
+  for(@range(u16, population.gSize)) |i| {
     genome[i] = genome_ptr[i];
   }
+  wildtypeLogger.logger.update(population._get_ith_trait_value(0) == 0);
 
   // trigger next cycle
   // --------------------------------------------------------------------------
@@ -560,10 +564,10 @@ task cycleTask(_: u16) void {
     // closeout telemetry
     // ------------------------------------------------------------------------
     time.get_timestamp(@ptrcast(*[3]u16, &tscEndBuffer));
-    fitness[0] = population_._calc_ith_fitness(0);
+    fitness[0] = population._calc_ith_fitness(0);
     // record final trait distributions
     for (@range(u16, popSize)) |i| {
-      traitCounts[population_._get_ith_trait_value(i)] += 1;
+      traitCounts[population._get_ith_trait_value(i)] += 1;
     }
     // record trait values
     for (@range(u32, nTraitVals)) |i| { traitValues[i] = i; }
@@ -616,7 +620,7 @@ fn dolaunch() void {  // launched by RPC (remote procedure call)
   );
   random.set_global_prng_seed(localSeed);  // zero seed seems to break RNG...
   desync();
-  population_.init_module();
+  population.init_module();
   // open initial recv requests, never-filled recv requests on edges ok
   dispatchRecv_N(); dispatchRecv_S(); dispatchRecv_E(); dispatchRecv_W();
   @mov16(cycleDsd, 0);  // send wavelet to self, trigger first cycle

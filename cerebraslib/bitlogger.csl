@@ -1,0 +1,83 @@
+// module params ==============================================================
+param numBits: u16;
+param dstreamAlgoName: comptime_string;
+param symbolName: comptime_string;
+
+// module imports =============================================================
+const dstream_algo = @import_module(
+    @strcat("<downstream/dstream/", dstreamAlgoName, ">"),
+);
+
+const bitmanip = @import_module("cerebraslib/bitmanip.csl");
+
+// global state ===============================================================
+const numHalfWords = numBits >> 4;
+
+var dstream_T: u32 = 0;
+var recordBuffer = @zeros([numHalfWords + 2]u16);  // +2 are u32 last seen T
+var pendingBuffer = @zeros([numHalfWords]u16);
+var ptr_recordBuffer : [*]u16 = &recordBuffer;
+
+const recordDsd = @get_dsd(mem1d_dsd, .{
+    .tensor_access = |i|{numHalfWords} -> recordBuffer[i],
+});
+const pendingDsd = @get_dsd(mem1d_dsd, .{
+    .tensor_access = |i|{numHalfWords} -> pendingBuffer[i],
+});
+
+
+// module functions ===========================================================
+///////////////////////////////////////////////////////////////////////////////
+
+fn _last_seen_T_ptr() *u32 {
+    return @ptrcast(*u32, &recordBuffer[numHalfWords]);
+}
+
+// public API =================================================================
+fn update(sample: bool) void {
+    const site = @as(u16, dstream_algo.assign_storage_site(numBits, dstream_T));
+
+    const dstream_S = numBits;
+    if (sample) {
+
+        // mask out any pending zeros...
+        @or16(recordDsd, recordDsd, pendingDsd);  // (x or y) xor y is same as
+        @xor16(recordDsd, recordDsd, pendingDsd); // x & (~y)
+        @mov16(pendingDsd, 0);
+
+        const record_bytes = @ptrcast([*]u8, &recordBuffer);
+        if (site != dstream_S) bitmanip.set_nth_bit_with_swaps(
+            record_bytes,
+            site,
+            true,
+            .{ .byteSwap = true, .bitSwap = true },
+        );
+        const last_seen_T_ptr = _last_seen_T_ptr();
+        last_seen_T_ptr.* = dstream_T + 1;
+    } else {
+        const pending_bytes = @ptrcast([*]u8, &pendingBuffer);
+        if (site != dstream_S) bitmanip.set_nth_bit_with_swaps(
+            pending_bytes,
+            site,
+            true,
+            .{ .byteSwap = true, .bitSwap = true },
+        );
+    }
+
+    dstream_T += 1;
+}
+
+
+fn reset() void {
+    @mov16(pendingDsd, 0);
+    @mov16(recordDsd, 0);
+    const last_seen_T_ptr = _last_seen_T_ptr();
+    last_seen_T_ptr.* = 0;
+    dstream_T = 0;
+}
+
+comptime {  // symbols let memcpy gather end-state data from device to host
+    if (@strlen(symbolName) > 0) {
+        @export_symbol(ptr_recordBuffer, symbolName);
+    }
+}

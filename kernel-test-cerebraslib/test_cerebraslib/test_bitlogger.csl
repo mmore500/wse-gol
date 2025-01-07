@@ -1,0 +1,288 @@
+const dstream_algo = @import_module("<downstream/dstream/steady_algo>");
+
+const bitlogger = @import_module(
+    "cerebraslib/bitlogger.csl",
+    .{
+        .numBits = 64,
+        .dstreamAlgoName = "steady_algo",
+        .symbolName = "",
+    },
+);
+const opscalar = @import_module("cerebraslib/opscalar.csl");
+
+fn test_parity_even() void {
+    bitlogger.reset();
+    for (@range(u16, 64)) |T| {
+        bitlogger.update(T % 2 == 0);
+    }
+    @assert(bitlogger.dstream_T == 64);
+    @assert(bitlogger._last_seen_T_ptr().* == 63);
+
+    const popcnt = ( //
+        opscalar.popcnt32(@as(u32, bitlogger.recordBuffer[0])) + //
+        opscalar.popcnt32(@as(u32, bitlogger.recordBuffer[1])) + //
+        opscalar.popcnt32(@as(u32, bitlogger.recordBuffer[2])) + //
+        opscalar.popcnt32(@as(u32, bitlogger.recordBuffer[3])) //
+    );
+    @assert(popcnt == 64 / 2);
+}
+
+fn test_parity_rare() void {
+    bitlogger.reset();
+    for (@range(u16, 64)) |T| {
+        bitlogger.update(T % 4 == 0);
+    }
+    @assert(bitlogger.dstream_T == 64);
+    @assert(bitlogger._last_seen_T_ptr().* == 61);
+
+    const popcnt = ( //
+        opscalar.popcnt32(@as(u32, bitlogger.recordBuffer[0])) + //
+        opscalar.popcnt32(@as(u32, bitlogger.recordBuffer[1])) + //
+        opscalar.popcnt32(@as(u32, bitlogger.recordBuffer[2])) + //
+        opscalar.popcnt32(@as(u32, bitlogger.recordBuffer[3])) //
+    );
+
+    @assert(popcnt == 64 / 4);
+}
+
+fn test_parity_common() void {
+    bitlogger.reset();
+    for (@range(u16, 64)) |T| {
+        bitlogger.update(T % 4 != 2);
+    }
+    @assert(bitlogger.dstream_T == 64);
+    @assert(bitlogger._last_seen_T_ptr().* == 64);
+
+    const popcnt = ( //
+        opscalar.popcnt32(@as(u32, bitlogger.recordBuffer[0])) + //
+        opscalar.popcnt32(@as(u32, bitlogger.recordBuffer[1])) + //
+        opscalar.popcnt32(@as(u32, bitlogger.recordBuffer[2])) + //
+        opscalar.popcnt32(@as(u32, bitlogger.recordBuffer[3])) //
+    );
+    @assert(popcnt == 3 * 64 / 4);
+}
+
+fn test_parity_never1() void {
+    bitlogger.reset();
+    for (@range(u16, 64)) |T| {
+        bitlogger.update(false);
+    }
+    @assert(bitlogger.dstream_T == 64);
+    @assert(bitlogger._last_seen_T_ptr().* == 0);
+
+    const popcnt = ( //
+        opscalar.popcnt32(@as(u32, bitlogger.recordBuffer[0])) + //
+        opscalar.popcnt32(@as(u32, bitlogger.recordBuffer[1])) + //
+        opscalar.popcnt32(@as(u32, bitlogger.recordBuffer[2])) + //
+        opscalar.popcnt32(@as(u32, bitlogger.recordBuffer[3])) //
+    );
+
+    @assert(popcnt == 0);
+}
+
+fn test_parity_never2() void {
+    bitlogger.reset();
+    for (@range(u16, 128)) |T| {
+        bitlogger.update(false);
+    }
+    @assert(bitlogger.dstream_T == 128);
+    @assert(bitlogger._last_seen_T_ptr().* == 0);
+
+    const popcnt = ( //
+        opscalar.popcnt32(@as(u32, bitlogger.recordBuffer[0])) + //
+        opscalar.popcnt32(@as(u32, bitlogger.recordBuffer[1])) + //
+        opscalar.popcnt32(@as(u32, bitlogger.recordBuffer[2])) + //
+        opscalar.popcnt32(@as(u32, bitlogger.recordBuffer[3])) //
+    );
+
+    @assert(popcnt == 0);
+}
+
+fn test_parity_always1() void {
+    bitlogger.reset();
+    for (@range(u16, 27)) |T| {
+        bitlogger.update(true);
+    }
+    @assert(bitlogger.dstream_T == 27);
+    @assert(bitlogger._last_seen_T_ptr().* == 27);
+
+    const popcnt = ( //
+        opscalar.popcnt32(@as(u32, bitlogger.recordBuffer[0])) + //
+        opscalar.popcnt32(@as(u32, bitlogger.recordBuffer[1])) + //
+        opscalar.popcnt32(@as(u32, bitlogger.recordBuffer[2])) + //
+        opscalar.popcnt32(@as(u32, bitlogger.recordBuffer[3])) //
+    );
+
+    @assert(popcnt == 27);
+}
+
+fn test_parity_always2() void {
+    bitlogger.reset();
+    for (@range(u16, 64)) |T| {
+        bitlogger.update(true);
+    }
+    @assert(bitlogger.dstream_T == 64);
+    @assert(bitlogger._last_seen_T_ptr().* == 64);
+
+    const popcnt = ( //
+        opscalar.popcnt32(@as(u32, bitlogger.recordBuffer[0])) + //
+        opscalar.popcnt32(@as(u32, bitlogger.recordBuffer[1])) + //
+        opscalar.popcnt32(@as(u32, bitlogger.recordBuffer[2])) + //
+        opscalar.popcnt32(@as(u32, bitlogger.recordBuffer[3])) //
+    );
+
+    @assert(popcnt == 64);
+}
+
+fn test_parity_always3() void {
+    bitlogger.reset();
+    for (@range(u16, 128)) |T| {
+        bitlogger.update(true);
+    }
+    @assert(bitlogger.dstream_T == 128);
+    @assert(bitlogger._last_seen_T_ptr().* == 128);
+
+    const popcnt = ( //
+        opscalar.popcnt32(@as(u32, bitlogger.recordBuffer[0])) + //
+        opscalar.popcnt32(@as(u32, bitlogger.recordBuffer[1])) + //
+        opscalar.popcnt32(@as(u32, bitlogger.recordBuffer[2])) + //
+        opscalar.popcnt32(@as(u32, bitlogger.recordBuffer[3])) //
+    );
+
+    @assert(popcnt == 64);
+}
+
+fn test_parity_long1() void {
+    bitlogger.reset();
+    for (@range(u16, 128)) |T| {
+        bitlogger.update(T % 2 == 0);
+    }
+    @assert(bitlogger.dstream_T == 128);
+    @assert(bitlogger._last_seen_T_ptr().* == 127);
+
+    const popcnt_actual = ( //
+        opscalar.popcnt32(@as(u32, bitlogger.recordBuffer[0])) + //
+        opscalar.popcnt32(@as(u32, bitlogger.recordBuffer[1])) + //
+        opscalar.popcnt32(@as(u32, bitlogger.recordBuffer[2])) + //
+        opscalar.popcnt32(@as(u32, bitlogger.recordBuffer[3])) //
+    );
+
+    var expected = @zeros([64]u8);
+    for (@range(u32, bitlogger._last_seen_T_ptr().*)) |T| {
+        const site = dstream_algo.assign_storage_site(64, T);
+        if (site != 64) {
+            expected[site] = @as(u8, T % 2 == 0);
+        }
+    }
+    var popcnt_expected: u32 = 0;
+    for (@range(u16, 64)) |k| {
+        popcnt_expected += @as(u32, expected[k]);
+    }
+
+    @assert(popcnt_actual == popcnt_expected);
+}
+
+fn test_parity_long2() void {
+    bitlogger.reset();
+    for (@range(u16, 128)) |T| {
+        bitlogger.update(T % 2 == 1);
+    }
+    @assert(bitlogger.dstream_T == 128);
+    @assert(bitlogger._last_seen_T_ptr().* == 128);
+
+    const popcnt_actual = ( //
+        opscalar.popcnt32(@as(u32, bitlogger.recordBuffer[0])) + //
+        opscalar.popcnt32(@as(u32, bitlogger.recordBuffer[1])) + //
+        opscalar.popcnt32(@as(u32, bitlogger.recordBuffer[2])) + //
+        opscalar.popcnt32(@as(u32, bitlogger.recordBuffer[3])) //
+    );
+
+    var expected = @zeros([64]u8);
+    for (@range(u32, bitlogger._last_seen_T_ptr().*)) |T| {
+        const site = dstream_algo.assign_storage_site(64, T);
+        if (site != 64) {
+            expected[site] = @as(u8, T % 2 == 1);
+        }
+    }
+    var popcnt_expected: u32 = 0;
+    for (@range(u16, 64)) |k| {
+        popcnt_expected += @as(u32, expected[k]);
+    }
+
+    @assert(popcnt_actual == popcnt_expected);
+}
+
+fn test_parity_long3() void {
+    bitlogger.reset();
+    for (@range(u16, 128)) |T| {
+        bitlogger.update(T % 4 < 2);
+    }
+    @assert(bitlogger.dstream_T == 128);
+    @assert(bitlogger._last_seen_T_ptr().* == 126);
+
+    const popcnt_actual = ( //
+        opscalar.popcnt32(@as(u32, bitlogger.recordBuffer[0])) + //
+        opscalar.popcnt32(@as(u32, bitlogger.recordBuffer[1])) + //
+        opscalar.popcnt32(@as(u32, bitlogger.recordBuffer[2])) + //
+        opscalar.popcnt32(@as(u32, bitlogger.recordBuffer[3])) //
+    );
+
+    var expected = @zeros([64]u8);
+    for (@range(u32, bitlogger._last_seen_T_ptr().*)) |T| {
+        const site = dstream_algo.assign_storage_site(64, T);
+        if (site != 64) {
+            expected[site] = @as(u8, T % 4 < 2);
+        }
+    }
+    var popcnt_expected: u32 = 0;
+    for (@range(u16, 64)) |k| {
+        popcnt_expected += @as(u32, expected[k]);
+    }
+
+    @assert(popcnt_actual == popcnt_expected);
+}
+
+fn test_parity_long4() void {
+    bitlogger.reset();
+    for (@range(u16, 289)) |T| {
+        bitlogger.update(T % 3 == 2 and T < 123);
+    }
+    @assert(bitlogger.dstream_T == 289);
+    @assert(bitlogger._last_seen_T_ptr().* == 123);
+
+    const popcnt_actual = ( //
+        opscalar.popcnt32(@as(u32, bitlogger.recordBuffer[0])) + //
+        opscalar.popcnt32(@as(u32, bitlogger.recordBuffer[1])) + //
+        opscalar.popcnt32(@as(u32, bitlogger.recordBuffer[2])) + //
+        opscalar.popcnt32(@as(u32, bitlogger.recordBuffer[3])) //
+    );
+
+    var expected = @zeros([64]u8);
+    for (@range(u32, bitlogger._last_seen_T_ptr().*)) |T| {
+        const site = dstream_algo.assign_storage_site(64, T);
+        if (site != 64) {
+            expected[site] = @as(u8, T % 3 == 2 and T < 123);
+        }
+    }
+    var popcnt_expected: u32 = 0;
+    for (@range(u16, 64)) |k| {
+        popcnt_expected += @as(u32, expected[k]);
+    }
+
+    @assert(popcnt_actual == popcnt_expected);
+}
+
+fn do_test() void {
+    test_parity_even();
+    test_parity_rare();
+    test_parity_common();
+    test_parity_never1();
+    test_parity_never2();
+    test_parity_always1();
+    test_parity_always2();
+    test_parity_always3();
+    test_parity_long1();
+    test_parity_long2();
+    test_parity_long3();
+    test_parity_long4();
+}
