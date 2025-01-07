@@ -33,54 +33,54 @@ def removeprefix(text: str, prefix: str) -> str:
     return text
 
 
-def hexify_genome_data(
-    raw_genome_data: "np.ndarray",
+def hexify_binary_data(
+    raw_binary_data: "np.ndarray",
+    nWav: int,
     verbose: bool = False,
 ) -> typing.List[str]:
     if verbose:
         for word in range(nWav):
-            log(f"---------------------------------------------- genome word {word}")
-            values = (
-                inner[word] for outer in raw_genome_data for inner in outer
-            )
+            log(f"---------------------------------------------- binary word {word}")
+            values = (inner[word] for outer in raw_binary_data for inner in outer)
             log(str([*it.islice(values, 10)]))
 
-    shape = raw_genome_data.shape
-    genome_ints = raw_genome_data.astype(">u4").reshape(-1, shape[-1])
-    assert len(genome_ints) == nRow * nCol
+    shape = raw_binary_data.shape
+    binary_ints = raw_binary_data.astype(">u4").reshape(-1, shape[-1])
+    assert len(binary_ints) == nRow * nCol
     if verbose:
-        log("------------------------------------------------ genome u32 ints")
-        for genome_int in genome_ints[:10]:
-            log(f"{len(genome_ints)=} {genome_int=}")
+        log("------------------------------------------------ binary u32 ints")
+        for binary_int in binary_ints[:10]:
+            log(f"{len(binary_ints)=} {binary_int=}")
 
-    genome_hex = genome_ints.tobytes().hex()
+    binary_hex = binary_ints.tobytes().hex()
     if verbose:
-        log("------------------------------------------- genome hex string")
-        log(f"{len(genome_hex)=} {genome_hex[:100]=}")
+        log("---------------------------------------------- binary hex string")
+        log(f"{len(binary_hex)=} {binary_hex[:100]=}")
 
-    genome_bytes = bytearray(genome_hex, "ascii")
+    binary_bytes = bytearray(binary_hex, "ascii")
     if verbose:
-        log("------------------------------------------- genome bytes")
-        log(f"{len(genome_bytes)=} {genome_bytes[:100]=}")
+        log("--------------------------------------------------- binary bytes")
+        log(f"{len(binary_bytes)=} {binary_bytes[:100]=}")
 
-    genome_chars = np.frombuffer(genome_bytes, dtype="S1").astype(str)
+    binary_chars = np.frombuffer(binary_bytes, dtype="S1").astype(str)
     if verbose:
-        log("------------------------------------------- genome chars")
-        log(f"{len(genome_chars)=} {genome_chars[:100]=}")
+        log("--------------------------------------------------- binary chars")
+        log(f"{len(binary_chars)=} {binary_chars[:100]=}")
 
     chunk_size = nWav * wavSize // 4
-    reshaped = genome_chars.reshape(-1, chunk_size)
-    genome_strings = np.apply_along_axis("".join, 1, reshaped)
-    assert len(genome_strings) == nRow * nCol
+    reshaped = binary_chars.reshape(-1, chunk_size)
+    binary_strings = np.apply_along_axis("".join, 1, reshaped)
+    assert len(binary_strings) == nRow * nCol
     if verbose:
-        log("------------------------------------------------ genome hex strings")
-        for genome_string in genome_strings[:10]:
-            log(f"{genome_string=}")
+        log("--------------------------------------------- binary hex strings")
+        for binary_string in binary_strings[:10]:
+            log(f"{binary_string=}")
 
-    return genome_strings
+    return binary_strings
 
-def hexify_genome_data_silent(data: "np.ndarray") -> typing.List[str]:
-    return hexify_genome_data(data, verbose=False)
+
+def hexify_genome_data(data: "np.ndarray", verbose: bool = False) -> typing.List[str]:
+    return hexify_binary_data(data, nWav=nWav, verbose=False)
 
 
 log("- setting up temp dir")
