@@ -44,6 +44,7 @@ echo "setup virtual env ======================================================"
 venv="$(mktemp -d)"
 python3 -m venv "${venv}"
 source "${venv}/bin/activate"
+python3 -m pip install --upgrade pip wheel
 python3 -m pip install "compconf==0.5.0"
 python3 -m pip freeze
 
