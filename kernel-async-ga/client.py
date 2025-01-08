@@ -585,7 +585,9 @@ df = pl.DataFrame({
     pl.lit(value, dtype=dtype).alias(key)
     for key, (value, dtype) in metadata.items()
 ]).with_columns(
-    dstream_algo=pl.lit(traitLoggerDstreamAlgoName, dtype=pl.Categorical),
+    dstream_algo=pl.lit(
+        f"dstream.{traitLoggerDstreamAlgoName}", dtype=pl.Categorical
+    ),
     dstream_storage_bitoffset=pl.lit(0, dtype=pl.UInt16),
     dstream_storage_bitwidth=pl.lit(traitLoggerNumBits, dtype=pl.UInt16),
     dstream_S=pl.lit(traitLoggerNumBits, dtype=pl.UInt16),
