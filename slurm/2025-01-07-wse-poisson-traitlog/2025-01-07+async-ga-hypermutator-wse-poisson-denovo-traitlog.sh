@@ -40,6 +40,13 @@ cd "${SOURCEDIR}"
 git checkout "${WSE_SKETCHES_REVISION}"
 cd -
 
+echo "setup virtual env ======================================================"
+venv="$(mktemp -d)"
+python3 -m venv "${venv}"
+source "${venv}/bin/activate"
+python3 -m pip install -r "${SOURCEDIR}/requirements.txt"
+python3 -m pip freeze
+
 echo "begin work loop ========================================================"
 seed=0
 export ASYNC_GA_NCOL=729
