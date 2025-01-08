@@ -13,7 +13,7 @@ cd "$(dirname "$0")"
 
 echo "SLURM_ARRAY_TASK_ID ${SLURM_ARRAY_TASK_ID}"
 
-WSE_SKETCHES_REVISION="bb2437d2c86d74344cbf06e4eb83cbabde62f03b"
+WSE_SKETCHES_REVISION="c96c70481019ebce22774fdc1a06c30cae1885ba"
 echo "WSE_SKETCHES_REVISION ${WSE_SKETCHES_REVISION}"
 
 WORKDIR="${HOME}/scratch/2025-01-07/async-ga-hypermutator-wse-poisson-denovo-traitlog"
@@ -91,7 +91,7 @@ echo "ASYNC_GA_FABRIC_DIMS ${ASYNC_GA_FABRIC_DIMS}"
 export ASYNC_GA_ARCH_FLAG="--arch=wse2"
 echo "ASYNC_GA_ARCH_FLAG ${ASYNC_GA_ARCH_FLAG}"
 
-export ASYNC_GA_GENOME_FLAVOR="genome_hypermutator_cappedxl_denovo_poisson"
+export ASYNC_GA_GENOME_FLAVOR="genome_hypermutator_cappedxl_denovo_snap"
 echo "ASYNC_GA_GENOME_FLAVOR ${ASYNC_GA_GENOME_FLAVOR}"
 export ASYNC_GA_NWAV="${ASYNC_GA_NWAV:-1}"
 echo "ASYNC_GA_NWAV ${ASYNC_GA_NWAV}"
