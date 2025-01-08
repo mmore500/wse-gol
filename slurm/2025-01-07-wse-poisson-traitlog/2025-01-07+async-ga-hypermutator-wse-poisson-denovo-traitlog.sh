@@ -44,7 +44,7 @@ echo "setup virtual env ======================================================"
 venv="$(mktemp -d)"
 python3 -m venv "${venv}"
 source "${venv}/bin/activate"
-python3 -m pip install -r "${SOURCEDIR}/requirements.txt"
+python3 -m pip install -r "compconf==0.5.0"
 python3 -m pip freeze
 
 echo "begin work loop ========================================================"
