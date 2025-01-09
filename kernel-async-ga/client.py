@@ -253,6 +253,23 @@ metadata = {
     "tsc": (tscAtLeast, pl.UInt64),
     "replicate": (str(uuid.uuid4()), pl.Categorical),
     **genomeData,
+    **{
+        k.split(":")[0]: {
+            "bool": lambda: (json.loads(v), pl.Boolean),
+            "f16": lambda: (float(v), pl.Float32),
+            "f32": lambda: (float(v), pl.Float32),
+            "i8": lambda: (int(v), pl.Int8),
+            "i16": lambda: (int(v), pl.Int16),
+            "i32": lambda: (int(v), pl.Int32),
+            "i64": lambda: (int(v), pl.Int64),
+            "u8": lambda: (int(v), pl.UInt8),
+            "u16": lambda: (int(v), pl.UInt16),
+            "u32": lambda: (int(v), pl.UInt32),
+            "u64": lambda: (int(v), pl.UInt64),
+            "comptime_string": lambda: (v, pl.Categorical),
+        }[k.split(":")[-1]]()
+        for k, v in compconf_data.items()
+    },
 }
 log(metadata)
 
