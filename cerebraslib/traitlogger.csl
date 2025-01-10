@@ -11,7 +11,7 @@ comptime { // access via get_value for logging...
 const compconf_raw = @import_module("<compconf_raw>");
 const dstream_algo_name = compconf_raw.CEREBRASLIB_TRAITLOGGER_DSTREAM_ALGO_NAME;
 
-const num_bits = compconf.get_value("CEREBRASLIB_TRAITLOGGER_NUM_BITS", u16);
+const num_bits = compconf.get_value("CEREBRASLIB_TRAITLOGGER_NUM_BITS", u32);
 
 // configure implementation ===================================================
 const logger = @import_module("cerebraslib/bitlogger.csl", .{
