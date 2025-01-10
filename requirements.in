@@ -1,6 +1,7 @@
 # pylib
 compconf==0.5.0
 dendropy
+downstream==1.6.1
 hstrat==1.14.0
 opytional
 pandas
