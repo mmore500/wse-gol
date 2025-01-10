@@ -554,7 +554,7 @@ task cycleTask(_: u16) void {
   for(@range(u16, population.gSize)) |i| {
     genome[i] = genome_ptr[i];
   }
-  wildtypeLogger.logger.update(population._get_ith_trait_value(0) == 0);
+  wildtypeLogger.update(population._get_ith_trait_value(0) == 0);
 
   // trigger next cycle
   // --------------------------------------------------------------------------

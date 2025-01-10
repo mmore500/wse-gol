@@ -12,6 +12,7 @@ const compconf_raw = @import_module("<compconf_raw>");
 const dstream_algo_name = compconf_raw.CEREBRASLIB_TRAITLOGGER_DSTREAM_ALGO_NAME;
 
 const num_bits = compconf.get_value("CEREBRASLIB_TRAITLOGGER_NUM_BITS", u32);
+const dilation = compconf.get_value("CEREBRASLIB_TRAITLOGGER_DILATION", u32);
 
 // configure implementation ===================================================
 const logger = @import_module("cerebraslib/bitlogger.csl", .{
@@ -19,3 +20,12 @@ const logger = @import_module("cerebraslib/bitlogger.csl", .{
     .dstreamAlgoName = dstream_algo_name,
     .symbolName = symbolName,
 });
+
+// global variables ===========================================================
+var _T: u32 = 0;
+
+// public API =================================================================
+fn update(sample: bool) void {
+    if (_T % dilation == 0) logger.update(sample);
+    _T += 1;
+}
