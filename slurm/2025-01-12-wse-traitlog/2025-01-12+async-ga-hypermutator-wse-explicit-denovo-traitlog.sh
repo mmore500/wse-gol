@@ -13,7 +13,7 @@ cd "$(dirname "$0")"
 
 echo "SLURM_ARRAY_TASK_ID ${SLURM_ARRAY_TASK_ID}"
 
-WSE_SKETCHES_REVISION="10f3d24997d30e470866ec40925be76e5d88b8e5"
+WSE_SKETCHES_REVISION="e0e81a8ca19b5be2699332c3dc8613b927ea4c7b"
 echo "WSE_SKETCHES_REVISION ${WSE_SKETCHES_REVISION}"
 
 WORKDIR="${HOME}/scratch/2025-01-12/async-ga-hypermutator-wse-explicit-denovo-traitlog"
