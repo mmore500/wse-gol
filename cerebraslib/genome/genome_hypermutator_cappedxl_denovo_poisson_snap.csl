@@ -15,6 +15,18 @@
 
 //! {
 //!     "nWav": (3, pl.UInt8),
+//!     "netbencount_hexoffset": (0, pl.UInt8),
+//!     "netbencount_hexwidth": (4, pl.UInt8),
+//!     "mutator_hexoffset": (4, pl.UInt8),
+//!     "mutator_hexwidth": (2, pl.UInt8),
+//!     "delcount_hexoffset": (6, pl.UInt8),
+//!     "delcount_hexwidth": (2, pl.UInt8),
+//!     "counter_hexoffset": (8, pl.UInt8),
+//!     "counter_hexwidth": (8, pl.UInt8),
+//!     "snapshot_netbencount_hexoffset": (16, pl.UInt8),
+//!     "snapshot_netbencount_hexwidth": (4, pl.UInt8),
+//!     "snapshot_counter_hexoffset": (20, pl.UInt8),
+//!     "snapshot_counter_hexwidth": (4, pl.UInt8),
 //! }
 
 // module imports =============================================================
