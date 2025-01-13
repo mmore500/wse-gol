@@ -27,6 +27,7 @@
 //!     "snapshot_netbencount_hexwidth": (4, pl.UInt8),
 //!     "snapshot_counter_hexoffset": (20, pl.UInt8),
 //!     "snapshot_counter_hexwidth": (4, pl.UInt8),
+//!     "snapshot_counter_dilation": (8, pl.UInt8),
 //! }
 
 // module imports =============================================================
@@ -72,7 +73,7 @@ fn _apply_mutation(genome: genomePtr_t) void {
             _ptr_snap_netbencount(genome).* = _ptr_netbencount(genome).*;
             _ptr_snap_counter(genome).* = @as(
                 u16,
-                _ptr_counter(genome).* >> 8,
+                _ptr_counter(genome).* >> 3,
             );
         }
         _ptr_mutator(genome).* = 100;
