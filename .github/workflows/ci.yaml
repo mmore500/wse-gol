@@ -12,7 +12,7 @@ on:
 jobs:
   test-pylib:
     name: Test pylib
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
 
     steps:
       - name: Checkout repository
@@ -33,7 +33,7 @@ jobs:
         run: ./pylib/test.sh
 
   test-async-ga:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
@@ -145,7 +145,7 @@ jobs:
 
   test-sample-populations:
     name: Test make sample population
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     env:
       CSLC: cslc
       CS_PYTHON: cs_python
@@ -230,7 +230,7 @@ jobs:
           path: ./kernel-async-ga/a=concatenated_genomes+flavor=genome_hsurftiltedsticky_tagged+ext=.csv
 
   test-hstrat:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
@@ -485,7 +485,7 @@ jobs:
 
   test-cerebraslib:
     name: Test cerebraslib
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     env:
       CSLC: cslc
       CS_PYTHON: cs_python
