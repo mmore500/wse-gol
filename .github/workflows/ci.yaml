@@ -83,6 +83,7 @@ jobs:
             sudo apt-get update
             sudo apt-get install -y rpm2cpio
             sudo apt-get install -y golang-go
+            sudo apt-get install -y libsubid-dev
             mkdir -p ~/apptainer
             # echo 'export PATH="$HOME/apptainer/bin:$PATH"' >> ~/.bashrc
             echo "$HOME/apptainer/bin" >> $GITHUB_PATH
@@ -174,6 +175,7 @@ jobs:
             sudo apt-get update
             sudo apt-get install -y rpm2cpio
             sudo apt-get install -y golang-go
+            sudo apt-get install -y libsubid-dev
             mkdir -p ~/apptainer
             # echo 'export PATH="$HOME/apptainer/bin:$PATH"' >> ~/.bashrc
             echo "$HOME/apptainer/bin" >> $GITHUB_PATH
@@ -380,6 +382,7 @@ jobs:
             sudo apt-get update
             sudo apt-get install -y rpm2cpio
             sudo apt-get install -y golang-go
+            sudo apt-get install -y libsubid-dev
             mkdir -p ~/apptainer
             # echo 'export PATH="$HOME/apptainer/bin:$PATH"' >> ~/.bashrc
             echo "$HOME/apptainer/bin" >> $GITHUB_PATH
@@ -514,6 +517,7 @@ jobs:
             sudo apt-get update
             sudo apt-get install -y rpm2cpio
             sudo apt-get install -y golang-go
+            sudo apt-get install -y libsubid-dev
             mkdir -p ~/apptainer
             # echo 'export PATH="$HOME/apptainer/bin:$PATH"' >> ~/.bashrc
             echo "$HOME/apptainer/bin" >> $GITHUB_PATH
