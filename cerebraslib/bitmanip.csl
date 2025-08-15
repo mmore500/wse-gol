@@ -85,3 +85,15 @@ fn randomize(bitfield: [*]u16, n: u16) void {
     );
     @map(_random16, dsd);
 }
+
+fn mutate_log2p(
+    bitfield: [*]u16,
+    n: u16,
+    log2p: u8,
+) void {
+    for (@range(u16, n)) |i| {
+        var mask: u16 = 0xFFFF;
+        for (@range(u8, log2p)) |_| { mask &= @random16(); }
+        bitfield[i] ^= mask;
+    }
+}
