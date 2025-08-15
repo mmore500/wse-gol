@@ -402,7 +402,7 @@ fn test_set_nth_bit_with_swaps() void {
 }
 
 fn test_set_nth_bit_with_swaps_regression1() void {
-    var bitfield = @zeros([16]u8); // Initialize a 2-byte bitfield
+    var bitfield = @zeros([16]u8); // Initialize a 16-byte bitfield
 
     const kwargs = .{
         .byteSwap = true,
@@ -476,7 +476,7 @@ fn test_set_nth_bit_with_swaps_regression1() void {
 }
 
 fn test_set_nth_bit_with_swaps_regression2() void {
-    var bitfield = @zeros([16]u8); // Initialize a 2-byte bitfield
+    var bitfield = @zeros([16]u8); // Initialize a 16-byte bitfield
 
     const kwargs = .{
         .byteSwap = true,
@@ -527,7 +527,7 @@ fn test_set_nth_bit_with_swaps_regression2() void {
 
 fn test_randomize() void {
     random.set_global_prng_seed(1);
-    var bitfield = @zeros([2]u16); // Initialize a 2-byte bitfield
+    var bitfield = @zeros([2]u16); // Initialize a 1-word bitfield
 
     bitmanip.randomize(&bitfield, 0);
     @assert(bitfield[0] == 0);
