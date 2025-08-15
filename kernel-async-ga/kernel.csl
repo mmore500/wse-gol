@@ -69,6 +69,8 @@ const population = @import_module("cerebraslib/population.csl", .{
   .pExtinction = pExtinction,
   .tournamentSize = tournSize,
   .fitFun = genome_.calc_fitness_of,
+  .immClobber = genome_.hasImmClobber,
+  .immClobberFun = genome_.clobber_immigrant,
   .inheritFun = genome_.elapse_inheritance_of,
   .initFun = genome_.initialize_one,
   .traitFun = genome_.get_trait_value,
@@ -511,19 +513,19 @@ task cycleTask(_: u16) void {
   // note: never-filled recv requests on PE array edges ok
   // --------------------------------------------------------------------------
   if (recvFlag_N == 1) {  // has open recv request been filled?
-    population.immigrate_genomes(recvBufDsd_N, recvNumGenomes);
+    population.immigrate_genomes(@ptrcast([*]u32, &recvBuf_N), recvNumGenomes);
     recvFlag_N = 0; dispatchRecv_N();
   }
   if (recvFlag_S == 1) {
-    population.immigrate_genomes(recvBufDsd_S, recvNumGenomes);
+    population.immigrate_genomes(@ptrcast([*]u32, &recvBuf_S), recvNumGenomes);
     recvFlag_S = 0; dispatchRecv_S();
   }
   if (recvFlag_E == 1) {
-    population.immigrate_genomes(recvBufDsd_E, recvNumGenomes);
+    population.immigrate_genomes(@ptrcast([*]u32, &recvBuf_E), recvNumGenomes);
     recvFlag_E = 0; dispatchRecv_E();
   }
   if (recvFlag_W == 1) {
-    population.immigrate_genomes(recvBufDsd_W, recvNumGenomes);
+    population.immigrate_genomes(@ptrcast([*]u32, &recvBuf_W), recvNumGenomes);
     recvFlag_W = 0; dispatchRecv_W();
   }
 

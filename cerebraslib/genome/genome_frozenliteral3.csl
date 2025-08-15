@@ -22,6 +22,7 @@ const gSize: u16 = 3;
 const genome_t = [gSize]u32;
 const genomePtr_t = [*]u32;
 const nTraitVals: u16 = 1;
+const hasImmClobber: bool = false;
 
 const val1: u32 = 1692398096;
 const val2: u32 = 2816128869;
@@ -49,3 +50,5 @@ fn initialize_one(genome: genomePtr_t) void {
     genome[2] = val3;
     @assert(_validate(genome));
 }
+
+fn clobber_immigrant(resident: genomePtr_t, immigrant: genomePtr_t) void { }

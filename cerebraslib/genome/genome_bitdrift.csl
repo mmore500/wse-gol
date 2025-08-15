@@ -28,6 +28,7 @@ const gSize: u16 = 3;
 const genome_t = [gSize]u32;
 const genomePtr_t = [*]u32;
 const nTraitVals: u16 = 1;
+const hasImmClobber: bool = false;
 
 // internal functions =========================================================
 fn _apply_mutation(genome: genomePtr_t) void {
@@ -61,3 +62,5 @@ fn initialize_one(genome: genomePtr_t) void {
     bitmanip.randomize(@ptrcast([*]u16, genome), gHalfWords);
     @ptrcast(*f16, genome).* = 0.0;
 }
+
+fn clobber_immigrant(resident: genomePtr_t, immigrant: genomePtr_t) void { }

@@ -24,6 +24,7 @@ const gSize: u16 = 1;
 const genome_t = [gSize]u32;
 const genomePtr_t = [*]u32;
 const nTraitVals: u16 = 2;
+const hasImmClobber: bool = false;
 
 const sb = 0.1;
 const sd = 0.1;
@@ -93,3 +94,5 @@ fn initialize_one(genome: genomePtr_t) void {
     _ptr_delcount(genome).* = 0;
     _ptr_mutator(genome).* = 1;
 }
+
+fn clobber_immigrant(resident: genomePtr_t, immigrant: genomePtr_t) void { }
