@@ -10,13 +10,17 @@ const population = @import_module("cerebraslib/population.csl", .{
     .traitFun = genome.get_trait_value,
 });
 
+const genomeFrozen = @import_module(
+    "cerebraslib/genome/genome_frozenliteral3.csl",
+    .{ .peId = 0, }
+);
 const populationExtinction = @import_module("cerebraslib/population.csl", .{
-    .gSize = genome.gSize, .popSize = 2,
+    .gSize = genomeFrozen.gSize, .popSize = 2,
     .tournamentSize = 3.0, .pExtinction = 1.0,
-    .fitFun = genome.calc_fitness_of,
-    .inheritFun = genome.elapse_inheritance_of,
-    .initFun = genome.initialize_one, .peId = 0,
-    .traitFun = genome.get_trait_value,
+    .fitFun = genomeFrozen.calc_fitness_of,
+    .inheritFun = genomeFrozen.elapse_inheritance_of,
+    .initFun = genomeFrozen.initialize_one, .peId = 0,
+    .traitFun = genomeFrozen.get_trait_value,
 });
 
 // internal accessors ======================================================
@@ -61,13 +65,20 @@ fn test_sample_n() void {
 
 fn test_perform_extinction_all() void {
     populationExtinction.init_module();
-    @assert(populationExtinction.get_population_word(0) != 0);
-    @assert(populationExtinction.get_population_word(1) != 0);
-    @assert(populationExtinction.get_population_word(0 + genome.gSize) != 0);
+    @assert(populationExtinction._get_population_word(0) != 0);
+    @assert(populationExtinction._get_population_word(1) != 0);
+    @assert(populationExtinction._get_population_word(2) != 0);
+    @assert(populationExtinction._get_population_word(3) != 0);
+    @assert(populationExtinction._get_population_word(4) != 0);
+    @assert(populationExtinction._get_population_word(5) != 0);
     populationExtinction._perform_extinction_all();
-    @assert(populationExtinction.get_population_word(0) == 0);
-    @assert(populationExtinction.get_population_word(1) == 0);
-    @assert(populationExtinction.get_population_word(0 + genome.gSize) == 0);
+    @assert(populationExtinction._get_population_word(0) == 0);
+    @assert(populationExtinction._get_population_word(1) == 0);
+    @assert(populationExtinction._get_population_word(2) == 0);
+    @assert(populationExtinction._get_population_word(3) == 0);
+    @assert(populationExtinction._get_population_word(4) == 0);
+    @assert(populationExtinction._get_population_word(5) == 0);
+
 }
 
 // public API =================================================================
