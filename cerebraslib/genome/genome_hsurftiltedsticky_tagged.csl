@@ -29,6 +29,7 @@ const gSize: u16 = 3;
 const genome_t = [gSize]u32;
 const genomePtr_t = [*]u32;
 const nTraitVals: u16 = 1;
+const hasImmClobber: bool = false;
 
 // internal functions =========================================================
 fn _step_instrumentation(genome: genomePtr_t) void {
@@ -53,7 +54,9 @@ fn elapse_inheritance_of(genome: genomePtr_t) void {
     _step_instrumentation(genome);
 }
 
-fn calc_fitness_of(genome: genomePtr_t) f32 { return 0.0; }
+fn calc_fitness_of(genome: genomePtr_t) f32 {
+    return 0.0;
+}
 
 fn get_trait_value(genome: genomePtr_t) u32 {
     return 0;
@@ -66,3 +69,5 @@ fn initialize_one(genome: genomePtr_t) void {
     genome_ptr[1] = 0;
     // tag bits left randomized
 }
+
+fn clobber_immigrant(resident: genomePtr_t, immigrant: genomePtr_t) void { }

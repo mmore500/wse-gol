@@ -4,6 +4,8 @@ const genome = @import_module("cerebraslib/genome/genome_bitdrift.csl", .{
 const population = @import_module("cerebraslib/population.csl", .{
     .gSize = genome.gSize, .popSize = 100,
     .tournamentSize = 3.0, .pExtinction = 0.0,
+    .immClobber = genome.hasImmClobber,
+    .immClobberFun = genome.clobber_immigrant,
     .fitFun = genome.calc_fitness_of,
     .inheritFun = genome.elapse_inheritance_of,
     .initFun = genome.initialize_one, .peId = 0,
@@ -17,10 +19,27 @@ const genomeFrozen = @import_module(
 const populationExtinction = @import_module("cerebraslib/population.csl", .{
     .gSize = genomeFrozen.gSize, .popSize = 2,
     .tournamentSize = 3.0, .pExtinction = 1.0,
+    .immClobber = genomeFrozen.hasImmClobber,
+    .immClobberFun = genomeFrozen.clobber_immigrant,
     .fitFun = genomeFrozen.calc_fitness_of,
     .inheritFun = genomeFrozen.elapse_inheritance_of,
     .initFun = genomeFrozen.initialize_one, .peId = 0,
     .traitFun = genomeFrozen.get_trait_value,
+});
+
+const genomeClobber = @import_module(
+    "cerebraslib/genome/genome_bitdrift_clobber.csl",
+    .{ .peId = 0, }
+);
+const populationClobber = @import_module("cerebraslib/population.csl", .{
+    .gSize = genomeClobber.gSize, .popSize = 2,
+    .tournamentSize = 3.0, .pExtinction = 1.0,
+    .immClobber = genomeClobber.hasImmClobber,
+    .immClobberFun = genomeClobber.clobber_immigrant,
+    .fitFun = genomeClobber.calc_fitness_of,
+    .inheritFun = genomeClobber.elapse_inheritance_of,
+    .initFun = genomeClobber.initialize_one, .peId = 0,
+    .traitFun = genomeClobber.get_trait_value,
 });
 
 // internal accessors ======================================================
@@ -87,7 +106,13 @@ fn test_emigrate_genomes() void {
 }
 
 fn test_immigrate_genomes() void {
-    population.immigrate_genomes(population.swapDsd, 10);
+    population.immigrate_genomes(@ptrcast([*]u32, &population.swap), 10);
+}
+
+fn test_immigrate_genomes_clobber() void {
+    populationClobber.immigrate_genomes(
+        @ptrcast([*]u32, &populationClobber.swap), 10
+    );
 }
 
 fn test_do_generation() void { population.do_generation(); }
@@ -110,5 +135,6 @@ fn do_test() void {
     test_perform_extinction_all();
     test_emigrate_genomes();
     test_immigrate_genomes();
+    test_immigrate_genomes_clobber();
     test_do_generation();
 }

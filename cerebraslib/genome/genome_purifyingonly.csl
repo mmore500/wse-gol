@@ -64,6 +64,7 @@ const gSize: u16 = 5;
 const genome_t = [gSize]u32;
 const genomePtr_t = [*]u32;
 const nTraitVals: u16 = 1;
+const hasImmClobber: bool = false;
 
 // internal functions =========================================================
 const S = 64;
@@ -116,3 +117,5 @@ fn initialize_one(genome: genomePtr_t) void {
     @ptrcast([*]u32, genome)[1] = 0;
     for (@range(u16, S)) |_| { _step_instrumentation(genome); }
 }
+
+fn clobber_immigrant(resident: genomePtr_t, immigrant: genomePtr_t) void { }
