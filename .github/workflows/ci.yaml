@@ -74,20 +74,24 @@ jobs:
           python -m pip install --upgrade uv
           uv pip install -r requirements.txt --system
 
-      - name: Set up Apptainer
-        uses: nick-fields/retry@v3
+      - name: Install Nix
+        uses: cachix/install-nix-action@v25
         with:
-          timeout_minutes: 15
-          max_attempts: 3
-          command: |
-            sudo apt-get update
-            sudo apt-get install -y rpm2cpio
-            sudo apt-get install -y golang-go
-            mkdir -p ~/apptainer
-            # echo 'export PATH="$HOME/apptainer/bin:$PATH"' >> ~/.bashrc
-            echo "$HOME/apptainer/bin" >> $GITHUB_PATH
-            curl -s https://raw.githubusercontent.com/apptainer/apptainer/03bb84afc90c9699816db2e2730b56f2d3501eff/tools/install-unprivileged.sh | bash -s - ~/apptainer
+          nix_path: nixpkgs=channel:nixos-22.11
 
+      - name: Set up Nix Channels
+        run: |
+          nix-channel --add https://nixos.org/channels/nixpkgs-unstable nixpkgs
+          nix-channel --update
+
+      - name: Test nix
+        run: |
+          nix-env -iA nixpkgs.cowsay nixpkgs.hello
+          cowsay "Hello from Nix!"
+          hello
+
+      - name: Set up Apptainer
+        run: echo "nix-env -iA nixpkgs.apptainer" | sh
       - name: Test Apptainer
         uses: nick-fields/retry@v3
         with:
@@ -165,20 +169,24 @@ jobs:
           python -m pip install --upgrade uv
           uv pip install -r requirements.txt --system
 
-      - name: Set up Apptainer
-        uses: nick-fields/retry@v3
+      - name: Install Nix
+        uses: cachix/install-nix-action@v25
         with:
-          timeout_minutes: 15
-          max_attempts: 3
-          command: |
-            sudo apt-get update
-            sudo apt-get install -y rpm2cpio
-            sudo apt-get install -y golang-go
-            mkdir -p ~/apptainer
-            # echo 'export PATH="$HOME/apptainer/bin:$PATH"' >> ~/.bashrc
-            echo "$HOME/apptainer/bin" >> $GITHUB_PATH
-            curl -s https://raw.githubusercontent.com/apptainer/apptainer/03bb84afc90c9699816db2e2730b56f2d3501eff/tools/install-unprivileged.sh | bash -s - ~/apptainer
+          nix_path: nixpkgs=channel:nixos-22.11
 
+      - name: Set up Nix Channels
+        run: |
+          nix-channel --add https://nixos.org/channels/nixpkgs-unstable nixpkgs
+          nix-channel --update
+
+      - name: Test nix
+        run: |
+          nix-env -iA nixpkgs.cowsay nixpkgs.hello
+          cowsay "Hello from Nix!"
+          hello
+
+      - name: Set up Apptainer
+        run: echo "nix-env -iA nixpkgs.apptainer" | sh
       - name: Test Apptainer
         uses: nick-fields/retry@v3
         with:
@@ -371,20 +379,24 @@ jobs:
           python -m pip install --upgrade uv
           uv pip install -r requirements.txt --system
 
-      - name: Set up Apptainer
-        uses: nick-fields/retry@v3
+      - name: Install Nix
+        uses: cachix/install-nix-action@v25
         with:
-          timeout_minutes: 15
-          max_attempts: 3
-          command: |
-            sudo apt-get update
-            sudo apt-get install -y rpm2cpio
-            sudo apt-get install -y golang-go
-            mkdir -p ~/apptainer
-            # echo 'export PATH="$HOME/apptainer/bin:$PATH"' >> ~/.bashrc
-            echo "$HOME/apptainer/bin" >> $GITHUB_PATH
-            curl -s https://raw.githubusercontent.com/apptainer/apptainer/03bb84afc90c9699816db2e2730b56f2d3501eff/tools/install-unprivileged.sh | bash -s - ~/apptainer
+          nix_path: nixpkgs=channel:nixos-22.11
 
+      - name: Set up Nix Channels
+        run: |
+          nix-channel --add https://nixos.org/channels/nixpkgs-unstable nixpkgs
+          nix-channel --update
+
+      - name: Test nix
+        run: |
+          nix-env -iA nixpkgs.cowsay nixpkgs.hello
+          cowsay "Hello from Nix!"
+          hello
+
+      - name: Set up Apptainer
+        run: echo "nix-env -iA nixpkgs.apptainer" | sh
       - name: Test Apptainer
         uses: nick-fields/retry@v3
         with:
@@ -505,20 +517,24 @@ jobs:
           python -m pip install --upgrade uv
           uv pip install -r requirements.txt --system
 
-      - name: Set up Apptainer
-        uses: nick-fields/retry@v3
+      - name: Install Nix
+        uses: cachix/install-nix-action@v25
         with:
-          timeout_minutes: 15
-          max_attempts: 3
-          command: |
-            sudo apt-get update
-            sudo apt-get install -y rpm2cpio
-            sudo apt-get install -y golang-go
-            mkdir -p ~/apptainer
-            # echo 'export PATH="$HOME/apptainer/bin:$PATH"' >> ~/.bashrc
-            echo "$HOME/apptainer/bin" >> $GITHUB_PATH
-            curl -s https://raw.githubusercontent.com/apptainer/apptainer/03bb84afc90c9699816db2e2730b56f2d3501eff/tools/install-unprivileged.sh | bash -s - ~/apptainer
+          nix_path: nixpkgs=channel:nixos-22.11
 
+      - name: Set up Nix Channels
+        run: |
+          nix-channel --add https://nixos.org/channels/nixpkgs-unstable nixpkgs
+          nix-channel --update
+
+      - name: Test nix
+        run: |
+          nix-env -iA nixpkgs.cowsay nixpkgs.hello
+          cowsay "Hello from Nix!"
+          hello
+
+      - name: Set up Apptainer
+        run: echo "nix-env -iA nixpkgs.apptainer" | sh
       - name: Test Apptainer
         uses: nick-fields/retry@v3
         with:

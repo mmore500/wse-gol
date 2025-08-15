@@ -1,6 +1,7 @@
 // module params ==============================================================
 param gSize: u16;
 param popSize: u16;
+param pExtinction: f32;
 param tournamentSize: f32;
 param fitFun: fn([*]u32) f32;
 param inheritFun: fn([*]u32) void;
@@ -104,6 +105,13 @@ fn _initialize_all() void {
     // @map(_initialize_ith_genome, indexBufDsd);
 }
 
+fn _perform_extinction_all() void {
+    @comptime_assert(0.0 <= pExtinction and pExtinction <= 1.0);
+    if (pExtinction > 0.0) {
+        if (opscalar.p(pExtinction)) { @mov32(bufferDsd, 0); }
+    }
+}
+
 fn _perform_selection_all() void {
     _eval_fitness_all();
     // sample tournament returns word indices, so don't need to rescale
@@ -178,4 +186,8 @@ fn immigrate_genomes(fromDsd: mem1d_dsd, nGenomes: u16) void {
 
 fn init_module() void { _initialize_all(); }
 
-fn do_generation() void { _elapse_inheritance_all(); _perform_selection_all(); }
+fn do_generation() void {
+    _elapse_inheritance_all();
+    _perform_selection_all();
+    _perform_extinction_all();
+}
