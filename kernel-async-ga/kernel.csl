@@ -59,8 +59,15 @@ const genome_ = @import_module(
 comptime { @comptime_assert(genome_.gSize % 2 == 1); }
 
 const nTraitVals = genome_.nTraitVals;
+const pExtinction = compconf.get_value_or(
+    "CEREBRASLIB_POPULATION_EXTINCTION_PROBABILITY",
+    @as(f32, 0.0),
+);
+
 const population = @import_module("cerebraslib/population.csl", .{
-  .gSize = genome_.gSize, .popSize = popSize, .tournamentSize = tournSize,
+  .gSize = genome_.gSize, .popSize = popSize,
+  .pExtinction = pExtinction,
+  .tournamentSize = tournSize,
   .fitFun = genome_.calc_fitness_of,
   .inheritFun = genome_.elapse_inheritance_of,
   .initFun = genome_.initialize_one,
