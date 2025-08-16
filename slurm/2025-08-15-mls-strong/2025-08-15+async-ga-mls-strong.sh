@@ -32,7 +32,8 @@ echo "setup WORKDIR =========================================================="
 mkdir -p "${WORKDIR}"
 
 echo "setup SOURCEDIR ========================================================"
-SOURCEDIR="/tmp/${WSE_ASYNC_GA_REVISION}-${SLURM_JOB_ID}"
+mkdir -p "${HOME}/tmp"
+SOURCEDIR="${HOME}/tmp/${WSE_ASYNC_GA_REVISION}-${SLURM_JOB_ID}"
 echo "SOURCEDIR ${SOURCEDIR}"
 rm -rf "${SOURCEDIR}"
 git clone https://github.com/mmore500/wse-async-ga.git "${SOURCEDIR}" --single-branch
