@@ -25,6 +25,19 @@ fn test_elapse_inheritance_of() void {
     genome_mls.elapse_inheritance_of(genome_ptr);
     @assert(genome[2] == 132);
 
+    // genome flags
+    for (@range(u16, 2)) |i| {
+        var genome_i = genome[i];
+        while (genome_i == genome[i]) {
+            genome_mls._apply_mutation(genome_ptr, 8);
+        }
+        genome_i = genome[i];
+        while (genome_i != genome[i]) {
+            genome_mls._apply_mutation(genome_ptr, 8);
+        }
+    }
+
+    // genome
     for (@range(u16, 3, 7, 1)) |i| {
         var genome_i = genome[i];
         while (genome_i == genome[i]) {

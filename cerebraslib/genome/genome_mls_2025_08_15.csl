@@ -79,8 +79,8 @@ const nTraitVals: u16 = 2;
 const hasImmClobber: bool = true;
 
 // internal functions =========================================================
-fn _apply_mutation(genome: genomePtr_t) void {
-    bitmanip.mutate_log2p(@ptrcast([*]u16, genome), 4, 18);
+fn _apply_mutation(genome: genomePtr_t, log2p: u8) void {
+    bitmanip.mutate_log2p(@ptrcast([*]u16, genome), 4, log2p);
 }
 
 fn _step_instrumentation(genome: genomePtr_t) void {
@@ -128,7 +128,7 @@ inline fn _is_clear(genome: genomePtr_t) bool {
 
 // public API =================================================================
 fn elapse_inheritance_of(genome: genomePtr_t) void {
-    _apply_mutation(genome);
+    _apply_mutation(genome, 18);
     _step_instrumentation(genome); // elapse two steps per generation
     _step_instrumentation(genome);
 }
