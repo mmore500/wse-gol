@@ -33,6 +33,9 @@ export TMPDIR="${HOME}/scratch/tmp"
 echo "TMPDIR ${TMPDIR}"
 mkdir -p "${TMPDIR}"
 
+export TMPDIR="$(readlink -f "${TMPDIR}")"
+echo "TMPDIR ${TMPDIR}"
+
 echo "setup WORKDIR =========================================================="
 mkdir -p "${WORKDIR}"
 
