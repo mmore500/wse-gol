@@ -29,9 +29,9 @@ echo "SDK_INSTALL_PATH ${SDK_INSTALL_PATH:-}"
 echo "hostname $(hostname)"
 
 echo "setup TMPDIR ==========================================================="
-mkdir -p "${HOME}/tmp"
-export TMPDIR="${HOME}/tmp"
+export TMPDIR="${HOME}/scratch/tmp"
 echo "TMPDIR ${TMPDIR}"
+mkdir -p "${TMPDIR}"
 
 echo "setup WORKDIR =========================================================="
 mkdir -p "${WORKDIR}"
