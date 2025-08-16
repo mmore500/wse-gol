@@ -29,7 +29,8 @@ fn test_get_trait_value() void {
     var genome = @zeros(genome_bitdrift.genome_t);
     @assert(genome_bitdrift.get_trait_value(&genome) == 0);
     @assert(
-        genome_bitdrift.get_trait_value(&genome) < genome_bitdrift.nTraitVals
+        genome_bitdrift.get_trait_value(&genome)
+        < @as(u32, genome_bitdrift.nTraitVals)
     );
 }
 
@@ -38,26 +39,36 @@ fn test_initialize_one() void {
     genome_bitdrift.initialize_one(&genome);
 }
 
-fn clobber_immigrant() void {
+fn test_clobber_immigrant() void {
+    random.set_global_prng_seed(1);
     var immigrant = @zeros(genome_bitdrift.genome_t);
-    genome_bitdrift.initialize_one(&immigrant);
+    var immigrant_ptr = @ptrcast(genome_bitdrift.genomePtr_t, &immigrant[0]);
+    genome_bitdrift.initialize_one(immigrant_ptr);
     @assert(immigrant[0] | immigrant[1] | immigrant[2] != 0);
-
-    var empty_resident = @zeros(genome_bitdrift.genome_t);
 
     var resident = @zeros(genome_bitdrift.genome_t);
-    genome_bitdrift.initialize_one(&resident);
+    var resident_ptr = @ptrcast(genome_bitdrift.genomePtr_t, &resident[0]);
+    genome_bitdrift.initialize_one(resident_ptr);
+    @assert(resident[0] | resident[1] | resident[2] != 0);
 
-    genome_bitdrift.clobber_immigrant(&resident, &immigrant);
+    genome_bitdrift.clobber_immigrant(resident_ptr, immigrant_ptr);
     @assert(immigrant[0] | immigrant[1] | immigrant[2] != 0);
 
-    genome_bitdrift.clobber_immigrant(&resident_zero, &immigrant);
-    @assert(immigrant[0] | immigrant[1] | immigrant[2] == 0);
+    genome_bitdrift.initialize_one(immigrant_ptr);
+    @assert(immigrant[0] | immigrant[1] | immigrant[2] != 0);
+    var empty_resident = @zeros(genome_bitdrift.genome_t);
+    var empty_resident_ptr = @ptrcast(
+        genome_bitdrift.genomePtr_t, &empty_resident[0]
+    );
+    genome_bitdrift.clobber_immigrant(empty_resident_ptr, immigrant_ptr);
+    @assert(immigrant[0] | immigrant[1] | immigrant[2] != 0);
 }
 
 fn do_test() void {
     test_builtin_random_seeding();
     test_calc_fitness_of();
     test_elapse_inheritance_of();
+    test_get_trait_value();
     test_initialize_one();
+    test_clobber_immigrant();
 }

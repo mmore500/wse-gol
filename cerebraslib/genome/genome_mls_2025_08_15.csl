@@ -1,0 +1,159 @@
+// memory layout ===============================================================
+// byte 0 FLAG SITES (8 bytes)
+// byte 1
+// byte 2
+// byte 3
+// byte 4
+// byte 5
+// byte 6
+// byte 7
+// byte 8 COUNTER (u32, 4 bytes)
+// byte 9
+// byte 10
+// byte 11
+// byte 12 BITFIELD (16 bytes)
+// byte 13
+// byte 14
+// byte 15
+// byte 16
+// byte 17
+// byte 18
+// byte 19
+
+// byte 20
+// byte 21
+// byte 22
+// byte 23
+// byte 24
+// byte 25
+// byte 26
+// byte 27
+// TOTAL: 7 words -> 28 bytes
+
+//! {
+//!     "dstream_algo": (
+//!         "dstream." + compconf_data.get(
+//!             "CEREBRASLIB_HSTRAT_DSTREAM_ALGO_NAME:comptime_string", "hybrid_0_steady_1_tilted_2_algo"
+//!         ),
+//!         pl.Categorical,
+//!     ),
+//!     "dstream_storage_bitoffset": (96, pl.UInt8),
+//!     "dstream_storage_bitwidth": (128, pl.UInt8),
+//!     "dstream_T_bitoffset": (3642, pl.UInt8),
+//!     "dstream_T_bitwidth": (32, pl.UInt8),
+//!     "dstream_S": (128, pl.UInt8),
+//!     "nWav": (7, pl.UInt8),
+//! }
+
+// module imports =============================================================
+const math = @import_module("<math>");
+const random = @import_module("<random>");
+
+const compconf = @import_module("<compconf>");
+comptime { // access via get_value for logging...
+    const _ = compconf.get_value_or(
+        "CEREBRASLIB_HSTRAT_DSTREAM_ALGO_NAME",
+        "hybrid_0_steady_1_tilted_2_algo",
+    );
+} // ... raw string works around sdk v1.0.0 limitation
+const compconf_raw = @import_module("<compconf_raw>");
+const has_value = compconf.has_value("CEREBRASLIB_HSTRAT_DSTREAM_ALGO_NAME");
+const dstream_algo_name = (if (has_value)
+    compconf_raw.CEREBRASLIB_HSTRAT_DSTREAM_ALGO_NAME
+else
+    "hybrid_0_steady_1_tilted_2_algo");
+const dstream_algo = @import_module(
+    @strcat("<downstream/dstream/", dstream_algo_name, ">"),
+);
+
+const bitmanip = @import_module("cerebraslib/bitmanip.csl");
+const opscalar = @import_module("cerebraslib/opscalar.csl");
+
+const S = 128;
+
+// module config specs ========================================================
+const gSize: u16 = 7;
+const genome_t = [gSize]u32;
+const genomePtr_t = [*]u32;
+const nTraitVals: u16 = 2;
+const hasImmClobber: bool = true;
+
+// internal functions =========================================================
+fn _apply_mutation(genome: genomePtr_t, log2p: u8) void {
+    bitmanip.mutate_log2p(@ptrcast([*]u16, genome), 4, log2p);
+}
+
+fn _step_instrumentation(genome: genomePtr_t) void {
+    // elapse generation in bitfield
+    if (opscalar.unifbool()) {
+        const T = @ptrcast([*]u32, genome)[2];
+        const site = dstream_algo.assign_storage_site(128, T);
+
+        const offset_bits: u16 = (8 + 4) * 8;
+        const target_bit = @as(u16, site) + offset_bits;
+
+        const genome_bytes = @ptrcast([*]u8, genome);
+        if (site != S) bitmanip.flip_nth_bit_with_swaps(
+            genome_bytes,
+            target_bit,
+            .{ .byteSwap = true, .bitSwap = true },
+        );
+    }
+
+    // elapse generation in counter
+    @ptrcast([*]u32, genome)[2] += 1;
+}
+
+inline fn _clear(genome: genomePtr_t) void {
+    genome[0] = 0;
+    genome[1] = 0;
+    genome[2] = 0;
+    genome[3] = 0;
+    genome[4] = 0;
+    genome[5] = 0;
+    genome[6] = 0;
+}
+
+inline fn _is_clear(genome: genomePtr_t) bool {
+    const g = genome;
+    var res: u32 = g[0];
+    res |= g[1];
+    res |= g[2];
+    res |= g[3];
+    res |= g[4];
+    res |= g[5];
+    res |= g[6];
+    return res == 0;
+}
+
+// public API =================================================================
+fn elapse_inheritance_of(genome: genomePtr_t) void {
+    _apply_mutation(genome, 18);
+    _step_instrumentation(genome); // elapse two steps per generation
+    _step_instrumentation(genome);
+}
+
+fn calc_fitness_of(genome: genomePtr_t) f32 {
+    return @as(f32, get_trait_value(genome));
+}
+
+fn get_trait_value(genome: genomePtr_t) u32 {
+    return (genome[0] & 1) ^ 1; // bottom 8 sites initialized as 1's
+}
+
+fn initialize_one(genome: genomePtr_t) void {
+    _clear(genome);
+    genome[0] |= 0xFF; // initialize bottom 8 sites as 1's
+    // (to hint for testing endianness when decoding)
+    for (@range(u16, S)) |_| {
+        _step_instrumentation(genome);
+    }
+}
+
+fn clobber_immigrant(resident: genomePtr_t, immigrant: genomePtr_t) void {
+    if (!_is_clear(resident) or ( // nofmt
+        get_trait_value(resident) == 1 and opscalar.p(0.9)) // nofmt
+    ) {
+        _clear(immigrant);
+    }
+}

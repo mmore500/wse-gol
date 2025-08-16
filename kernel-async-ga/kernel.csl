@@ -513,19 +513,23 @@ task cycleTask(_: u16) void {
   // note: never-filled recv requests on PE array edges ok
   // --------------------------------------------------------------------------
   if (recvFlag_N == 1) {  // has open recv request been filled?
-    population.immigrate_genomes(@ptrcast([*]u32, &recvBuf_N), recvNumGenomes);
+    var recvBufPtr_N = @ptrcast([*]u32, &recvBuf_N[0]);
+    population.immigrate_genomes(recvBufPtr_N, recvNumGenomes);
     recvFlag_N = 0; dispatchRecv_N();
   }
   if (recvFlag_S == 1) {
-    population.immigrate_genomes(@ptrcast([*]u32, &recvBuf_S), recvNumGenomes);
+    var recvBufPtr_S = @ptrcast([*]u32, &recvBuf_S[0]);
+    population.immigrate_genomes(recvBufPtr_S, recvNumGenomes);
     recvFlag_S = 0; dispatchRecv_S();
   }
   if (recvFlag_E == 1) {
-    population.immigrate_genomes(@ptrcast([*]u32, &recvBuf_E), recvNumGenomes);
+    var recvBufPtr_E = @ptrcast([*]u32, &recvBuf_E[0]);
+    population.immigrate_genomes(recvBufPtr_E, recvNumGenomes);
     recvFlag_E = 0; dispatchRecv_E();
   }
   if (recvFlag_W == 1) {
-    population.immigrate_genomes(@ptrcast([*]u32, &recvBuf_W), recvNumGenomes);
+    var recvBufPtr_W = @ptrcast([*]u32, &recvBuf_W[0]);
+    population.immigrate_genomes(recvBufPtr_W, recvNumGenomes);
     recvFlag_W = 0; dispatchRecv_W();
   }
 
@@ -572,7 +576,7 @@ task cycleTask(_: u16) void {
   } else {
     // closeout telemetry
     // ------------------------------------------------------------------------
-    time.get_timestamp(@ptrcast(*[3]u16, &tscEndBuffer));
+    time.get_timestamp(@ptrcast(*[3]u16, ptr_tscEndBuffer));
     fitness[0] = population._calc_ith_fitness(0);
     // record final trait distributions
     for (@range(u16, popSize)) |i| {
@@ -633,10 +637,10 @@ fn dolaunch() void {  // launched by RPC (remote procedure call)
   // open initial recv requests, never-filled recv requests on edges ok
   dispatchRecv_N(); dispatchRecv_S(); dispatchRecv_E(); dispatchRecv_W();
   @mov16(cycleDsd, 0);  // send wavelet to self, trigger first cycle
-  @ptrcast(*[3]u16, &tscControlBuffer).*[0] = 507;
-  @ptrcast(*[3]u16, &tscControlBuffer).*[1] = 3;
-  @ptrcast(*[3]u16, &tscControlBuffer).*[2] = 7;
-  time.get_timestamp(@ptrcast(*[3]u16, &tscStartBuffer));
+  @ptrcast(*[3]u16, ptr_tscEndBuffer).*[0] = 507;
+  @ptrcast(*[3]u16, ptr_tscEndBuffer).*[1] = 3;
+  @ptrcast(*[3]u16, ptr_tscEndBuffer).*[2] = 7;
+  time.get_timestamp(@ptrcast(*[3]u16, ptr_tscStartBuffer));
   if (nonBlock == 1) memcpy.unblock_cmd_stream();
 }
 

@@ -46,8 +46,8 @@ fn has_elapsed_ms_(
     start_tsc: *const [3]u16,
 ) bool {
     var tsc_end = [3]u16{ 0, 0, 0 };
-    time.get_timestamp(&tsc_end);
-    return has_elapsed_ms(ms, start_tsc, &tsc_end);
+    time.get_timestamp(&tsc_end[0]);
+    return has_elapsed_ms(ms, start_tsc, &tsc_end[0]);
 }
 
 /// Check if given number of TSC ticks nave elapsed between two TSC values.
@@ -83,6 +83,6 @@ fn has_elapsed_tsc_(
     start_tsc: *const [3]u16,
 ) bool {
     var tsc_end = [3]u16{ 0, 0, 0 };
-    time.get_timestamp(&tsc_end);
-    return has_elapsed_tsc(tsc, start_tsc, &tsc_end);
+    time.get_timestamp(&tsc_end[0]);
+    return has_elapsed_tsc(tsc, start_tsc, &tsc_end[0]);
 }

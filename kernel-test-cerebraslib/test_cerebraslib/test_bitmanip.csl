@@ -402,7 +402,7 @@ fn test_set_nth_bit_with_swaps() void {
 }
 
 fn test_set_nth_bit_with_swaps_regression1() void {
-    var bitfield = @zeros([16]u8); // Initialize a 2-byte bitfield
+    var bitfield = @zeros([16]u8); // Initialize a 16-byte bitfield
 
     const kwargs = .{
         .byteSwap = true,
@@ -476,7 +476,7 @@ fn test_set_nth_bit_with_swaps_regression1() void {
 }
 
 fn test_set_nth_bit_with_swaps_regression2() void {
-    var bitfield = @zeros([16]u8); // Initialize a 2-byte bitfield
+    var bitfield = @zeros([16]u8); // Initialize a 16-byte bitfield
 
     const kwargs = .{
         .byteSwap = true,
@@ -527,7 +527,7 @@ fn test_set_nth_bit_with_swaps_regression2() void {
 
 fn test_randomize() void {
     random.set_global_prng_seed(1);
-    var bitfield = @zeros([2]u16); // Initialize a 2-byte bitfield
+    var bitfield = @zeros([2]u16); // Initialize a 1-word bitfield
 
     bitmanip.randomize(&bitfield, 0);
     @assert(bitfield[0] == 0);
@@ -542,6 +542,55 @@ fn test_randomize() void {
     @assert(bitfield[1] != 0);
 }
 
+fn test_mutate_log2p() void {
+    random.set_global_prng_seed(1);
+    var bitfield = @zeros([2]u16); // Initialize a 1-word bitfield
+
+    bitmanip.mutate_log2p(&bitfield, 0, 64);
+    @assert(bitfield[0] == 0);
+    @assert(bitfield[1] == 0);
+
+    bitmanip.mutate_log2p(&bitfield, 0, 0);
+    @assert(bitfield[0] == 0);
+    @assert(bitfield[1] == 0);
+
+    bitmanip.mutate_log2p(&bitfield, 0, 1);
+    @assert(bitfield[0] == 0);
+    @assert(bitfield[1] == 0);
+
+    bitmanip.mutate_log2p(&bitfield, 0, 64);
+    @assert(bitfield[0] == 0);
+    @assert(bitfield[1] == 0);
+
+    bitmanip.mutate_log2p(&bitfield, 1, 0);
+    @assert(bitfield[0] == 0xFFFF);
+    @assert(bitfield[1] == 0);
+
+    bitmanip.mutate_log2p(&bitfield, 1, 1);
+    @assert(bitfield[0] != 0 and bitfield[0] != 0xFFFF);
+    @assert(bitfield[1] == 0);
+
+    bitfield[0] = 0;
+    bitmanip.mutate_log2p(&bitfield, 2, 64);
+    @assert(bitfield[0] == 0);
+    @assert(bitfield[1] == 0);
+
+    bitmanip.mutate_log2p(&bitfield, 3, 0);
+    @assert(bitfield[0] == 0xFFFF);
+    @assert(bitfield[1] == 0xFFFF);
+
+    bitmanip.mutate_log2p(&bitfield, 3, 1);
+    @assert(bitfield[0] != 0 and bitfield[0] != 0xFFFF);
+    @assert(bitfield[1] != 0 and bitfield[1] != 0xFFFF);
+
+    bitfield[0] = 0;
+    bitfield[1] = 0;
+    bitmanip.mutate_log2p(&bitfield, 2, 2);
+    @assert(bitfield[0] != 0 and bitfield[0] != 0xFFFF);
+    @assert(bitfield[1] != 0 and bitfield[1] != 0xFFFF);
+}
+
+
 fn do_test() void {
     test_flip_nth_bit();
     test_set_nth_bit();
@@ -552,4 +601,5 @@ fn do_test() void {
     test_set_nth_bit_with_swaps_regression1();
     test_set_nth_bit_with_swaps_regression2();
     test_randomize();
+    test_mutate_log2p();
 }

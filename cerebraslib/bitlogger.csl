@@ -45,7 +45,7 @@ fn update(sample: bool) void {
         @xor16(recordDsd, recordDsd, pendingDsd); // x & (~y)
         @mov16(pendingDsd, 0);
 
-        const record_bytes = @ptrcast([*]u8, &recordBuffer);
+        const record_bytes = @ptrcast([*]u8, &recordBuffer[0]);
         if (site != dstream_S) bitmanip.set_nth_bit_with_swaps(
             record_bytes,
             site,
@@ -55,7 +55,7 @@ fn update(sample: bool) void {
         const last_seen_T_ptr = _last_seen_T_ptr();
         last_seen_T_ptr.* = dstream_T + 1;
     } else {
-        const pending_bytes = @ptrcast([*]u8, &pendingBuffer);
+        const pending_bytes = @ptrcast([*]u8, &pendingBuffer[0]);
         if (site != dstream_S) bitmanip.set_nth_bit_with_swaps(
             pending_bytes,
             site,

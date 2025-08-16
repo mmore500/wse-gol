@@ -1,0 +1,133 @@
+const random = @import_module("<random>");
+
+const genome_mls = @import_module("cerebraslib/genome/genome_mls_2025_08_15.csl", .{
+    .peId = 0,
+});
+
+
+fn test_builtin_random_seeding() void {
+    random.set_global_prng_seed(1);
+    const first = @random16();
+    @assert(first != @random16());
+    random.set_global_prng_seed(1);
+    @assert(first == @random16());
+}
+
+fn test_elapse_inheritance_of() void {
+    var genome = @zeros(genome_mls.genome_t);
+    var genome_ptr = @ptrcast(genome_mls.genomePtr_t, &genome[0]);
+    genome_mls.initialize_one(genome_ptr);
+    @assert(genome[2] == 128);
+
+    genome_mls.elapse_inheritance_of(genome_ptr);
+    @assert(genome[2] == 130);
+
+    genome_mls.elapse_inheritance_of(genome_ptr);
+    @assert(genome[2] == 132);
+
+    // genome flags
+    for (@range(u16, 2)) |i| {
+        var genome_i = genome[i];
+        while (genome_i == genome[i]) {
+            genome_mls._apply_mutation(genome_ptr, 8);
+        }
+        genome_i = genome[i];
+        while (genome_i != genome[i]) {
+            genome_mls._apply_mutation(genome_ptr, 8);
+        }
+    }
+
+    // genome
+    for (@range(u16, 3, 7, 1)) |i| {
+        var genome_i = genome[i];
+        while (genome_i == genome[i]) {
+            genome_mls.elapse_inheritance_of(genome_ptr);
+        }
+    }
+}
+
+
+fn test_calc_fitness_of() void {
+    var genome = @zeros(genome_mls.genome_t);
+    var genome_ptr = @ptrcast(genome_mls.genomePtr_t, &genome[0]);
+    genome_mls.initialize_one(genome_ptr);
+    @assert(genome_mls.calc_fitness_of(genome_ptr) == 0.0);
+    genome[0] ^= 1;
+    @assert(genome_mls.calc_fitness_of(genome_ptr) == 1.0);
+}
+
+fn test_get_trait_value() void {
+    var genome = @zeros(genome_mls.genome_t);
+    var genome_ptr = @ptrcast(genome_mls.genomePtr_t, &genome[0]);
+    genome_mls.initialize_one(genome_ptr);
+    @assert(genome_mls.get_trait_value(genome_ptr) == 0);
+    @assert(
+        genome_mls.get_trait_value(genome_ptr) < @as(u32, genome_mls.nTraitVals)
+    );
+    genome[0] ^= 1;
+    @assert(genome_mls.get_trait_value(genome_ptr) == 1);
+    @assert(
+        genome_mls.get_trait_value(genome_ptr) < @as(u32, genome_mls.nTraitVals)
+    );
+}
+
+fn test_initialize_one() void {
+    var genome = @zeros(genome_mls.genome_t);
+    var genome_ptr = @ptrcast(genome_mls.genomePtr_t, &genome[0]);
+    genome_mls.initialize_one(genome_ptr);
+    @assert(genome[0] == 0xFF);
+    @assert(genome[1] == 0);
+    @assert(genome[2] == 128);
+    @assert(genome[3] != 0);
+    @assert(genome[4] != 0);
+    @assert(genome[5] != 0);
+    @assert(genome[6] != 0);
+    @assert(genome[3] != genome[4]);
+    @assert(genome[4] != genome[5]);
+    @assert(genome[5] != genome[6]);
+    @assert(genome[6] != genome[3]);
+}
+
+fn test_clobber_immigrant() void {
+    random.set_global_prng_seed(1);
+
+    var imm = @zeros(genome_mls.genome_t);
+    var imm_ptr = @ptrcast(genome_mls.genomePtr_t, &imm[0]);
+    genome_mls.initialize_one(imm_ptr);
+    @assert(!genome_mls._is_clear(imm_ptr));
+
+    var resident = @zeros(genome_mls.genome_t);
+    var resident_ptr = @ptrcast(genome_mls.genomePtr_t, &resident[0]);
+    genome_mls.initialize_one(resident_ptr);
+    @assert(!genome_mls._is_clear(resident_ptr));
+
+    genome_mls.clobber_immigrant(resident_ptr, imm_ptr);
+    @assert(genome_mls._is_clear(imm_ptr));
+    @assert(!genome_mls._is_clear(resident_ptr));
+
+    var empty_resident = @zeros(genome_mls.genome_t);
+    var empty_resident_ptr = @ptrcast(
+        genome_mls.genomePtr_t, &empty_resident[0]
+    );
+    @assert(genome_mls._is_clear(empty_resident_ptr));
+
+    @assert(genome_mls._is_clear(imm_ptr));
+    while (genome_mls._is_clear(imm_ptr)) {
+        genome_mls.initialize_one(imm_ptr);
+        genome_mls.clobber_immigrant(empty_resident_ptr, imm_ptr);
+    }
+
+    @assert(!genome_mls._is_clear(imm_ptr));
+    while (!genome_mls._is_clear(imm_ptr)) {
+        genome_mls.clobber_immigrant(empty_resident_ptr, imm_ptr);
+    }
+}
+
+fn do_test() void {
+    test_builtin_random_seeding();
+    test_calc_fitness_of();
+    test_elapse_inheritance_of();
+    test_get_trait_value();
+    test_initialize_one();
+    test_clobber_immigrant();
+}

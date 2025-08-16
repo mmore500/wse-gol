@@ -33,4 +33,5 @@ fn do_test() void {
     test_calc_fitness_of();
     test_elapse_inheritance_of();
     test_initialize_one();
+    test_get_trait_value();
 }
