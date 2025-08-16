@@ -22,7 +22,7 @@ fn test_get_trait_value() void {
     @assert(genome_frozenliteral7.get_trait_value(&g) == 0);
     @assert(
         genome_frozenliteral7.get_trait_value(&g)
-        < genome_frozenliteral7.nTraitVals
+        < @as(u32, genome_frozenliteral7.nTraitVals)
     );
 }
 
@@ -35,5 +35,6 @@ fn test_initialize_one() void {
 fn do_test() void {
     test_calc_fitness_of();
     test_elapse_inheritance_of();
+    test_get_trait_value();
     test_initialize_one();
 }

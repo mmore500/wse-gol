@@ -29,7 +29,8 @@ fn test_get_trait_value() void {
     var genome = @zeros(genome_bitdrift.genome_t);
     @assert(genome_bitdrift.get_trait_value(&genome) == 0);
     @assert(
-        genome_bitdrift.get_trait_value(&genome) < genome_bitdrift.nTraitVals
+        genome_bitdrift.get_trait_value(&genome)
+        < @as(u32, genome_bitdrift.nTraitVals)
     );
 }
 
@@ -42,6 +43,7 @@ fn test_initialize_one() void {
 fn do_test() void {
     test_builtin_random_seeding();
     test_calc_fitness_of();
+    test_get_trait_value();
     test_elapse_inheritance_of();
     test_initialize_one();
 }

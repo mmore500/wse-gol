@@ -17,7 +17,7 @@ fn test_calc_fitness_of() void {
 fn test_get_trait_value() void {
     var g = @zeros(genome.genome_t);
     @assert(genome.get_trait_value(&g) == 0);
-    @assert(genome.get_trait_value(&g) < genome.nTraitVals);
+    @assert(genome.get_trait_value(&g) < @as(u32, genome.nTraitVals));
 }
 
 fn test_initialize_one() void {
@@ -28,5 +28,6 @@ fn test_initialize_one() void {
 fn do_test() void {
     test_calc_fitness_of();
     test_elapse_inheritance_of();
+    test_get_trait_value();
     test_initialize_one();
 }
