@@ -28,12 +28,16 @@ echo "SDK_INSTALL_LOCATION ${SDK_INSTALL_LOCATION:-}"
 echo "SDK_INSTALL_PATH ${SDK_INSTALL_PATH:-}"
 echo "hostname $(hostname)"
 
+echo "setup TMPDIR ==========================================================="
+mkdir -p "${HOME}/tmp"
+export TMPDIR="${HOME}/tmp"
+echo "TMPDIR ${TMPDIR}"
+
 echo "setup WORKDIR =========================================================="
 mkdir -p "${WORKDIR}"
 
 echo "setup SOURCEDIR ========================================================"
-mkdir -p "${HOME}/tmp"
-SOURCEDIR="${HOME}/tmp/${WSE_ASYNC_GA_REVISION}-${SLURM_JOB_ID}"
+SOURCEDIR="${TMPDIR}/${WSE_ASYNC_GA_REVISION}-${SLURM_JOB_ID}"
 echo "SOURCEDIR ${SOURCEDIR}"
 rm -rf "${SOURCEDIR}"
 git clone https://github.com/mmore500/wse-async-ga.git "${SOURCEDIR}" --single-branch
@@ -43,6 +47,7 @@ cd -
 
 echo "setup virtual env ======================================================"
 venv="$(mktemp -d)"
+echo "venv ${venv}"
 python3 -m venv "${venv}"
 source "${venv}/bin/activate"
 python3 -m pip install --upgrade pip wheel
