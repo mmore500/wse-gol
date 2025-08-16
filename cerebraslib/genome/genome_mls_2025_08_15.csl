@@ -39,7 +39,7 @@
 //!     ),
 //!     "dstream_storage_bitoffset": (96, pl.UInt8),
 //!     "dstream_storage_bitwidth": (128, pl.UInt8),
-//!     "dstream_T_bitoffset": (3642, pl.UInt8),
+//!     "dstream_T_bitoffset": (64, pl.UInt8),
 //!     "dstream_T_bitwidth": (32, pl.UInt8),
 //!     "dstream_S": (128, pl.UInt8),
 //!     "nWav": (7, pl.UInt8),
