@@ -71,7 +71,7 @@ fn clobber_immigrant(resident: genomePtr_t, immigrant: genomePtr_t) void {
         resident[0] | resident[1] | resident[2] != 0
     ) {
         immigrant[0] = 0;
-        immigrant[1] = 1;
-        immigrant[2] = 2;
+        immigrant[1] = 0;
+        immigrant[2] = 0;
     }
 }
