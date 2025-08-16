@@ -144,9 +144,9 @@ fn initialize_one(genome: genomePtr_t) void {
     _clear(genome);
     genome[0] |= 0xFF; // initialize bottom 8 sites as 1's
     // (to hint for testing endianness when decoding)
-    for (@range(u16, S)) |_| {
-        _step_instrumentation(genome);
-    }
+    genome[2] = 128; // initialize counter to 128
+    // randomize hstrat bitfield
+    bitmanip.randomize(@ptrcast([*]u16, &genome[3]), 8);
 }
 
 fn clobber_immigrant(resident: genomePtr_t, immigrant: genomePtr_t) void {
