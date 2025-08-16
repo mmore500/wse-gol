@@ -115,15 +115,8 @@ inline fn _clear(genome: genomePtr_t) void {
 }
 
 inline fn _is_clear(genome: genomePtr_t) bool {
-    const g = genome;
-    var res: u32 = g[0];
-    res |= g[1];
-    res |= g[2];
-    res |= g[3];
-    res |= g[4];
-    res |= g[5];
-    res |= g[6];
-    return res == 0;
+    const res: bool = genome[2] == 0;
+    return res;
 }
 
 // public API =================================================================
@@ -134,7 +127,7 @@ fn elapse_inheritance_of(genome: genomePtr_t) void {
 }
 
 fn calc_fitness_of(genome: genomePtr_t) f32 {
-    return @as(f32, get_trait_value(genome));
+    return @as(f32, get_trait_value(genome)) - @as(f32, _is_clear(genome));
 }
 
 fn get_trait_value(genome: genomePtr_t) u32 {
