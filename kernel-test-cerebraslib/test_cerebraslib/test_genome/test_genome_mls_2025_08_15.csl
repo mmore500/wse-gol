@@ -155,6 +155,7 @@ fn test_clobber_immigrant() void {
         genome_mls.clobber_immigrant(empty_resident_ptr, imm_ptr);
     }
 
+    @assert(genome_mls._is_clear(empty_resident_ptr));
     @assert(genome_mls._is_clear(imm_ptr));
     while (genome_mls._is_clear(imm_ptr)) {
         genome_mls.initialize_one(imm_ptr);
