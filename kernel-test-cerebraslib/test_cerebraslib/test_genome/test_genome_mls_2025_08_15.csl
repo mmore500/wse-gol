@@ -50,22 +50,49 @@ fn test_elapse_inheritance_of() void {
 fn test_calc_fitness_of() void {
     var genome = @zeros(genome_mls.genome_t);
     var genome_ptr = @ptrcast(genome_mls.genomePtr_t, &genome[0]);
-    genome_mls.initialize_one(genome_ptr);
     @assert(genome_mls.calc_fitness_of(genome_ptr) == 0.0);
+
+    genome_mls.initialize_one(genome_ptr);
+    @assert(genome_mls.calc_fitness_of(genome_ptr) == 1.0);
+
+    genome[0] ^= 1;
+    @assert(genome_mls.calc_fitness_of(genome_ptr) == 2.0);
+
     genome[0] ^= 1;
     @assert(genome_mls.calc_fitness_of(genome_ptr) == 1.0);
+
+    genome_mls._clear(genome_ptr);
+    @assert(genome_mls.calc_fitness_of(genome_ptr) == 0.0);
 }
 
 fn test_get_trait_value() void {
     var genome = @zeros(genome_mls.genome_t);
     var genome_ptr = @ptrcast(genome_mls.genomePtr_t, &genome[0]);
-    genome_mls.initialize_one(genome_ptr);
     @assert(genome_mls.get_trait_value(genome_ptr) == 0);
     @assert(
         genome_mls.get_trait_value(genome_ptr) < @as(u32, genome_mls.nTraitVals)
     );
+
+    genome_mls.initialize_one(genome_ptr);
+    @assert(genome_mls.get_trait_value(genome_ptr) == 1);
+    @assert(
+        genome_mls.get_trait_value(genome_ptr) < @as(u32, genome_mls.nTraitVals)
+    );
+
+    genome[0] ^= 1;
+    @assert(genome_mls.get_trait_value(genome_ptr) == 2);
+    @assert(
+        genome_mls.get_trait_value(genome_ptr) < @as(u32, genome_mls.nTraitVals)
+    );
+
     genome[0] ^= 1;
     @assert(genome_mls.get_trait_value(genome_ptr) == 1);
+    @assert(
+        genome_mls.get_trait_value(genome_ptr) < @as(u32, genome_mls.nTraitVals)
+    );
+
+    genome_mls._clear(genome_ptr);
+    @assert(genome_mls.get_trait_value(genome_ptr) == 0);
     @assert(
         genome_mls.get_trait_value(genome_ptr) < @as(u32, genome_mls.nTraitVals)
     );
@@ -101,9 +128,22 @@ fn test_clobber_immigrant() void {
     genome_mls.initialize_one(resident_ptr);
     @assert(!genome_mls._is_clear(resident_ptr));
 
-    genome_mls.clobber_immigrant(resident_ptr, imm_ptr);
-    @assert(genome_mls._is_clear(imm_ptr));
-    @assert(!genome_mls._is_clear(resident_ptr));
+    for (@range(u8, 255)) |_| {
+        genome_mls.initialize_one(imm_ptr);
+        @assert(genome_mls.get_trait_value(imm_ptr) == 1);
+        genome_mls.clobber_immigrant(resident_ptr, imm_ptr);
+        @assert(genome_mls._is_clear(imm_ptr));
+        @assert(!genome_mls._is_clear(resident_ptr));
+    }
+
+    for (@range(u8, 255)) |_| {
+        genome_mls.initialize_one(imm_ptr);
+        imm[0] ^= 1; // set focal mutation
+        @assert(genome_mls.get_trait_value(imm_ptr) == 2);
+        genome_mls.clobber_immigrant(resident_ptr, imm_ptr);
+        @assert(genome_mls._is_clear(imm_ptr));
+        @assert(!genome_mls._is_clear(resident_ptr));
+    }
 
     var empty_resident = @zeros(genome_mls.genome_t);
     var empty_resident_ptr = @ptrcast(
@@ -111,14 +151,28 @@ fn test_clobber_immigrant() void {
     );
     @assert(genome_mls._is_clear(empty_resident_ptr));
 
-    @assert(genome_mls._is_clear(imm_ptr));
-    while (genome_mls._is_clear(imm_ptr)) {
-        genome_mls.initialize_one(imm_ptr);
+    genome_mls.initialize_one(imm_ptr);
+    @assert(!genome_mls._is_clear(imm_ptr));
+    @assert(genome_mls.get_trait_value(imm_ptr) == 1);
+    for (@range(u8, 255)) |_| {
+        genome_mls.clobber_immigrant(empty_resident_ptr, imm_ptr);
+        @assert(!genome_mls._is_clear(imm_ptr));
+    }
+
+    imm[0] ^= 1; // set focal mutation
+    @assert(genome_mls.get_trait_value(imm_ptr) == 2);
+
+    @assert(genome_mls._is_clear(empty_resident_ptr));
+    while (!genome_mls._is_clear(imm_ptr)) {
         genome_mls.clobber_immigrant(empty_resident_ptr, imm_ptr);
     }
 
-    @assert(!genome_mls._is_clear(imm_ptr));
-    while (!genome_mls._is_clear(imm_ptr)) {
+    @assert(genome_mls._is_clear(empty_resident_ptr));
+    @assert(genome_mls._is_clear(imm_ptr));
+    while (genome_mls._is_clear(imm_ptr)) {
+        genome_mls.initialize_one(imm_ptr);
+        imm[0] ^= 1; // set focal mutation
+        @assert(genome_mls.get_trait_value(imm_ptr) == 2);
         genome_mls.clobber_immigrant(empty_resident_ptr, imm_ptr);
     }
 }
