@@ -4,6 +4,8 @@ set -euo pipefail
 
 cd "$(dirname "$0")"
 
+echo "begin compile.sh --------------------------------------------------------"
+
 echo "CSLC ${CSLC}"
 
 ASYNC_GA_GENOME_FLAVOR="${ASYNC_GA_GENOME_FLAVOR:-genome_bitdrift}"
