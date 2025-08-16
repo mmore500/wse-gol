@@ -75,7 +75,7 @@ const S = 128;
 const gSize: u16 = 7;
 const genome_t = [gSize]u32;
 const genomePtr_t = [*]u32;
-const nTraitVals: u16 = 2;
+const nTraitVals: u16 = 3;
 const hasImmClobber: bool = true;
 
 // internal functions =========================================================
@@ -127,11 +127,17 @@ fn elapse_inheritance_of(genome: genomePtr_t) void {
 }
 
 fn calc_fitness_of(genome: genomePtr_t) f32 {
-    return @as(f32, get_trait_value(genome)) - @as(f32, _is_clear(genome));
+    return @as(f32, get_trait_value(genome));
 }
 
 fn get_trait_value(genome: genomePtr_t) u32 {
-    return (genome[0] & 1) ^ 1; // bottom 8 sites initialized as 1's
+    // note: bottom 8 sites initialized as 1's
+    const is_not_clear: u32 = @as(u32, !_is_clear(genome));
+    const has_focal_mut: u32 = (genome[0] & 1) ^ is_not_clear;
+    // 0: is_clear
+    // 1: not clear, no focal mutation
+    // 2: not clear, has focal mutation
+    return is_not_clear + has_focal_mut;
 }
 
 fn initialize_one(genome: genomePtr_t) void {
@@ -145,7 +151,7 @@ fn initialize_one(genome: genomePtr_t) void {
 
 fn clobber_immigrant(resident: genomePtr_t, immigrant: genomePtr_t) void {
     if (!_is_clear(resident) or ( // nofmt
-        get_trait_value(resident) == 1 and opscalar.p(0.9)) // nofmt
+        get_trait_value(immigrant) == 2 and opscalar.p(0.9)) // nofmt
     ) {
         _clear(immigrant);
     }
