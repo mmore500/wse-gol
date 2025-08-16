@@ -128,10 +128,22 @@ fn test_clobber_immigrant() void {
     genome_mls.initialize_one(resident_ptr);
     @assert(!genome_mls._is_clear(resident_ptr));
 
-    @assert(!genome_mls._is_clear(imm_ptr));
-    genome_mls.clobber_immigrant(resident_ptr, imm_ptr);
-    @assert(genome_mls._is_clear(imm_ptr));
-    @assert(!genome_mls._is_clear(resident_ptr));
+    for (@range(u8, 255)) |_| {
+        genome_mls.initialize_one(imm_ptr);
+        @assert(genome_mls.get_trait_value(imm_ptr) == 1);
+        genome_mls.clobber_immigrant(resident_ptr, imm_ptr);
+        @assert(genome_mls._is_clear(imm_ptr));
+        @assert(!genome_mls._is_clear(resident_ptr));
+    }
+
+    for (@range(u8, 255)) |_| {
+        genome_mls.initialize_one(imm_ptr);
+        imm[0] ^= 1; // set focal mutation
+        @assert(genome_mls.get_trait_value(imm_ptr) == 2);
+        genome_mls.clobber_immigrant(resident_ptr, imm_ptr);
+        @assert(genome_mls._is_clear(imm_ptr));
+        @assert(!genome_mls._is_clear(resident_ptr));
+    }
 
     var empty_resident = @zeros(genome_mls.genome_t);
     var empty_resident_ptr = @ptrcast(
