@@ -48,7 +48,17 @@ fn test_initialize_one() void {
     var genome = @zeros(genome_mls.genome_t);
     var genome_ptr = @ptrcast(genome_mls.genomePtr_t, &genome[0]);
     genome_mls.initialize_one(genome_ptr);
+    @assert(genome[0] == 0xFF);
+    @assert(genome[1] == 0);
     @assert(genome[2] == 128);
+    @assert(genome[3] != 0);
+    @assert(genome[4] != 0);
+    @assert(genome[5] != 0);
+    @assert(genome[6] != 0);
+    @assert(genome[3] != genome[4]);
+    @assert(genome[4] != genome[5]);
+    @assert(genome[5] != genome[6]);
+    @assert(genome[6] != genome[3]);
 }
 
 fn test_clobber_immigrant() void {
