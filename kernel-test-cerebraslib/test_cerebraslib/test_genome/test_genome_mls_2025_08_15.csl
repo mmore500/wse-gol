@@ -16,7 +16,21 @@ fn test_builtin_random_seeding() void {
 fn test_elapse_inheritance_of() void {
     var genome = @zeros(genome_mls.genome_t);
     var genome_ptr = @ptrcast(genome_mls.genomePtr_t, &genome[0]);
-    genome_mls.elapse_inheritance_of(&genome);
+    genome_mls.initialize_one(genome_ptr);
+    @assert(genome[2] == 128);
+
+    genome_mls.elapse_inheritance_of(genome_ptr);
+    @assert(genome[2] == 130);
+
+    genome_mls.elapse_inheritance_of(genome_ptr);
+    @assert(genome[2] == 132);
+
+    for (@range(u16, 3, 7, 1)) |i| {
+        var genome_i = genome[i];
+        while (genome_i == genome[i]) {
+            genome_mls.elapse_inheritance_of(genome_ptr);
+        }
+    }
 }
 
 
