@@ -121,9 +121,11 @@ inline fn _is_clear(genome: genomePtr_t) bool {
 
 // public API =================================================================
 fn elapse_inheritance_of(genome: genomePtr_t) void {
-    _apply_mutation(genome, 18);
-    _step_instrumentation(genome); // elapse two steps per generation
-    _step_instrumentation(genome);
+    if (!_is_clear(genome)) {
+        _apply_mutation(genome, 18);
+        _step_instrumentation(genome); // elapse two steps per generation
+        _step_instrumentation(genome);
+    }
 }
 
 fn calc_fitness_of(genome: genomePtr_t) f32 {
