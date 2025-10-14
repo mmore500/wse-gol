@@ -32,6 +32,7 @@ param popSize: u16;  // how many genomes in each local population?
 param tournSize: f32;  // how many genomes compete for selection?
 param memcpy_params: comptime_struct;  // parameters for memcpy layout
 param globalSeed: u16;
+param colorSwapParity: bool;  // is "black" or "white" tile in checkerboard?
 
 // module imports =============================================================
 ///////////////////////////////////////////////////////////////////////////////
@@ -143,20 +144,20 @@ const q_in_W: input_queue = @get_input_queue(7);
 
 // task IDs ===================================================================
 ///////////////////////////////////////////////////////////////////////////////
-const sendColor_N: color = @get_color(0);
-const recvColor_S: color = @get_color(1);
+const sendColor_N: color = @get_color(if (colorSwapParity) 0 else 1);
+const recvColor_S: color = @get_color(if (colorSwapParity) 1 else 0);
 const ignRecvTaskID_S: data_task_id = @get_data_task_id(recvColor_S);
 
-const sendColor_E: color = @get_color(2);
-const recvColor_W: color = @get_color(3);
+const sendColor_E: color = @get_color(if (colorSwapParity) 2 else 3);
+const recvColor_W: color = @get_color(if (colorSwapParity) 3 else 2);
 const ignRecvTaskID_W: data_task_id = @get_data_task_id(recvColor_W);
 
-const recvColor_N: color = @get_color(4);
-const sendColor_S: color = @get_color(5);
+const recvColor_N: color = @get_color(if (colorSwapParity) 4 else 5);
+const sendColor_S: color = @get_color(if (colorSwapParity) 5 else 4);
 const ignRecvTaskID_N: data_task_id = @get_data_task_id(recvColor_N);
 
-const recvColor_E: color = @get_color(6);
-const sendColor_W: color = @get_color(7);
+const recvColor_E: color = @get_color(if (colorSwapParity) 6 else 7);
+const sendColor_W: color = @get_color(if (colorSwapParity) 7 else 6);
 const ignRecvTaskID_E: data_task_id = @get_data_task_id(recvColor_E);
 
 const cycleColor: color = @get_color(8);
@@ -678,24 +679,24 @@ comptime {
   // NORTH / SOUTH (vertical)
   // note use of color swaps: neighbor's outgoing color -> PE's incoming color
   @set_local_color_config(sendColor_N, .{
-    .routes = .{ .rx = .{ RAMP }, .tx = .{ NORTH }, .color_swap_y = true } }, );
+    .routes = .{ .rx = .{ RAMP }, .tx = .{ NORTH } } }, );
   @set_local_color_config(sendColor_S, .{
-    .routes = .{ .rx = .{ RAMP }, .tx = .{ SOUTH }, .color_swap_y = true } }, );
+    .routes = .{ .rx = .{ RAMP }, .tx = .{ SOUTH } } }, );
   @set_local_color_config(recvColor_N, .{
-    .routes = .{ .rx = .{ NORTH }, .tx = .{ RAMP }, .color_swap_y = true } }, );
+    .routes = .{ .rx = .{ NORTH }, .tx = .{ RAMP } } }, );
   @set_local_color_config( recvColor_S, .{
-    .routes = .{ .rx = .{ SOUTH }, .tx = .{ RAMP }, .color_swap_y = true } }, );
+    .routes = .{ .rx = .{ SOUTH }, .tx = .{ RAMP } } }, );
 
   // EAST / WEST (horizontal)
   // note use of color swaps: neighbor's outgoing color -> PE's incoming color
   @set_local_color_config(sendColor_E, .{
-    .routes = .{ .rx = .{ RAMP }, .tx = .{ EAST }, .color_swap_x = true } }, );
+    .routes = .{ .rx = .{ RAMP }, .tx = .{ EAST } } }, );
   @set_local_color_config(sendColor_W, .{
-    .routes = .{ .rx = .{ RAMP }, .tx = .{ WEST }, .color_swap_x = true } }, );
+    .routes = .{ .rx = .{ RAMP }, .tx = .{ WEST } } }, );
   @set_local_color_config(recvColor_E, .{
-    .routes = .{ .rx = .{ EAST }, .tx = .{ RAMP }, .color_swap_x = true } }, );
+    .routes = .{ .rx = .{ EAST }, .tx = .{ RAMP } } }, );
   @set_local_color_config(recvColor_W, .{
-    .routes = .{ .rx = .{ WEST }, .tx = .{ RAMP }, .color_swap_x = true } }, );
+    .routes = .{ .rx = .{ WEST }, .tx = .{ RAMP } } }, );
 }
 
 // symbol exports =============================================================
