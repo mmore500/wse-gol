@@ -132,6 +132,15 @@ var ptr_tscEndBuffer : [*]u32 = &tscEndBuffer;
 var tscStartBuffer = @zeros([(time.tsc_size_words + 1) / 2]u32);
 var ptr_tscStartBuffer : [*]u32 = &tscStartBuffer;
 
+// queue IDs ==================================================================
+///////////////////////////////////////////////////////////////////////////////
+var busyThreads = @zeros([4]u8);  // 0, 1, 2, 3
+
+const q_in_N: input_queue = @get_input_queue(4);
+const q_in_S: input_queue = @get_input_queue(5);
+const q_in_E: input_queue = @get_input_queue(6);
+const q_in_W: input_queue = @get_input_queue(7);
+
 // task IDs ===================================================================
 ///////////////////////////////////////////////////////////////////////////////
 const sendColor_N: color = @get_color(0);
@@ -170,15 +179,6 @@ const closeoutTaskID: data_task_id = @get_data_task_id(closeoutColor);
 // available: 19, 20, 24, 25, 26, 32, 33, 34, 35
 // reserved (memcpy): 21, 22, 23, 27, 28, 30
 // reserved: 29, 31
-
-// queue IDs ==================================================================
-///////////////////////////////////////////////////////////////////////////////
-var busyThreads = @zeros([4]u8);  // 0, 1, 2, 3
-
-const q_in_N: i16 = 4;
-const q_in_S: i16 = 5;
-const q_in_E: i16 = 6;
-const q_in_W: i16 = 7;
 
 ///////////////////////////////////////////////////////////////////////////////
 // ============================================================================
@@ -386,7 +386,7 @@ task recvFinalizeTask_N() void { recvFlag_N = 1; recvCounter_N[0] += 1;
 
 fn dispatchRecv_N() void {  // open async microthread to recv ing recvBuf
   const recvDsd_N = @get_dsd(fabin_dsd, .{ .fabric_color = recvColor_N,
-    .extent = recvBufSize, .input_queue = @get_input_queue(q_in_N), });
+    .extent = recvBufSize, .input_queue = q_in_N, });
   @fmovs(recvBufDsd_N, recvDsd_N,  // callback on complete
     .{ .async = true, .activate = recvFinalizeTaskID_N, }, );
   recvCounter_N[0] += 1;  // counter only used for telemetry
@@ -408,7 +408,7 @@ task recvFinalizeTask_S() void { recvFlag_S = 1; recvCounter_S[0] += 1;
 // open an async microthread to recv from neighbor into recvBuf
 fn dispatchRecv_S() void {  // open async microthread to recv ing recvBuf
   const recvDsd_S = @get_dsd(fabin_dsd, .{ .fabric_color = recvColor_S,
-    .extent = recvBufSize, .input_queue = @get_input_queue(q_in_S), });
+    .extent = recvBufSize, .input_queue = q_in_S, });
   @fmovs(recvBufDsd_S, recvDsd_S,  // callback on complete
     .{ .async = true, .activate = recvFinalizeTaskID_S, }, );
   recvCounter_S[0] += 1;  // counter only used for telemetry
@@ -428,7 +428,7 @@ task recvFinalizeTask_E() void { recvFlag_E = 1; recvCounter_E[0] += 1;
 
 fn dispatchRecv_E() void {  // open an async microthread to recv into recvBuf
   const recvDsd_E = @get_dsd(fabin_dsd, .{  .fabric_color = recvColor_E,
-    .extent = recvBufSize, .input_queue = @get_input_queue(q_in_E), });
+    .extent = recvBufSize, .input_queue = q_in_E, });
   @fmovs(recvBufDsd_E, recvDsd_E,  // callback on complete
     .{ .async = true, .activate = recvFinalizeTaskID_E, }, );
   recvCounter_E[0] += 1;  // counter only used for telemetry
@@ -448,7 +448,7 @@ task recvFinalizeTask_W() void { recvFlag_W = 1; recvCounter_W[0] += 1;
 
 fn dispatchRecv_W() void { // open an async microthread to recv into recvBuf
   const recvDsd_W = @get_dsd(fabin_dsd, .{ .fabric_color = recvColor_W,
-    .extent = recvBufSize, .input_queue = @get_input_queue(q_in_W), });
+    .extent = recvBufSize, .input_queue = q_in_W, });
   @fmovs(recvBufDsd_W, recvDsd_W,  // callback on complete
     .{ .async = true, .activate = recvFinalizeTaskID_W, }, );
   recvCounter_W[0] += 1;  // counter only used for telemetry
