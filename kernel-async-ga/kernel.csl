@@ -30,7 +30,7 @@ param nColSubgrid: i16;  // if n, disable migration between PEs every n cols
 param nonBlock: u8;  // if true, unblock memcpy command stream at startup
 param popSize: u16;  // how many genomes in each local population?
 param tournSize: f32;  // how many genomes compete for selection?
-param memcpy_params: comptime_struct; // parameters for memcpy layout
+param memcpy_params: comptime_struct;  // parameters for memcpy layout
 param globalSeed: u16;
 
 // module imports =============================================================
