@@ -37,6 +37,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
+        arch:
+          - wse2
+          - wse3
         nonBlock:
           - 0
           - 1
@@ -60,6 +63,7 @@ jobs:
       CSLC: cslc
       CS_PYTHON: cs_python
       APPTAINERENV_CSL_SUPPRESS_SIMFAB_TRACE: 1
+      ASYNC_GA_ARCH_FLAG: ${{ matrix.arch }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
@@ -134,7 +138,7 @@ jobs:
         run: |
           export ASYNC_GA_GENOME_FLAVOR="${{ matrix.genome }}"
           export ASYNC_GA_NONBLOCK="${{ matrix.nonBlock }}"
-          export CSLC CS_PYTHON PATH
+          export CSLC CS_PYTHON PATH ASYNC_GA_ARCH_FLAG
           sudo -E env PATH=$PATH \
             ./kernel-async-ga/compile.sh \
             # >/dev/null 2>&1
@@ -143,7 +147,7 @@ jobs:
         run: |
           export ASYNC_GA_GENOME_FLAVOR="${{ matrix.genome }}"
           export ASYNC_GA_NONBLOCK="${{ matrix.nonBlock }}"
-          export CSLC CS_PYTHON PATH
+          export CSLC CS_PYTHON PATH ASYNC_GA_ARCH_FLAG
           sudo -E env PATH=$PATH \
             ./kernel-async-ga/execute.sh \
             # >/dev/null 2>&1
