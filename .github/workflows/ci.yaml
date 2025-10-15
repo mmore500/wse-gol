@@ -499,9 +499,14 @@ jobs:
   test-cerebraslib:
     name: Test cerebraslib
     runs-on: ubuntu-latest
+    matrix:
+      arch:
+        - wse2
+        - wse3
     env:
       CSLC: cslc
       CS_PYTHON: cs_python
+      ASYNC_GA_ARCH_FLAG: ${{ matrix.arch }}
       APPTAINERENV_CSL_SUPPRESS_SIMFAB_TRACE: 1
     steps:
       - name: Checkout repository
@@ -575,13 +580,15 @@ jobs:
 
       - name: Compile cerebraslib tests
         run: |
-          sudo env PATH=$PATH CSLC=$CSLC CS_PYTHON=$CS_PYTHON \
+          sudo env PATH=$PATH ASYNC_GA_ARCH_FLAG=$ASYNC_GA_ARCH_FLAG \
+            CSLC=$CSLC CS_PYTHON=$CS_PYTHON \
             ./kernel-test-cerebraslib/compile.sh \
             # >/dev/null 2>&1
           ls ./kernel-test-cerebraslib
 
       - name: Run cerebraslib tests
         run: |
-          sudo env PATH=$PATH CSLC=$CSLC CS_PYTHON=$CS_PYTHON \
+          sudo env PATH=$PATH ASYNC_GA_ARCH_FLAG=$ASYNC_GA_ARCH_FLAG \
+            CSLC=$CSLC CS_PYTHON=$CS_PYTHON \
             ./kernel-test-cerebraslib/execute.sh \
             # >/dev/null 2>&1

@@ -11,7 +11,16 @@ fn dolaunch() void {
     memcpy.unblock_cmd_stream();  // terminate
 }
 
+const in_q_lauch : input_queue = @get_input_queue(2);  // RE: non-wse2 only
+const launch_task_id : data_task_id = (
+  if (@is_arch("wse2")) @get_data_task_id(memcpy.LAUNCH)
+  else @get_data_task_id(in_q_lauch)
+);
+
 comptime {
     @export_symbol(dolaunch);
-    @rpc(@get_data_task_id(memcpy.LAUNCH)); // direct remote procedure calls
+    @rpc(launch_task_id); // direct remote procedure calls
+    if (!@is_arch("wse2")) {
+        @initialize_queue(in_q_lauch, .{ .color = memcpy.LAUNCH });
+    }
 }
