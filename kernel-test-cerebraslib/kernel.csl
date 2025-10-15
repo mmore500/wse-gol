@@ -13,5 +13,4 @@ fn dolaunch() void {
 
 comptime {
     @export_symbol(dolaunch);
-    @rpc(@get_data_task_id(memcpy.LAUNCH)); // direct remote procedure calls
 }
