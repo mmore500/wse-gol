@@ -499,10 +499,12 @@ jobs:
   test-cerebraslib:
     name: Test cerebraslib
     runs-on: ubuntu-latest
-    matrix:
-      arch:
-        - wse2
-        - wse3
+    strategy:
+      fail-fast: false
+      matrix:
+        arch:
+          - wse2
+          - wse3
     env:
       CSLC: cslc
       CS_PYTHON: cs_python
