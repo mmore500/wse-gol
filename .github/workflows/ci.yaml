@@ -115,7 +115,7 @@ jobs:
           restore-keys: |
             cerebras-sdk-${{ github.repository }}-${{ secrets.CEREBRAS_SDK_VERSION }}
 
-      - name: Set up SDK
+      - name: Download SDK
         if: steps.cache-sdk.outputs.cache-hit != 'true'
         uses: nick-fields/retry@v3
         with:
@@ -125,10 +125,14 @@ jobs:
             mkdir -p ~/cerebras/bin
             curl -L "${CEREBRAS_SDK_URL}" | tar -xzv -C ~/cerebras/bin
             ls ~/cerebras/bin
-            echo $GITHUB_PATH
-            echo "$HOME/cerebras/bin" >> $GITHUB_PATH
         env:
           CEREBRAS_SDK_URL: ${{ secrets.CEREBRAS_SDK_URL }}
+
+      - name: Set up SDK
+        run: |
+          ls ~/cerebras/bin
+          echo $GITHUB_PATH
+          echo "$HOME/cerebras/bin" >> $GITHUB_PATH
 
       - name: Test SDK
         run: |
@@ -227,7 +231,7 @@ jobs:
           restore-keys: |
             cerebras-sdk-${{ github.repository }}-${{ secrets.CEREBRAS_SDK_VERSION }}
 
-      - name: Set up SDK
+      - name: Download SDK
         if: steps.cache-sdk.outputs.cache-hit != 'true'
         uses: nick-fields/retry@v3
         with:
@@ -237,10 +241,14 @@ jobs:
             mkdir -p ~/cerebras/bin
             curl -L "${CEREBRAS_SDK_URL}" | tar -xzv -C ~/cerebras/bin
             ls ~/cerebras/bin
-            echo $GITHUB_PATH
-            echo "$HOME/cerebras/bin" >> $GITHUB_PATH
         env:
           CEREBRAS_SDK_URL: ${{ secrets.CEREBRAS_SDK_URL }}
+
+      - name: Set up SDK
+        run: |
+          ls ~/cerebras/bin
+          echo $GITHUB_PATH
+          echo "$HOME/cerebras/bin" >> $GITHUB_PATH
 
       - name: Test SDK
         run: |
@@ -595,7 +603,7 @@ jobs:
           restore-keys: |
             cerebras-sdk-${{ github.repository }}-${{ secrets.CEREBRAS_SDK_VERSION }}
 
-      - name: Set up SDK
+      - name: Download SDK
         if: steps.cache-sdk.outputs.cache-hit != 'true'
         uses: nick-fields/retry@v3
         with:
@@ -605,10 +613,14 @@ jobs:
             mkdir -p ~/cerebras/bin
             curl -L "${CEREBRAS_SDK_URL}" | tar -xzv -C ~/cerebras/bin
             ls ~/cerebras/bin
-            echo $GITHUB_PATH
-            echo "$HOME/cerebras/bin" >> $GITHUB_PATH
         env:
           CEREBRAS_SDK_URL: ${{ secrets.CEREBRAS_SDK_URL }}
+
+      - name: Set up SDK
+        run: |
+          ls ~/cerebras/bin
+          echo $GITHUB_PATH
+          echo "$HOME/cerebras/bin" >> $GITHUB_PATH
 
       - name: Test SDK
         run: |
@@ -750,7 +762,7 @@ jobs:
           restore-keys: |
             cerebras-sdk-${{ github.repository }}-${{ secrets.CEREBRAS_SDK_VERSION }}
 
-      - name: Set up SDK
+      - name: Download SDK
         if: steps.cache-sdk.outputs.cache-hit != 'true'
         uses: nick-fields/retry@v3
         with:
@@ -760,10 +772,14 @@ jobs:
             mkdir -p ~/cerebras/bin
             curl -L "${CEREBRAS_SDK_URL}" | tar -xzv -C ~/cerebras/bin
             ls ~/cerebras/bin
-            echo $GITHUB_PATH
-            echo "$HOME/cerebras/bin" >> $GITHUB_PATH
         env:
           CEREBRAS_SDK_URL: ${{ secrets.CEREBRAS_SDK_URL }}
+
+      - name: Set up SDK
+        run: |
+          ls ~/cerebras/bin
+          echo $GITHUB_PATH
+          echo "$HOME/cerebras/bin" >> $GITHUB_PATH
 
       - name: Test SDK
         run: |
