@@ -106,7 +106,17 @@ jobs:
             apptainer --version
             sudo "$(which apptainer)" exec docker://busybox:latest echo "Hello from Singularity and Docker!"
 
+      - name: Cache Cerebras SDK
+        id: cache-sdk
+        uses: actions/cache@v4
+        with:
+          path: ~/cerebras/bin
+          key: cerebras-sdk-${{ github.repository }}-${{ hashSecrets('CEREBRAS_SDK_URL') }}
+          restore-keys: |
+            cerebras-sdk-${{ github.repository }}-
+
       - name: Set up SDK
+        if: steps.cache-sdk.outputs.cache-hit != 'true'
         uses: nick-fields/retry@v3
         with:
           timeout_minutes: 15
@@ -208,7 +218,17 @@ jobs:
             apptainer --version
             sudo "$(which apptainer)" exec docker://busybox:latest echo "Hello from Singularity and Docker!"
 
+      - name: Cache Cerebras SDK
+        id: cache-sdk
+        uses: actions/cache@v4
+        with:
+          path: ~/cerebras/bin
+          key: cerebras-sdk-${{ github.repository }}-${{ hashSecrets('CEREBRAS_SDK_URL') }}
+          restore-keys: |
+            cerebras-sdk-${{ github.repository }}-
+
       - name: Set up SDK
+        if: steps.cache-sdk.outputs.cache-hit != 'true'
         uses: nick-fields/retry@v3
         with:
           timeout_minutes: 15
@@ -418,7 +438,17 @@ jobs:
             apptainer --version
             sudo "$(which apptainer)" exec docker://busybox:latest echo "Hello from Singularity and Docker!"
 
+      - name: Cache Cerebras SDK
+        id: cache-sdk
+        uses: actions/cache@v4
+        with:
+          path: ~/cerebras/bin
+          key: cerebras-sdk-${{ github.repository }}-${{ hashSecrets('CEREBRAS_SDK_URL') }}
+          restore-keys: |
+            cerebras-sdk-${{ github.repository }}-
+
       - name: Set up SDK
+        if: steps.cache-sdk.outputs.cache-hit != 'true'
         uses: nick-fields/retry@v3
         with:
           timeout_minutes: 15
@@ -563,7 +593,17 @@ jobs:
             apptainer --version
             sudo "$(which apptainer)" exec docker://busybox:latest echo "Hello from Singularity and Docker!"
 
+      - name: Cache Cerebras SDK
+        id: cache-sdk
+        uses: actions/cache@v4
+        with:
+          path: ~/cerebras/bin
+          key: cerebras-sdk-${{ github.repository }}-${{ hashSecrets('CEREBRAS_SDK_URL') }}
+          restore-keys: |
+            cerebras-sdk-${{ github.repository }}-
+
       - name: Set up SDK
+        if: steps.cache-sdk.outputs.cache-hit != 'true'
         uses: nick-fields/retry@v3
         with:
           timeout_minutes: 15
