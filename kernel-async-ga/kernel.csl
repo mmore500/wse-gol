@@ -86,7 +86,7 @@ const optime = @import_module("cerebraslib/optime.csl");
 // for end-state telemetry, ptrs are necessary for memcpy infrastructure
 ///////////////////////////////////////////////////////////////////////////////
 var x: i16 = 0; var y: i16 = 0;  // PE array coordinates
-var cycleCounter = @zeros([1]u32);  // how many self-activations cycles elapse?
+var cycleCounter = @zeros([1]u32);  // how many self-activation cycles elapse?
 var ptr_cycleCounter : [*]u32 = &cycleCounter;
 
 var recvCounter_N = @zeros([1]u32);  // number recv's opened + number filled
