@@ -39,10 +39,13 @@ echo "Compiling ${num_tests} tests"
 export COMPCONFENV_CEREBRASLIB_TRAITLOGGER_NUM_BITS__u32="256"
 export COMPCONFENV_CEREBRASLIB_TRAITLOGGER_DSTREAM_ALGO_NAME__comptime_string="steady_algo"
 
+ASYNC_GA_ARCH_FLAG="${ASYNC_GA_ARCH_FLAG:-wse2}"
+echo "ASYNC_GA_ARCH_FLAG ${ASYNC_GA_ARCH_FLAG}"
+
 for test_module_path in ${test_module_paths}; do
     cp "${test_module_path}" "cerebraslib/current_compilation_target.csl"
     test_basename="$(basename -- "${test_module_path}")"
     test_name="${test_basename%.csl}"
-    python3 -m compconf --compconf-cslc "${CSLC}" layout.csl --import-path ./downstream/include --fabric-dims=9,4 --fabric-offsets=4,1 --channels=1 --memcpy -o "out_${test_name}" --verbose >/dev/null 2>&1
+    python3 -m compconf --compconf-cslc "${CSLC}" layout.csl --import-path ./downstream/include --arch=${ASYNC_GA_ARCH_FLAG} --fabric-dims=9,4 --fabric-offsets=4,1 --channels=1 --memcpy -o "out_${test_name}" --verbose >/dev/null 2>&1
     echo "${test_module_path}"
 done | python3 -m tqdm --total "${num_tests}" --unit test --unit_scale --desc "Compiling"

@@ -48,6 +48,7 @@ layout {
           .tournSize = tournSize,
           .globalSeed = globalSeed,
           .memcpy_params = memcpy.get_params(x),
+          .colorSwapParity = (x % 2 == y % 2),
         }
       );
     }

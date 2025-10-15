@@ -1,3 +1,4 @@
+local/
 out/
 simfab_traces/
 *.json

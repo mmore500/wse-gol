@@ -19,7 +19,6 @@
 // byte 17
 // byte 18
 // byte 19
-
 // byte 20
 // byte 21
 // byte 22
@@ -42,6 +41,25 @@
 //!     "dstream_T_bitoffset": (64, pl.UInt8),
 //!     "dstream_T_bitwidth": (32, pl.UInt8),
 //!     "dstream_S": (128, pl.UInt8),
+//!     "flag_site_bitwidth": (1, pl.UInt8),
+//!     "flag_sites_bitoffset": (0, pl.UInt8),
+//!     "flag_sites_bitwidth": (64, pl.UInt8),
+//!     "flag_is_focal_mask_byte0": (0x00, pl.UInt8),
+//!     "flag_is_focal_mask_byte1": (0x00, pl.UInt8),
+//!     "flag_is_focal_mask_byte2": (0x00, pl.UInt8),
+//!     "flag_is_focal_mask_byte3": (0x01, pl.UInt8),
+//!     "flag_is_focal_mask_byte4": (0x00, pl.UInt8),
+//!     "flag_is_focal_mask_byte5": (0x00, pl.UInt8),
+//!     "flag_is_focal_mask_byte6": (0x00, pl.UInt8),
+//!     "flag_is_focal_mask_byte7": (0x00, pl.UInt8),
+//!     "flag_nand_mask_byte0": (0x00, pl.UInt8),
+//!     "flag_nand_mask_byte1": (0x00, pl.UInt8),
+//!     "flag_nand_mask_byte2": (0x00, pl.UInt8),
+//!     "flag_nand_mask_byte3": (0x0F, pl.UInt8),
+//!     "flag_nand_mask_byte4": (0x00, pl.UInt8),
+//!     "flag_nand_mask_byte5": (0x00, pl.UInt8),
+//!     "flag_nand_mask_byte6": (0x00, pl.UInt8),
+//!     "flag_nand_mask_byte7": (0x00, pl.UInt8),
 //!     "nWav": (7, pl.UInt8),
 //! }
 
@@ -87,7 +105,7 @@ fn _step_instrumentation(genome: genomePtr_t) void {
     // elapse generation in bitfield
     if (opscalar.unifbool()) {
         const T = @ptrcast([*]u32, genome)[2];
-        const site = dstream_algo.assign_storage_site(128, T);
+        const site = dstream_algo.assign_storage_site(S, T);
 
         const offset_bits: u16 = (8 + 4) * 8;
         const target_bit = @as(u16, site) + offset_bits;
@@ -144,9 +162,9 @@ fn get_trait_value(genome: genomePtr_t) u32 {
 
 fn initialize_one(genome: genomePtr_t) void {
     _clear(genome);
-    genome[0] |= 0xFF; // initialize bottom 8 sites as 1's
+    genome[0] |= 0x0F; // initialize bottom 4 sites as 1's
     // (to hint for testing endianness when decoding)
-    genome[2] = 128; // initialize counter to 128
+    genome[2] = S; // initialize counter to S
     // randomize hstrat bitfield
     bitmanip.randomize(@ptrcast([*]u16, &genome[3]), 8);
 }

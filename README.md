@@ -7,6 +7,7 @@ Development work for agent-based evolution/epidemiological modeling on the Cereb
 Incoprorates [hereditary stratigraphy](https://github.com/mmore500/hstrat) methodology for distributed tracking of agent phylogenies.
 
 Requires [Cerebras SDK](https://www.cerebras.net/developers/sdk-request/), available through invitation.
+Library CSL code targets compatibility with Cerebras SDK v1.X releases. As of October 2025, library code is tested against Cerebras SDK v1.4.0.
 
 ## Contents
 

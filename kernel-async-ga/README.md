@@ -55,4 +55,4 @@ Traffic from neighboring PEs will be accepted into the unblocked no-operation da
 
 ## Platform
 
-written with Cerebras SDK v1.3.0, targeting WSE-2.
+written with Cerebras SDK v1.4.0, targeting WSE-2 and WSE-3.
