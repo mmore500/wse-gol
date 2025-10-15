@@ -244,6 +244,7 @@ task sendFinalizeTask_N() void {
 
 // open async uthread to send from sendBuf
 fn doDispatchSend_N(comptime thread: u8) void {
+  population.emigrate_genomes(sendBufDsd_N, sendNumGenomes);
   const oq = if (@is_arch("wse2")) @get_output_queue(thread) else q_out_N;
   const sendDsd_N = @get_dsd(fabout_dsd, .{ .fabric_color = sendColor_N,
     .extent = sendBufSize, .output_queue = oq, });
@@ -253,11 +254,11 @@ fn doDispatchSend_N(comptime thread: u8) void {
       .ut_id = @get_ut_id(ut_out_N),
     },
   );
+  sendCounter_N[0] += 1;  // counter only used for telemetry
 }
 
 fn tryDispatchSend_N(thread: u8) bool {
   if (busyThreads[thread] == 1) { return false; }
-  population.emigrate_genomes(sendBufDsd_N, sendNumGenomes);
   busyThreads[thread] = 1;  // mark thread as busy
   sendThread_N = thread;
   switch (thread) {
@@ -267,7 +268,6 @@ fn tryDispatchSend_N(thread: u8) bool {
     3 => doDispatchSend_N(3),
     else => { @assert(false); },
   }
-  sendCounter_N[0] += 1;  // counter only used for telemetry
   return true;
 }
 
@@ -292,6 +292,7 @@ task sendFinalizeTask_S() void {
 
 // open async uthread to send from sendBuf
 fn doDispatchSend_S(comptime thread: u8) void {
+  population.emigrate_genomes(sendBufDsd_S, sendNumGenomes);
   const oq = if (@is_arch("wse2")) @get_output_queue(thread) else q_out_S;
   const sendDsd_S = @get_dsd(fabout_dsd, .{ .fabric_color = sendColor_S,
     .extent = sendBufSize, .output_queue = oq, });
@@ -301,11 +302,11 @@ fn doDispatchSend_S(comptime thread: u8) void {
       .ut_id = @get_ut_id(ut_out_S),
     },
   );
+  sendCounter_S[0] += 1;  // counter only used for telemetry
 }
 
 fn tryDispatchSend_S(thread: u8) bool {
   if (busyThreads[thread] == 1) { return false; }
-  population.emigrate_genomes(sendBufDsd_S, sendNumGenomes);
   busyThreads[thread] = 1;  // mark thread as busy
   sendThread_S = thread;
   switch (thread) {
@@ -315,7 +316,6 @@ fn tryDispatchSend_S(thread: u8) bool {
     3 => doDispatchSend_S(3),
     else => { @assert(false); },
   }
-  sendCounter_S[0] += 1;  // counter only used for telemetry
   return true;
 }
 
@@ -340,6 +340,7 @@ task sendFinalizeTask_E() void {
 
 // open async uthread to send from sendBuf
 fn doDispatchSend_E(comptime thread: u8) void {
+  population.emigrate_genomes(sendBufDsd_E, sendNumGenomes);
   const oq = if (@is_arch("wse2")) @get_output_queue(thread) else q_out_E;
   const sendDsd_E = @get_dsd(fabout_dsd, .{ .fabric_color = sendColor_E,
     .extent = sendBufSize, .output_queue = oq, });
@@ -349,11 +350,11 @@ fn doDispatchSend_E(comptime thread: u8) void {
       .ut_id = @get_ut_id(ut_out_E),
     },
   );
+  sendCounter_E[0] += 1;  // counter only used for telemetry
 }
 
 fn tryDispatchSend_E(thread: u8) bool {
   if (busyThreads[thread] == 1) { return false; }
-  population.emigrate_genomes(sendBufDsd_E, sendNumGenomes);
   busyThreads[thread] = 1;  // mark thread as busy
   sendThread_E = thread;
   switch (thread) {
@@ -363,7 +364,6 @@ fn tryDispatchSend_E(thread: u8) bool {
     3 => doDispatchSend_E(3),
     else => { @assert(false); },
   }
-  sendCounter_E[0] += 1;  // counter only used for telemetry
   return true;
 }
 
@@ -388,6 +388,7 @@ task sendFinalizeTask_W() void {
 
 // open async uthread to send from sendBuf
 fn doDispatchSend_W(comptime thread: u8) void {
+  population.emigrate_genomes(sendBufDsd_W, sendNumGenomes);
   const oq = if (@is_arch("wse2")) @get_output_queue(thread) else q_out_W;
   const sendDsd_W = @get_dsd(fabout_dsd, .{ .fabric_color = sendColor_W,
     .extent = sendBufSize, .output_queue = oq, });
@@ -397,11 +398,11 @@ fn doDispatchSend_W(comptime thread: u8) void {
       .ut_id = @get_ut_id(ut_out_W),
     },
   );
+  sendCounter_W[0] += 1;  // counter only used for telemetry
 }
 
 fn tryDispatchSend_W(thread: u8) bool {
   if (busyThreads[thread] == 1) { return false; }
-  population.emigrate_genomes(sendBufDsd_W, sendNumGenomes);
   busyThreads[thread] = 1;  // mark thread as busy
   sendThread_W = thread;
   switch (thread) {
@@ -411,7 +412,6 @@ fn tryDispatchSend_W(thread: u8) bool {
     3 => doDispatchSend_W(3),
     else => { @assert(false); },
   }
-  sendCounter_W[0] += 1;  // counter only used for telemetry
   return true;
 }
 
