@@ -137,31 +137,58 @@ var ptr_tscStartBuffer : [*]u32 = &tscStartBuffer;
 ///////////////////////////////////////////////////////////////////////////////
 var busyThreads = @zeros([4]u8);  // 0, 1, 2, 3
 
+const q_out_N: output_queue = @get_output_queue(4);  // RE: non-wse2 only
+const q_out_S: output_queue = @get_output_queue(5);  // RE: non-wse2 only
+const q_out_E: output_queue = @get_output_queue(6);  // RE: non-wse2 only
+const q_out_W: output_queue = @get_output_queue(7);  // RE: non-wse2 only
+
+const q_out_cycle: output_queue = @get_output_queue(2);  // RE: non-wse2 only
+const q_out_closeout: output_queue = @get_output_queue(3);  // RE: non-wse2 only
+
 const q_in_N: input_queue = @get_input_queue(4);
 const q_in_S: input_queue = @get_input_queue(5);
 const q_in_E: input_queue = @get_input_queue(6);
 const q_in_W: input_queue = @get_input_queue(7);
 
+const q_in_cycle: input_queue = @get_input_queue(2);  // RE: non-wse2 only
+const q_in_closeout: input_queue = @get_input_queue(3);  // RE: non-wse2 only
+
 // task IDs ===================================================================
 ///////////////////////////////////////////////////////////////////////////////
 const sendColor_N: color = @get_color(if (colorSwapParity) 0 else 1);
 const recvColor_S: color = @get_color(if (colorSwapParity) 1 else 0);
-const ignRecvTaskID_S: data_task_id = @get_data_task_id(recvColor_S);
+const ignRecvTaskID_S: data_task_id = (
+  if (@is_arch("wse2")) @get_data_task_id(recvColor_S)
+  else @get_data_task_id(q_in_S)
+);
 
 const sendColor_E: color = @get_color(if (colorSwapParity) 2 else 3);
 const recvColor_W: color = @get_color(if (colorSwapParity) 3 else 2);
-const ignRecvTaskID_W: data_task_id = @get_data_task_id(recvColor_W);
+const ignRecvTaskID_W: data_task_id = (
+  if (@is_arch("wse2")) @get_data_task_id(recvColor_W)
+  else @get_data_task_id(q_in_W)
+);
 
 const recvColor_N: color = @get_color(if (colorSwapParity) 4 else 5);
 const sendColor_S: color = @get_color(if (colorSwapParity) 5 else 4);
-const ignRecvTaskID_N: data_task_id = @get_data_task_id(recvColor_N);
+const ignRecvTaskID_N: data_task_id = (
+  if (@is_arch("wse2")) @get_data_task_id(recvColor_N)
+  else @get_data_task_id(q_in_N)
+);
 
 const recvColor_E: color = @get_color(if (colorSwapParity) 6 else 7);
 const sendColor_W: color = @get_color(if (colorSwapParity) 7 else 6);
-const ignRecvTaskID_E: data_task_id = @get_data_task_id(recvColor_E);
+const ignRecvTaskID_E: data_task_id = (
+  if (@is_arch("wse2")) @get_data_task_id(recvColor_E)
+  else @get_data_task_id(q_in_E)
+);
 
 const cycleColor: color = @get_color(8);
-const cycleTaskID: data_task_id = @get_data_task_id(cycleColor);
+const cycleTaskID: data_task_id = (
+  if (@is_arch("wse2")) @get_data_task_id(cycleColor)
+  else @get_data_task_id(q_in_cycle)
+);
+
 // color 9 is used by RPC launcher
 
 const sendFinalizeTaskID_N: local_task_id = @get_local_task_id(10);
@@ -175,7 +202,10 @@ const recvFinalizeTaskID_E: local_task_id = @get_local_task_id(16);
 const recvFinalizeTaskID_W: local_task_id = @get_local_task_id(17);
 
 const closeoutColor: color = @get_color(18);
-const closeoutTaskID: data_task_id = @get_data_task_id(closeoutColor);
+const closeoutTaskID: data_task_id = (
+  if (@is_arch("wse2")) @get_data_task_id(closeoutColor)
+  else @get_data_task_id(q_in_closeout)
+);
 
 // available: 19, 20, 24, 25, 26, 32, 33, 34, 35
 // reserved (memcpy): 21, 22, 23, 27, 28, 30
@@ -204,8 +234,9 @@ task sendFinalizeTask_N() void {
 
 // open async uthread to send from sendBuf
 fn doDispatchSend_N(comptime thread: u8) void {
+  const oq = if (@is_arch("wse2")) @get_output_queue(thread) else q_out_N;
   const sendDsd_N = @get_dsd(fabout_dsd, .{ .fabric_color = sendColor_N,
-    .extent = sendBufSize, .output_queue = @get_output_queue(thread), });
+    .extent = sendBufSize, .output_queue = oq, });
   @fmovs(sendDsd_N, sendBufDsd_N,  // callback on complete
     .{ .async = true, .activate = sendFinalizeTaskID_N, }, );
 }
@@ -247,8 +278,9 @@ task sendFinalizeTask_S() void {
 
 // open async uthread to send from sendBuf
 fn doDispatchSend_S(comptime thread: u8) void {
+  const oq = if (@is_arch("wse2")) @get_output_queue(thread) else q_out_S;
   const sendDsd_S = @get_dsd(fabout_dsd, .{ .fabric_color = sendColor_S,
-    .extent = sendBufSize, .output_queue = @get_output_queue(thread), });
+    .extent = sendBufSize, .output_queue = oq, });
   @fmovs(sendDsd_S, sendBufDsd_S,  // callback on complete
     .{ .async = true, .activate = sendFinalizeTaskID_S, }, );
 }
@@ -290,8 +322,9 @@ task sendFinalizeTask_E() void {
 
 // open async uthread to send from sendBuf
 fn doDispatchSend_E(comptime thread: u8) void {
+  const oq = if (@is_arch("wse2")) @get_output_queue(thread) else q_out_E;
   const sendDsd_E = @get_dsd(fabout_dsd, .{ .fabric_color = sendColor_E,
-    .extent = sendBufSize, .output_queue = @get_output_queue(thread), });
+    .extent = sendBufSize, .output_queue = oq, });
   @fmovs(sendDsd_E, sendBufDsd_E,  // callback on complete
     .{ .async = true, .activate = sendFinalizeTaskID_E, }, );
 }
@@ -333,8 +366,9 @@ task sendFinalizeTask_W() void {
 
 // open async uthread to send from sendBuf
 fn doDispatchSend_W(comptime thread: u8) void {
+  const oq = if (@is_arch("wse2")) @get_output_queue(thread) else q_out_W;
   const sendDsd_W = @get_dsd(fabout_dsd, .{ .fabric_color = sendColor_W,
-    .extent = sendBufSize, .output_queue = @get_output_queue(thread), });
+    .extent = sendBufSize, .output_queue = oq, });
   @fmovs(sendDsd_W, sendBufDsd_W,  // callback on complete
     .{ .async = true, .activate = sendFinalizeTaskID_W, }, );
 
@@ -479,8 +513,12 @@ fn closeoutRecv() void {
   if (recvFlag_W == 1) { recvFlag_W = 0; @unblock(ignRecvTaskID_W); }
 }
 
-const closeoutDsd = @get_dsd(fabout_dsd, .{
-  .extent = 1, .fabric_color = closeoutColor, });
+const closeoutDsd = @get_dsd(fabout_dsd, (
+  if (@is_arch("wse2")) .{ .extent = 1, .fabric_color = closeoutColor }
+  else .{
+    .extent = 1, .fabric_color = closeoutColor, .output_queue = q_out_closeout,
+  }
+));
 task closeoutTask(_: u16) void {
   if (closeoutSend()) {
     if (nonBlock == 0) memcpy.unblock_cmd_stream();  // terminate
@@ -507,8 +545,12 @@ fn shouldHalt(cycle: u32) bool {
 // cycle task =================================================================
 // main program loop: self-activate with incrementing values until nCycleAtLeast
 ///////////////////////////////////////////////////////////////////////////////
-const cycleDsd = @get_dsd(fabout_dsd, .{
-  .extent = 1, .fabric_color = cycleColor, }, );
+const cycleDsd = @get_dsd(fabout_dsd, (
+  if (@is_arch("wse2")) .{ .extent = 1, .fabric_color = cycleColor }
+  else .{
+    .extent = 1, .fabric_color = cycleColor, .output_queue = q_out_cycle,
+  }
+));
 task cycleTask(_: u16) void {
   // handle recv flags, pull recv buffer into pop and start next async recv
   // note: never-filled recv requests on PE array edges ok
@@ -541,21 +583,28 @@ task cycleTask(_: u16) void {
   // handle send flags, load send buffer from pop and start next async send
   // --------------------------------------------------------------------------
   const shuf = @random16() & 3;
-  for (@range(u16, 4)) |i| {  // send to all neighbors
-    const numBusy = (
-      busyThreads[0] + busyThreads[1] + busyThreads[2] + busyThreads[3]
-    );
-    if (numBusy == 4) break;
-    const j = (i + shuf) & 3;  // round-robin order
-    if (j == 0 and sendFlag_N == 1) {
-      if (dispatchSend_N()) { sendFlag_N = 0; }
-    } else if (j == 1 and sendFlag_S == 1) {
-      if (dispatchSend_S()) { sendFlag_S = 0; }
-    } else if (j == 2 and sendFlag_E == 1) {
-      if (dispatchSend_E()) { sendFlag_E = 0; }
-    } else if (j == 3 and sendFlag_W == 1) {
-      if (dispatchSend_W()) { sendFlag_W = 0; }
+  if (@is_arch("wse2")) {
+    for (@range(u16, 4)) |i| {  // send to all neighbors
+      const numBusy = (
+        busyThreads[0] + busyThreads[1] + busyThreads[2] + busyThreads[3]
+      );
+      if (numBusy == 4) break;
+      const j = (i + shuf) & 3;  // round-robin order
+      if (j == 0 and sendFlag_N == 1) {
+        if (dispatchSend_N()) { sendFlag_N = 0; }
+      } else if (j == 1 and sendFlag_S == 1) {
+        if (dispatchSend_S()) { sendFlag_S = 0; }
+      } else if (j == 2 and sendFlag_E == 1) {
+        if (dispatchSend_E()) { sendFlag_E = 0; }
+      } else if (j == 3 and sendFlag_W == 1) {
+        if (dispatchSend_W()) { sendFlag_W = 0; }
+      }
     }
+  } else {  // non-wse2
+    if (sendFlag_N == 1) { doDispatchSend_N(255); sendFlag_N = 0; }
+    if (sendFlag_S == 1) { doDispatchSend_S(255); sendFlag_S = 0; }
+    if (sendFlag_E == 1) { doDispatchSend_E(255); sendFlag_E = 0; }
+    if (sendFlag_W == 1) { doDispatchSend_W(255); sendFlag_W = 0; }
   }
 
   // update telemetry
@@ -665,6 +714,24 @@ comptime {
 
   @bind_data_task(cycleTask, cycleTaskID);
   @bind_data_task(closeoutTask, closeoutTaskID);
+
+  if (!@is_arch("wse2")) {
+    @initialize_queue(q_in_N, .{ .color = recvColor_N });
+    @initialize_queue(q_in_S, .{ .color = recvColor_S });
+    @initialize_queue(q_in_E, .{ .color = recvColor_E });
+    @initialize_queue(q_in_W, .{ .color = recvColor_W });
+
+    @initialize_queue(q_in_cycle, .{ .color = cycleColor });
+    @initialize_queue(q_in_closeout, .{ .color = closeoutColor });
+
+    @initialize_queue(q_out_N, .{ .color = sendColor_N });
+    @initialize_queue(q_out_S, .{ .color = sendColor_S });
+    @initialize_queue(q_out_E, .{ .color = sendColor_E });
+    @initialize_queue(q_out_W, .{ .color = sendColor_W });
+
+    @initialize_queue(q_out_cycle, .{ .color = cycleColor });
+    @initialize_queue(q_out_closeout, .{ .color = closeoutColor });
+  }
 }
 
 // wavlet routing =============================================================
@@ -723,6 +790,4 @@ comptime {  // symbols let memcpy gather end-state data from device to host
   @export_symbol(ptr_tscEndBuffer, "tscEndBuffer");
   @export_symbol(ptr_tscStartBuffer, "tscStartBuffer");
   @export_symbol(dolaunch);
-
-  @rpc(@get_data_task_id(memcpy.LAUNCH)); // direct remote procedure calls
 }
