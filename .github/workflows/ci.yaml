@@ -113,7 +113,7 @@ jobs:
           path: ~/cerebras/bin
           key: cerebras-sdk-${{ github.repository }}-${{ secrets.CEREBRAS_SDK_VERSION }}
           restore-keys: |
-            cerebras-sdk-${{ github.repository }}-
+            cerebras-sdk-${{ github.repository }}-${{ secrets.CEREBRAS_SDK_VERSION }}
 
       - name: Set up SDK
         if: steps.cache-sdk.outputs.cache-hit != 'true'
@@ -225,7 +225,7 @@ jobs:
           path: ~/cerebras/bin
           key: cerebras-sdk-${{ github.repository }}-${{ secrets.CEREBRAS_SDK_VERSION }}
           restore-keys: |
-            cerebras-sdk-${{ github.repository }}-
+            cerebras-sdk-${{ github.repository }}-${{ secrets.CEREBRAS_SDK_VERSION }}
 
       - name: Set up SDK
         if: steps.cache-sdk.outputs.cache-hit != 'true'
@@ -593,7 +593,7 @@ jobs:
           path: ~/cerebras/bin
           key: cerebras-sdk-${{ github.repository }}-${{ secrets.CEREBRAS_SDK_VERSION }}
           restore-keys: |
-            cerebras-sdk-${{ github.repository }}-
+            cerebras-sdk-${{ github.repository }}-${{ secrets.CEREBRAS_SDK_VERSION }}
 
       - name: Set up SDK
         if: steps.cache-sdk.outputs.cache-hit != 'true'
@@ -748,7 +748,7 @@ jobs:
           path: ~/cerebras/bin
           key: cerebras-sdk-${{ github.repository }}-${{ secrets.CEREBRAS_SDK_VERSION }}
           restore-keys: |
-            cerebras-sdk-${{ github.repository }}-
+            cerebras-sdk-${{ github.repository }}-${{ secrets.CEREBRAS_SDK_VERSION }}
 
       - name: Set up SDK
         if: steps.cache-sdk.outputs.cache-hit != 'true'
