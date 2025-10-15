@@ -168,10 +168,11 @@ jobs:
 
       - name: Build artifact
         run: |
-          find a=genomes+flavor=${ASYNC_GA_GENOME_FLAVOR}+*.pqt \
+          find ./kernel-async-ga/ \
+            -type f -name "a=genomes+*flavor=${ASYNC_GA_GENOME_FLAVOR}+*.pqt" \
             | python3 -m joinem \
               --with-column 'pl.lit(filepath).alias("source_file")' \
-              "a=concatenated_genomes+flavor=${ASYNC_GA_GENOME_FLAVOR}+ext=.csv"
+              "./kernel-async-ga/a=concatenated_genomes+flavor=${ASYNC_GA_GENOME_FLAVOR}+ext=.csv"
 
       - name: Upload output as artifact
         uses: actions/upload-artifact@v4
