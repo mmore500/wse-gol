@@ -723,6 +723,4 @@ comptime {  // symbols let memcpy gather end-state data from device to host
   @export_symbol(ptr_tscEndBuffer, "tscEndBuffer");
   @export_symbol(ptr_tscStartBuffer, "tscStartBuffer");
   @export_symbol(dolaunch);
-
-  @rpc(@get_data_task_id(memcpy.LAUNCH)); // direct remote procedure calls
 }
