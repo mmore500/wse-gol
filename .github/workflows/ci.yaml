@@ -173,13 +173,14 @@ jobs:
             -type f -name "a=genomes+*.pqt" \
             | python3 -m joinem \
               --with-column 'pl.lit(filepath).alias("source_file")' \
-              "./kernel-async-ga/a=concatenated_genomes+flavor=${ASYNC_GA_GENOME_FLAVOR}+ext=.csv"
+              "./kernel-async-ga/a=concatenated_genomes+ext=.csv"
+          ls -1 "./kernel-async-ga/a=concatenated_genomes+ext=.csv"
 
       - name: Upload output as artifact
         uses: actions/upload-artifact@v4
         with:
           name: sample-populations+arch=${{ matrix.arch }}+nonBlock=${{ matrix.nonBlock }}+genome=${{ matrix.genome }}
-          path: ./kernel-async-ga/a=concatenated_genomes+flavor=${{ matrix.genome }}+ext=.csv
+          path: ./kernel-async-ga/a=concatenated_genomes+ext=.csv
 
   test-sample-populations:
     name: Test make sample population
