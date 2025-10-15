@@ -274,8 +274,8 @@ jobs:
       - name: Upload output as artifact
         uses: actions/upload-artifact@v4
         with:
-          name: sample-tagged-populations
-          path: ./kernel-async-ga/a=concatenated_genomes+arch=${{ matrix.arch }}+flavor=genome_hsurftiltedsticky_tagged+ext=.csv
+          name: sample-tagged-populations+arch=${{ matrix.arch }}
+          path: ./kernel-async-ga/a=concatenated_genomes+flavor=genome_hsurftiltedsticky_tagged+ext=.csv
 
   test-hstrat:
     runs-on: ubuntu-latest
