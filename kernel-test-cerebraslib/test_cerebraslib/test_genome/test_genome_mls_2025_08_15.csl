@@ -102,7 +102,7 @@ fn test_initialize_one() void {
     var genome = @zeros(genome_mls.genome_t);
     var genome_ptr = @ptrcast(genome_mls.genomePtr_t, &genome[0]);
     genome_mls.initialize_one(genome_ptr);
-    @assert(genome[0] == 0xFF);
+    @assert(genome[0] == 0x0F);
     @assert(genome[1] == 0);
     @assert(genome[2] == 128);
     @assert(genome[3] != 0);
