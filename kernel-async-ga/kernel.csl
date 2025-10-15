@@ -137,6 +137,11 @@ var ptr_tscStartBuffer : [*]u32 = &tscStartBuffer;
 ///////////////////////////////////////////////////////////////////////////////
 var busyThreads = @zeros([4]u8);  // 0, 1, 2, 3
 
+const ut_out_N: u8 = 0;  // RE: non-wse2 only
+const ut_out_S: u8 = 1;  // RE: non-wse2 only
+const ut_out_E: u8 = 2;  // RE: non-wse2 only
+const ut_out_W: u8 = 3;  // RE: non-wse2 only
+
 const q_out_N: output_queue = @get_output_queue(4);  // RE: non-wse2 only
 const q_out_S: output_queue = @get_output_queue(5);  // RE: non-wse2 only
 const q_out_E: output_queue = @get_output_queue(6);  // RE: non-wse2 only
@@ -144,6 +149,11 @@ const q_out_W: output_queue = @get_output_queue(7);  // RE: non-wse2 only
 
 const q_out_cycle: output_queue = @get_output_queue(2);  // RE: non-wse2 only
 const q_out_closeout: output_queue = @get_output_queue(3);  // RE: non-wse2 only
+
+const ut_in_N: u8 = 4;  // RE: non-wse2 only
+const ut_in_S: u8 = 5;  // RE: non-wse2 only
+const ut_in_E: u8 = 6;  // RE: non-wse2 only
+const ut_in_W: u8 = 7;  // RE: non-wse2 only
 
 const q_in_N: input_queue = @get_input_queue(4);
 const q_in_S: input_queue = @get_input_queue(5);
@@ -238,7 +248,11 @@ fn doDispatchSend_N(comptime thread: u8) void {
   const sendDsd_N = @get_dsd(fabout_dsd, .{ .fabric_color = sendColor_N,
     .extent = sendBufSize, .output_queue = oq, });
   @fmovs(sendDsd_N, sendBufDsd_N,  // callback on complete
-    .{ .async = true, .activate = sendFinalizeTaskID_N, }, );
+    if (@is_arch("wse2")) .{ .async = true, .activate = sendFinalizeTaskID_N, }
+    else .{ .async = true, .activate = sendFinalizeTaskID_N,
+      .ut_id = @get_ut_id(ut_out_N),
+    },
+  );
 }
 
 fn tryDispatchSend_N(thread: u8) bool {
@@ -282,7 +296,11 @@ fn doDispatchSend_S(comptime thread: u8) void {
   const sendDsd_S = @get_dsd(fabout_dsd, .{ .fabric_color = sendColor_S,
     .extent = sendBufSize, .output_queue = oq, });
   @fmovs(sendDsd_S, sendBufDsd_S,  // callback on complete
-    .{ .async = true, .activate = sendFinalizeTaskID_S, }, );
+    if (@is_arch("wse2")) .{ .async = true, .activate = sendFinalizeTaskID_S, }
+    else .{ .async = true, .activate = sendFinalizeTaskID_S,
+      .ut_id = @get_ut_id(ut_out_S),
+    },
+  );
 }
 
 fn tryDispatchSend_S(thread: u8) bool {
@@ -326,7 +344,11 @@ fn doDispatchSend_E(comptime thread: u8) void {
   const sendDsd_E = @get_dsd(fabout_dsd, .{ .fabric_color = sendColor_E,
     .extent = sendBufSize, .output_queue = oq, });
   @fmovs(sendDsd_E, sendBufDsd_E,  // callback on complete
-    .{ .async = true, .activate = sendFinalizeTaskID_E, }, );
+    if (@is_arch("wse2")) .{ .async = true, .activate = sendFinalizeTaskID_E, }
+    else .{ .async = true, .activate = sendFinalizeTaskID_E,
+      .ut_id = @get_ut_id(ut_out_E),
+    },
+  );
 }
 
 fn tryDispatchSend_E(thread: u8) bool {
@@ -370,8 +392,11 @@ fn doDispatchSend_W(comptime thread: u8) void {
   const sendDsd_W = @get_dsd(fabout_dsd, .{ .fabric_color = sendColor_W,
     .extent = sendBufSize, .output_queue = oq, });
   @fmovs(sendDsd_W, sendBufDsd_W,  // callback on complete
-    .{ .async = true, .activate = sendFinalizeTaskID_W, }, );
-
+    if (@is_arch("wse2")) .{ .async = true, .activate = sendFinalizeTaskID_W, }
+    else .{ .async = true, .activate = sendFinalizeTaskID_W,
+      .ut_id = @get_ut_id(ut_out_W),
+    },
+  );
 }
 
 fn tryDispatchSend_W(thread: u8) bool {
@@ -423,7 +448,11 @@ fn dispatchRecv_N() void {  // open async microthread to recv ing recvBuf
   const recvDsd_N = @get_dsd(fabin_dsd, .{ .fabric_color = recvColor_N,
     .extent = recvBufSize, .input_queue = q_in_N, });
   @fmovs(recvBufDsd_N, recvDsd_N,  // callback on complete
-    .{ .async = true, .activate = recvFinalizeTaskID_N, }, );
+    if (@is_arch("wse2")) .{ .async = true, .activate = recvFinalizeTaskID_N }
+    else .{ .async = true, .activate = recvFinalizeTaskID_N,
+      .ut_id = @get_ut_id(ut_in_N),
+    },
+  );
   recvCounter_N[0] += 1;  // counter only used for telemetry
 }
 
@@ -445,7 +474,11 @@ fn dispatchRecv_S() void {  // open async microthread to recv ing recvBuf
   const recvDsd_S = @get_dsd(fabin_dsd, .{ .fabric_color = recvColor_S,
     .extent = recvBufSize, .input_queue = q_in_S, });
   @fmovs(recvBufDsd_S, recvDsd_S,  // callback on complete
-    .{ .async = true, .activate = recvFinalizeTaskID_S, }, );
+    if (@is_arch("wse2")) .{ .async = true, .activate = recvFinalizeTaskID_S }
+    else .{ .async = true, .activate = recvFinalizeTaskID_S,
+      .ut_id = @get_ut_id(ut_in_S),
+    },
+  );
   recvCounter_S[0] += 1;  // counter only used for telemetry
 }
 
@@ -465,7 +498,11 @@ fn dispatchRecv_E() void {  // open an async microthread to recv into recvBuf
   const recvDsd_E = @get_dsd(fabin_dsd, .{  .fabric_color = recvColor_E,
     .extent = recvBufSize, .input_queue = q_in_E, });
   @fmovs(recvBufDsd_E, recvDsd_E,  // callback on complete
-    .{ .async = true, .activate = recvFinalizeTaskID_E, }, );
+    if (@is_arch("wse2")) .{ .async = true, .activate = recvFinalizeTaskID_E }
+    else .{ .async = true, .activate = recvFinalizeTaskID_E,
+      .ut_id = @get_ut_id(ut_in_E),
+    },
+  );
   recvCounter_E[0] += 1;  // counter only used for telemetry
 }
 
@@ -485,7 +522,11 @@ fn dispatchRecv_W() void { // open an async microthread to recv into recvBuf
   const recvDsd_W = @get_dsd(fabin_dsd, .{ .fabric_color = recvColor_W,
     .extent = recvBufSize, .input_queue = q_in_W, });
   @fmovs(recvBufDsd_W, recvDsd_W,  // callback on complete
-    .{ .async = true, .activate = recvFinalizeTaskID_W, }, );
+    if (@is_arch("wse2")) .{ .async = true, .activate = recvFinalizeTaskID_W }
+    else .{ .async = true, .activate = recvFinalizeTaskID_W,
+      .ut_id = @get_ut_id(ut_in_W),
+    },
+  );
   recvCounter_W[0] += 1;  // counter only used for telemetry
 }
 
