@@ -151,7 +151,7 @@ jobs:
           export CSLC CS_PYTHON PATH ASYNC_GA_ARCH_FLAG
           sudo -E env PATH=$PATH \
             ./kernel-async-ga/compile.sh \
-            # >/dev/null 2>&1
+            >/dev/null 2>&1
 
       - name: Run async-ga
         run: |
@@ -160,7 +160,7 @@ jobs:
           export CSLC CS_PYTHON PATH ASYNC_GA_ARCH_FLAG
           sudo -E env PATH=$PATH \
             ./kernel-async-ga/execute.sh \
-            # >/dev/null 2>&1
+            >/dev/null 2>&1
 
   test-sample-populations:
     name: Test make sample population
@@ -261,7 +261,7 @@ jobs:
           export CSLC CS_PYTHON PATH ASYNC_GA_ARCH_FLAG
           sudo -E env PATH=$PATH \
             ./kernel-async-ga/generate_sample_tagged_populations.sh \
-            # >/dev/null 2>&1
+            >/dev/null 2>&1
 
       - name: Upload output as artifact
         uses: actions/upload-artifact@v4
@@ -634,7 +634,7 @@ jobs:
           export COMPCONFENV_CEREBRASLIB_HSTRAT_DSTREAM_ALGO_NAME__comptime_string="${{ matrix.dstream_algo_name }}"
           sudo -E env PATH=$PATH \
             ./kernel-async-ga/compile.sh \
-            # >/dev/null 2>&1
+            >/dev/null 2>&1
 
       - name: Run async-ga
         run: |
@@ -646,7 +646,7 @@ jobs:
           export COMPCONFENV_CEREBRASLIB_HSTRAT_DSTREAM_ALGO_NAME__comptime_string="${{ matrix.dstream_algo_name }}"
           sudo -E env PATH=$PATH \
             ./kernel-async-ga/execute.sh \
-            # >/dev/null 2>&1
+            >/dev/null 2>&1
 
       - name: Reconstruct from end-state genomes
         run: |
@@ -784,7 +784,7 @@ jobs:
           sudo env PATH=$PATH ASYNC_GA_ARCH_FLAG=$ASYNC_GA_ARCH_FLAG \
             CSLC=$CSLC CS_PYTHON=$CS_PYTHON \
             ./kernel-test-cerebraslib/compile.sh \
-            # >/dev/null 2>&1
+            >/dev/null 2>&1
           ls ./kernel-test-cerebraslib
 
       - name: Run cerebraslib tests
@@ -792,4 +792,4 @@ jobs:
           sudo env PATH=$PATH ASYNC_GA_ARCH_FLAG=$ASYNC_GA_ARCH_FLAG \
             CSLC=$CSLC CS_PYTHON=$CS_PYTHON \
             ./kernel-test-cerebraslib/execute.sh \
-            # >/dev/null 2>&1
+            >/dev/null 2>&1
