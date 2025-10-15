@@ -155,10 +155,17 @@ jobs:
   test-sample-populations:
     name: Test make sample population
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        arch:
+          - wse2
+          - wse3
     env:
       CSLC: cslc
       CS_PYTHON: cs_python
       APPTAINERENV_CSL_SUPPRESS_SIMFAB_TRACE: 1
+      ASYNC_GA_ARCH_FLAG: ${{ matrix.arch }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
@@ -231,7 +238,7 @@ jobs:
 
       - name: Generate sample tagged populations
         run: |
-          export CSLC CS_PYTHON PATH
+          export CSLC CS_PYTHON PATH ASYNC_GA_ARCH_FLAG
           sudo -E env PATH=$PATH \
             ./kernel-async-ga/generate_sample_tagged_populations.sh \
             # >/dev/null 2>&1
@@ -240,7 +247,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: sample-tagged-populations
-          path: ./kernel-async-ga/a=concatenated_genomes+flavor=genome_hsurftiltedsticky_tagged+ext=.csv
+          path: ./kernel-async-ga/a=concatenated_genomes+arch=${{ matrix.arch }}+flavor=genome_hsurftiltedsticky_tagged+ext=.csv
 
   test-hstrat:
     runs-on: ubuntu-latest
