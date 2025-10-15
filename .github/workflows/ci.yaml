@@ -274,6 +274,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
+        arch:
+          - wse2
+          - wse3
         dstream_validator:
           - "block"
           - "checkerboard"
@@ -290,103 +293,248 @@ jobs:
           - genome_purifyingonly
           - genome_purifyingplus
         exclude:
-          - dstream_validator: "checkerboard"
+          - arch: "wse2"
+            dstream_validator: "checkerboard"
             dstream_expected_T: 64
             dstream_algo_name: "steady_algo"
             genome: "genome_purifyingonly"
-          - dstream_validator: "checkerboard"
+          - arch: "wse2"
+            dstream_validator: "checkerboard"
             dstream_expected_T: 64
             dstream_algo_name: "steady_algo"
             genome: "genome_purifyingplus"
-          - dstream_validator: "checkerboard"
+          - arch: "wse2"
+            dstream_validator: "checkerboard"
             dstream_expected_T: 64
             dstream_algo_name: "stretched_algo"
             genome: "genome_purifyingonly"
-          - dstream_validator: "checkerboard"
+          - arch: "wse2"
+            dstream_validator: "checkerboard"
             dstream_expected_T: 64
             dstream_algo_name: "stretched_algo"
             genome: "genome_purifyingplus"
-          - dstream_validator: "checkerboard"
+          - arch: "wse2"
+            dstream_validator: "checkerboard"
             dstream_expected_T: 64
             dstream_algo_name: "tilted_algo"
             genome: "genome_purifyingonly"
-          - dstream_validator: "checkerboard"
+          - arch: "wse2"
+            dstream_validator: "checkerboard"
             dstream_expected_T: 64
             dstream_algo_name: "tilted_algo"
             genome: "genome_purifyingplus"
-          - dstream_validator: "checkerboard"
+          - arch: "wse2"
+            dstream_validator: "checkerboard"
             dstream_expected_T: 65
             dstream_algo_name: "steady_algo"
             genome: "genome_purifyingonly"
-          - dstream_validator: "checkerboard"
+          - arch: "wse2"
+            dstream_validator: "checkerboard"
             dstream_expected_T: 65
             dstream_algo_name: "steady_algo"
             genome: "genome_purifyingplus"
-          - dstream_validator: "checkerboard"
+          - arch: "wse2"
+            dstream_validator: "checkerboard"
             dstream_expected_T: 65
             dstream_algo_name: "stretched_algo"
             genome: "genome_purifyingonly"
-          - dstream_validator: "checkerboard"
+          - arch: "wse2"
+            dstream_validator: "checkerboard"
             dstream_expected_T: 65
             dstream_algo_name: "stretched_algo"
             genome: "genome_purifyingplus"
-          - dstream_validator: "checkerboard"
+          - arch: "wse2"
+            dstream_validator: "checkerboard"
             dstream_expected_T: 65
             dstream_algo_name: "tilted_algo"
             genome: "genome_purifyingonly"
-          - dstream_validator: "checkerboard"
+          - arch: "wse2"
+            dstream_validator: "checkerboard"
             dstream_expected_T: 65
             dstream_algo_name: "tilted_algo"
             genome: "genome_purifyingplus"
-          - dstream_validator: "hopscotch"
+          - arch: "wse2"
+            dstream_validator: "hopscotch"
             dstream_expected_T: 64
             dstream_algo_name: "steady_algo"
             genome: "genome_purifyingonly"
-          - dstream_validator: "hopscotch"
+          - arch: "wse2"
+            dstream_validator: "hopscotch"
             dstream_expected_T: 64
             dstream_algo_name: "steady_algo"
             genome: "genome_purifyingplus"
-          - dstream_validator: "hopscotch"
+          - arch: "wse2"
+            dstream_validator: "hopscotch"
             dstream_expected_T: 64
             dstream_algo_name: "stretched_algo"
             genome: "genome_purifyingonly"
-          - dstream_validator: "hopscotch"
+          - arch: "wse2"
+            dstream_validator: "hopscotch"
             dstream_expected_T: 64
             dstream_algo_name: "stretched_algo"
             genome: "genome_purifyingplus"
-          - dstream_validator: "hopscotch"
+          - arch: "wse2"
+            dstream_validator: "hopscotch"
             dstream_expected_T: 64
             dstream_algo_name: "tilted_algo"
             genome: "genome_purifyingonly"
-          - dstream_validator: "hopscotch"
+          - arch: "wse2"
+            dstream_validator: "hopscotch"
             dstream_expected_T: 64
             dstream_algo_name: "tilted_algo"
             genome: "genome_purifyingplus"
-          - dstream_validator: "hopscotch"
+          - arch: "wse2"
+            dstream_validator: "hopscotch"
             dstream_expected_T: 65
             dstream_algo_name: "steady_algo"
             genome: "genome_purifyingonly"
-          - dstream_validator: "hopscotch"
+          - arch: "wse2"
+            dstream_validator: "hopscotch"
             dstream_expected_T: 65
             dstream_algo_name: "steady_algo"
             genome: "genome_purifyingplus"
-          - dstream_validator: "hopscotch"
+          - arch: "wse2"
+            dstream_validator: "hopscotch"
             dstream_expected_T: 65
             dstream_algo_name: "stretched_algo"
             genome: "genome_purifyingonly"
-          - dstream_validator: "hopscotch"
+          - arch: "wse2"
+            dstream_validator: "hopscotch"
             dstream_expected_T: 65
             dstream_algo_name: "stretched_algo"
             genome: "genome_purifyingplus"
-          - dstream_validator: "hopscotch"
+          - arch: "wse2"
+            dstream_validator: "hopscotch"
             dstream_expected_T: 65
             dstream_algo_name: "tilted_algo"
             genome: "genome_purifyingonly"
-          - dstream_validator: "hopscotch"
+          - arch: "wse2"
+            dstream_validator: "hopscotch"
+            dstream_expected_T: 65
+            dstream_algo_name: "tilted_algo"
+            genome: "genome_purifyingplus"
+          - arch: "wse3"
+            dstream_validator: "checkerboard"
+            dstream_expected_T: 64
+            dstream_algo_name: "steady_algo"
+            genome: "genome_purifyingonly"
+          - arch: "wse3"
+            dstream_validator: "checkerboard"
+            dstream_expected_T: 64
+            dstream_algo_name: "steady_algo"
+            genome: "genome_purifyingplus"
+          - arch: "wse3"
+            dstream_validator: "checkerboard"
+            dstream_expected_T: 64
+            dstream_algo_name: "stretched_algo"
+            genome: "genome_purifyingonly"
+          - arch: "wse3"
+            dstream_validator: "checkerboard"
+            dstream_expected_T: 64
+            dstream_algo_name: "stretched_algo"
+            genome: "genome_purifyingplus"
+          - arch: "wse3"
+            dstream_validator: "checkerboard"
+            dstream_expected_T: 64
+            dstream_algo_name: "tilted_algo"
+            genome: "genome_purifyingonly"
+          - arch: "wse3"
+            dstream_validator: "checkerboard"
+            dstream_expected_T: 64
+            dstream_algo_name: "tilted_algo"
+            genome: "genome_purifyingplus"
+          - arch: "wse3"
+            dstream_validator: "checkerboard"
+            dstream_expected_T: 65
+            dstream_algo_name: "steady_algo"
+            genome: "genome_purifyingonly"
+          - arch: "wse3"
+            dstream_validator: "checkerboard"
+            dstream_expected_T: 65
+            dstream_algo_name: "steady_algo"
+            genome: "genome_purifyingplus"
+          - arch: "wse3"
+            dstream_validator: "checkerboard"
+            dstream_expected_T: 65
+            dstream_algo_name: "stretched_algo"
+            genome: "genome_purifyingonly"
+          - arch: "wse3"
+            dstream_validator: "checkerboard"
+            dstream_expected_T: 65
+            dstream_algo_name: "stretched_algo"
+            genome: "genome_purifyingplus"
+          - arch: "wse3"
+            dstream_validator: "checkerboard"
+            dstream_expected_T: 65
+            dstream_algo_name: "tilted_algo"
+            genome: "genome_purifyingonly"
+          - arch: "wse3"
+            dstream_validator: "checkerboard"
+            dstream_expected_T: 65
+            dstream_algo_name: "tilted_algo"
+            genome: "genome_purifyingplus"
+          - arch: "wse3"
+            dstream_validator: "hopscotch"
+            dstream_expected_T: 64
+            dstream_algo_name: "steady_algo"
+            genome: "genome_purifyingonly"
+          - arch: "wse3"
+            dstream_validator: "hopscotch"
+            dstream_expected_T: 64
+            dstream_algo_name: "steady_algo"
+            genome: "genome_purifyingplus"
+          - arch: "wse3"
+            dstream_validator: "hopscotch"
+            dstream_expected_T: 64
+            dstream_algo_name: "stretched_algo"
+            genome: "genome_purifyingonly"
+          - arch: "wse3"
+            dstream_validator: "hopscotch"
+            dstream_expected_T: 64
+            dstream_algo_name: "stretched_algo"
+            genome: "genome_purifyingplus"
+          - arch: "wse3"
+            dstream_validator: "hopscotch"
+            dstream_expected_T: 64
+            dstream_algo_name: "tilted_algo"
+            genome: "genome_purifyingonly"
+          - arch: "wse3"
+            dstream_validator: "hopscotch"
+            dstream_expected_T: 64
+            dstream_algo_name: "tilted_algo"
+            genome: "genome_purifyingplus"
+          - arch: "wse3"
+            dstream_validator: "hopscotch"
+            dstream_expected_T: 65
+            dstream_algo_name: "steady_algo"
+            genome: "genome_purifyingonly"
+          - arch: "wse3"
+            dstream_validator: "hopscotch"
+            dstream_expected_T: 65
+            dstream_algo_name: "steady_algo"
+            genome: "genome_purifyingplus"
+          - arch: "wse3"
+            dstream_validator: "hopscotch"
+            dstream_expected_T: 65
+            dstream_algo_name: "stretched_algo"
+            genome: "genome_purifyingonly"
+          - arch: "wse3"
+            dstream_validator: "hopscotch"
+            dstream_expected_T: 65
+            dstream_algo_name: "stretched_algo"
+            genome: "genome_purifyingplus"
+          - arch: "wse3"
+            dstream_validator: "hopscotch"
+            dstream_expected_T: 65
+            dstream_algo_name: "tilted_algo"
+            genome: "genome_purifyingonly"
+          - arch: "wse3"
+            dstream_validator: "hopscotch"
             dstream_expected_T: 65
             dstream_algo_name: "tilted_algo"
             genome: "genome_purifyingplus"
     env:
+      ASYNC_GA_ARCH_FLAG: ${{ matrix.arch }}
       CSLC: cslc
       CS_PYTHON: cs_python
       APPTAINERENV_CSL_SUPPRESS_SIMFAB_TRACE: 1
@@ -480,7 +628,7 @@ jobs:
         run: |
           export ASYNC_GA_GENOME_FLAVOR="${{ matrix.genome }}"
           export ASYNC_GA_NONBLOCK="1"
-          export CSLC CS_PYTHON PATH
+          export CSLC CS_PYTHON PATH ASYNC_GA_ARCH_FLAG
           export COMPCONFENV_CEREBRASLIB_DSTREAM_VALIDATOR__comptime_string="${{ matrix.dstream_validator }}"
           export COMPCONFENV_CEREBRASLIB_DSTREAM_EXPECTED_T__u32="${{ matrix.dstream_expected_T }}"
           export COMPCONFENV_CEREBRASLIB_HSTRAT_DSTREAM_ALGO_NAME__comptime_string="${{ matrix.dstream_algo_name }}"
@@ -492,7 +640,7 @@ jobs:
         run: |
           export ASYNC_GA_GENOME_FLAVOR="${{ matrix.genome }}"
           export ASYNC_GA_NONBLOCK="1"
-          export CSLC CS_PYTHON PATH
+          export CSLC CS_PYTHON PATH ASYNC_GA_ARCH_FLAG
           export COMPCONFENV_CEREBRASLIB_DSTREAM_VALIDATOR__comptime_string="${{ matrix.dstream_validator }}"
           export COMPCONFENV_CEREBRASLIB_DSTREAM_EXPECTED_T__u32="${{ matrix.dstream_expected_T }}"
           export COMPCONFENV_CEREBRASLIB_HSTRAT_DSTREAM_ALGO_NAME__comptime_string="${{ matrix.dstream_algo_name }}"
@@ -509,7 +657,7 @@ jobs:
       - name: Upload output as artifact
         uses: actions/upload-artifact@v4
         with:
-          name: genomes-reconstruction-${{ matrix.dstream_algo_name }}-${{ matrix.genome }}-${{ matrix.dstream_validator }}-${{ matrix.dstream_expected_T }}
+          name: genomes-reconstruction-${{ matrix.arch }}-${{ matrix.dstream_algo_name }}-${{ matrix.genome }}-${{ matrix.dstream_validator }}-${{ matrix.dstream_expected_T }}
           path: ./a=reconstruction+what=genomes+ext=.pqt
 
       - name: Reconstruct from fossil genomes
@@ -521,7 +669,7 @@ jobs:
       - name: Upload output as artifact
         uses: actions/upload-artifact@v4
         with:
-          name: fossils-reconstruction-${{ matrix.dstream_algo_name }}-${{ matrix.genome }}-${{ matrix.dstream_validator }}-${{ matrix.dstream_expected_T }}
+          name: fossils-reconstruction-${{ matrix.arch }}-${{ matrix.dstream_algo_name }}-${{ matrix.genome }}-${{ matrix.dstream_validator }}-${{ matrix.dstream_expected_T }}
           path: ./a=reconstruction+what=fossils+ext=.pqt
 
       - name: Reconstruct from all genomes
@@ -534,7 +682,7 @@ jobs:
       - name: Upload output as artifact
         uses: actions/upload-artifact@v4
         with:
-          name: fossils-and-genomes-reconstruction-${{ matrix.dstream_algo_name }}-${{ matrix.genome }}-${{ matrix.dstream_validator }}-${{ matrix.dstream_expected_T }}
+          name: fossils-and-genomes-reconstruction-${{ matrix.arch }}-${{ matrix.dstream_algo_name }}-${{ matrix.genome }}-${{ matrix.dstream_validator }}-${{ matrix.dstream_expected_T }}
           path: ./a=reconstruction+what=fossils-and-genomes+ext=.pqt
 
   test-cerebraslib:
