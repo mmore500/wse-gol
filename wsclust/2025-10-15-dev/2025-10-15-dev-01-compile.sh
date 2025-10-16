@@ -41,4 +41,7 @@ rsync -a "${PWD}/" "${WORKDIR}/source/"
 ###############################################################################
 echo "do compile -------------------------------------------------------------"
 ###############################################################################
+export CSLC="python3 -m pylib_cs.cslc_wsclust_shim"
+echo "CSLC ${CSLC}"
+
 "${WORKDIR}/source/kernel-async-ga/compile.sh" | tee "${WORKDIR}/compile.log"
