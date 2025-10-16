@@ -1,7 +1,7 @@
-from pylib_cs._clsc_wsclust_shim_parse_args import cslc_wsclust_shim_parse_args
+from pylib_cs._cslc_wsclust_shim_parse_args import cslc_wsclust_shim_parse_args
 
 
-def test_clsc_wsclust_shim_parse_args():
+def test_cslc_wsclust_shim_parse_args():
     assert cslc_wsclust_shim_parse_args(
         ["--help"],
     ) == (None, "--help")

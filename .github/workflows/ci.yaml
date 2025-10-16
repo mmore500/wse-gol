@@ -54,6 +54,11 @@ jobs:
       - name: Run test script
         run: ./pylib_cs/test.sh
 
+      - name: Test install and CLI
+        run: |
+          python3 -m pip install ./pylib_cs
+          python3 -m pylib_cs.cslc_wsclust_shim
+
   test-async-ga:
     runs-on: ubuntu-latest
     strategy:

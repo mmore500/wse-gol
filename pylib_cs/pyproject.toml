@@ -1,0 +1,28 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pylib_cs"
+version = "0.0.0"
+authors = [
+    { name = "Matthew Andres Moreno", email = "m.more500@gmail.com" }
+]
+license = { text = "MIT" }
+requires-python = ">=3.8"
+dependencies = [
+    "cerebras_appliance==2.5.0",
+    "cerebras_sdk==2.5.0",
+    # dev dependencies
+    "black==22.10.0",
+    "pytest",
+    "ruff",
+]
+
+[project.urls]
+Homepage = "https://github.com/mmore500/wse-async-ga"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["pylib_cs"]
+exclude = ["pylib_cs/test"]

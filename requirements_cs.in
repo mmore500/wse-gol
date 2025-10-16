@@ -1,8 +1,0 @@
-# pylib
-cerebras_appliance==2.5.0
-cerebras_sdk==2.5.0
-
-# qa
-black==22.10.0
-pytest
-ruff

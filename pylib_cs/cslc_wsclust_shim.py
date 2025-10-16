@@ -5,7 +5,7 @@ import sys
 from cerebras.sdk.client import SdkCompiler
 
 
-from ._clsc_wsclust_shim import cslc_wsclust_shim_parse_args
+from ._cslc_wsclust_shim_parse_args import cslc_wsclust_shim_parse_args
 
 if __name__ == "__main__":
 
@@ -18,6 +18,11 @@ if __name__ == "__main__":
     command, *args = sys.argv
     logging.info(f"command: {args}")
     logging.info(f"raw args: {args}")
+
+    if len(args) == 0:
+        print("Wrapper to run cslc CLI on Cerebras Wafer-Scale Cluster.")
+        print("Usage: cslc_wsclust_shim.py [cslc args]")
+        sys.exit(0)
 
     target, flags = cslc_wsclust_shim_parse_args(args)
 
