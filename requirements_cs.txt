@@ -10,6 +10,8 @@ cerebras-sdk==2.5.0
     # via pylib-cs (pylib_cs/pyproject.toml)
 click==8.1.8
     # via black
+compconf==0.6.0
+    # via pylib-cs (pylib_cs/pyproject.toml)
 dill==0.4.0
     # via cerebras-appliance
 exceptiongroup==1.3.0
@@ -28,6 +30,8 @@ hdf5plugin==5.1.0
     # via cerebras-appliance
 iniconfig==2.1.0
     # via pytest
+jq==1.10.0
+    # via compconf
 mypy-extensions==1.1.0
     # via black
 numpy==1.24.4

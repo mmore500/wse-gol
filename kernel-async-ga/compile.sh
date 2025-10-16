@@ -5,6 +5,7 @@ set -euo pipefail
 cd "$(dirname "$0")"
 
 echo "begin compile.sh --------------------------------------------------------"
+echo "which python3 $(which python3)"
 
 echo "CSLC ${CSLC}"
 

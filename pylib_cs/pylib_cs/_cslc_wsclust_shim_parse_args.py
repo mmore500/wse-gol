@@ -16,6 +16,9 @@ def cslc_wsclust_shim_parse_args(
         if first == "-o":
             args[i] = f"---o={second}"
             args[i + 1] = "---dropme"
+        if first == "--import-path":
+            args[i] = f"---import-path={second}"
+            args[i + 1] = "---dropme"
 
     logging.info(f"fix args: {args}")
 
@@ -33,7 +36,13 @@ def cslc_wsclust_shim_parse_args(
     logging.info(f"target: {target}")
 
     flags = " ".join(filter(lambda arg: arg.startswith("--"), args))
-    flags = flags.replace("---o=", "-o ").replace("---dropme", "").strip()
+    flags = (
+        flags
+        .replace("---o=", "-o ")
+        .replace("---import-path=", "--import-path ")
+        .replace("---dropme", "")
+        .strip()
+    )
     logging.info(f"flags: {flags}")
 
     return target, flags
