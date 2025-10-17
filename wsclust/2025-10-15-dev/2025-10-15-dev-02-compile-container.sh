@@ -59,6 +59,9 @@ echo "WORKDIR_MNT ${WORKDIR_MNT}"
 export SINGULARITY_BIND="${SINGULARITY_BIND:+${SINGULARITY_BIND},}/${WORKDIR_MNT}:/${WORKDIR_MNT},/tmp:/tmp"
 echo "SINGULARITY_BIND ${SINGULARITY_BIND}"
 
+export ASYNC_GA_FABRIC_DIMS="757,996"  # TODO these are PSC WSE2 fabric dims
+echo "ASYNC_GA_FABRIC_DIMS ${ASYNC_GA_FABRIC_DIMS}"
+
 ###############################################################################
 echo "do compile -------------------------------------------------------------"
 ###############################################################################
