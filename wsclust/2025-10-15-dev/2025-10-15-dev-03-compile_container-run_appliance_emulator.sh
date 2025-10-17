@@ -84,7 +84,7 @@ ls
 
 cd "${WORKDIR}"
 echo "PWD ${PWD}"
-find . | sed -e "s/[^-][^\/]*\// |/g" -e "s/|\([^ ]\)/|-\1/"
+find "./run" | sed -e "s/[^-][^\/]*\// |/g" -e "s/|\([^ ]\)/|-\1/"
 
 python3 - <<'EOF'
 import logging
@@ -126,7 +126,7 @@ with SdkLauncher(
         "env",
         "pwd",
         "ls",
-        r"""find . | sed -e "s/[^-][^\/]*\// |/g" -e "s/|\([^ ]\)/|-\1/"""",
+        r'find . | sed -e "s/[^-][^\/]*\// |/g" -e "s/|\([^ ]\)/|-\1/"',
     )
     logging.info("... done!")
     logging.info(response + "\n")
