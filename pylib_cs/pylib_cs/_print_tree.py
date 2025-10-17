@@ -1,4 +1,5 @@
 import os
+import pathlib
 
 from rich.tree import Tree as rich_Tree
 from rich.console import Console as rich_Console
@@ -10,7 +11,7 @@ def print_tree(path: str, ext: str) -> None:
     # 1. Get all matching files
     matching_files = [
         os.path.normpath(os.path.join(root, f))
-        for root, _, files in os.walk(path)
+        for root, _, files in os.walk(path, topdown=False, followlinks=True)
         for f in files
         if f.endswith(ext)
     ]
@@ -19,9 +20,9 @@ def print_tree(path: str, ext: str) -> None:
 
     # 2. Create set of all required directories (comprehension)
     required_dirs = {
-        os.path.dirname(file_path)
+        os.path.normpath(parent)
         for file_path in matching_files
-        for _ in os.path.relpath(os.path.dirname(file_path), path).split(os.sep)
+        for parent in pathlib.Path(file_path).parents
     }
 
     # 3. Build and print filtered tree
