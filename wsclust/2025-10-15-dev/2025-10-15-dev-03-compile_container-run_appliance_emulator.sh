@@ -140,3 +140,5 @@ with SdkLauncher(
 
 logging.info("exited SdkLauncher")
 EOF
+
+find "${WORKDIR}/out" | sed -e "s/[^-][^\/]*\// |/g" -e "s/|\([^ ]\)/|-\1/"
