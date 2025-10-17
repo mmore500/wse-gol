@@ -2,6 +2,9 @@
 
 set -euo pipefail
 
+echo "date $(date '+%Y-%m-%d %H:%M:%S')"
+echo "hostname $(hostname)"
+
 source "${HOME}/.env" || true
 
 cd "$(dirname "$0")"
