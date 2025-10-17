@@ -5,6 +5,8 @@ from rich.console import Console as rich_Console
 
 
 def print_tree(path: str, ext: str) -> None:
+    path = os.path.abspath(path)
+
     # 1. Get all matching files
     matching_files = [
         os.path.normpath(os.path.join(root, f))
