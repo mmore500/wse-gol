@@ -86,8 +86,6 @@ cp -L "${WORKDIR}/source/kernel-async-ga/client.py" .
 cp -L "${WORKDIR}/source/kernel-async-ga/compconf.json" .
 ls
 
-"${WORKDIR}/source/kernel-async-ga/compile.sh" | tee "${WORKDIR}/compile.log"
-
 cd "${WORKDIR}"
 echo "PWD ${PWD}"
 find "./run" | sed -e "s/[^-][^\/]*\// |/g" -e "s/|\([^ ]\)/|-\1/"
