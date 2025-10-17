@@ -127,7 +127,7 @@ with SdkLauncher("./run", disable_version_check=True) as launcher:
         for key, value in os.environ.items()
         if key.startswith("ASYNC_GA_") or key.startswith("COMPCONFENV_")
     )
-    command = "{env_prefix} cs_python client.py --cmaddr %CMADDR% | tee run.log"
+    command = f"{env_prefix} cs_python client.py --cmaddr %CMADDR% | tee run.log"
     logging.info(f"command={command}")
     logging.info("running command...")
     response = launcher.run(command)
