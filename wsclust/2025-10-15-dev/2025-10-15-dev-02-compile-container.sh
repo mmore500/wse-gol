@@ -49,11 +49,6 @@ echo "setup compile ----------------------------------------------------------"
 export CSLC="${CSLC:-cslc}"
 echo "CSLC ${CSLC}"
 
-# need to force all tmpdir files into context sent to worker
-COMPILE_TEMP="${WORKDIR}/source/kernel-async-ga/tmp"
-echo "COMPILE_TEMP ${COMPILE_TEMP}"
-mkdir -p "${WORKDIR}/source/kernel-async-ga/tmp"
-
 export ASYNC_GA_ARCH_FLAG="wse3"
 echo "ASYNC_GA_ARCH_FLAG ${ASYNC_GA_ARCH_FLAG}"
 
@@ -67,4 +62,4 @@ echo "SINGULARITY_BIND ${SINGULARITY_BIND}"
 ###############################################################################
 echo "do compile -------------------------------------------------------------"
 ###############################################################################
-TMPDIR="${COMPILE_TEMP}" "${WORKDIR}/source/kernel-async-ga/compile.sh" | tee "${WORKDIR}/compile.log"
+"${WORKDIR}/source/kernel-async-ga/compile.sh" | tee "${WORKDIR}/compile.log"
