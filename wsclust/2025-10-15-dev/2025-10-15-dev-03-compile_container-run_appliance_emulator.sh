@@ -81,6 +81,10 @@ cp -r "${WORKDIR}/source/kernel-async-ga/compconf.json" .
 
 "${WORKDIR}/source/kernel-async-ga/compile.sh" | tee "${WORKDIR}/compile.log"
 
+cd "${WORKDIR}"
+echo "PWD ${PWD}"
+ls -1 -R ./run | grep ":$" | sed -e 's/:$//' -e 's/[^-][^\/]*\//--/g' -e 's/^/   /' -e 's/-/|/'
+
 python3 - <<'EOF'
 import logging
 
@@ -95,7 +99,9 @@ logging.basicConfig(
 )
 
 logging.info("entering SdkLauncher")
-with SdkLauncher(".", disable_version_check=True, simulator=True) as launcher:
+with SdkLauncher(
+    "./run", disable_version_check=True, simulator=True
+) as launcher:
 
     logging.info("querying context info...")
     response = launcher.run(
