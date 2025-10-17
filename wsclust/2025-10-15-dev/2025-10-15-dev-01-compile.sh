@@ -39,7 +39,7 @@ python3 -m pylib_cs.cslc_wsclust_shim  # test install
 rsync -a "${PWD}/" "${WORKDIR}/source/"
 
 ###############################################################################
-echo "do compile -------------------------------------------------------------"
+echo "setup compile ----------------------------------------------------------"
 ###############################################################################
 export CSLC="python3 -m pylib_cs.cslc_wsclust_shim"
 echo "CSLC ${CSLC}"
@@ -49,4 +49,10 @@ COMPILE_TEMP="${WORKDIR}/source/kernel-async-ga/tmp"
 echo "COMPILE_TEMP ${COMPILE_TEMP}"
 mkdir -p "${WORKDIR}/source/kernel-async-ga/tmp"
 
+export ASYNC_GA_ARCH_FLAG="wse3"
+echo "ASYNC_GA_ARCH_FLAG ${ASYNC_GA_ARCH_FLAG}"
+
+###############################################################################
+echo "do compile -------------------------------------------------------------"
+###############################################################################
 TMPDIR="${COMPILE_TEMP}" "${WORKDIR}/source/kernel-async-ga/compile.sh" | tee "${WORKDIR}/compile.log"
