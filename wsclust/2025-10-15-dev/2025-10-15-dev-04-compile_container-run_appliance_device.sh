@@ -65,6 +65,11 @@ echo "SINGULARITY_BIND ${SINGULARITY_BIND}"
 export ASYNC_GA_FABRIC_DIMS="762,1172"
 echo "ASYNC_GA_FABRIC_DIMS ${ASYNC_GA_FABRIC_DIMS}"
 
+export ASYNC_GA_NCOL=755
+echo "ASYNC_GA_NCOL ${ASYNC_GA_NCOL}"
+export ASYNC_GA_NROW=1170
+echo "ASYNC_GA_NROW ${ASYNC_GA_NROW}"
+
 ###############################################################################
 echo "do compile -------------------------------------------------------------"
 echo "SECONDS ${SECONDS}"
