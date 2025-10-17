@@ -54,6 +54,13 @@ mkdir -p "${WORKDIR}/source/kernel-async-ga/tmp"
 export ASYNC_GA_ARCH_FLAG="wse3"
 echo "ASYNC_GA_ARCH_FLAG ${ASYNC_GA_ARCH_FLAG}"
 
+WORKDIR_MNT="$(realpath path)"
+WORKDIR_MNT="${WORKDIR_MNT#/}"
+WORKDIR_MNT="${WORKDIR_MNT%%/*}"
+echo "WORKDIR_MNT ${WORKDIR_MNT}"
+export SINGULARITY_BIND="${SINGULARITY_BIND:+${SINGULARITY_BIND},}/${WORKDIR_MNT}:/${WORKDIR_MNT}"
+echo "SINGULARITY_BIND ${SINGULARITY_BIND}"
+
 ###############################################################################
 echo "do compile -------------------------------------------------------------"
 ###############################################################################
