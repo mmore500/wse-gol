@@ -70,6 +70,7 @@ echo "do compile -------------------------------------------------------------"
 ###############################################################################
 echo "setup run -------------------------------------------------------------"
 ###############################################################################
+mkdir -p "${WORKDIR}/out"
 mkdir -p "${WORKDIR}/run"
 cd "${WORKDIR}/run"
 echo "PWD ${PWD}"
@@ -86,7 +87,7 @@ cd "${WORKDIR}"
 echo "PWD ${PWD}"
 find "./run" | sed -e "s/[^-][^\/]*\// |/g" -e "s/|\([^ ]\)/|-\1/"
 
-python3 - <<'EOF'
+python3 - << EOF
 import logging
 
 from cerebras.appliance import logger
@@ -121,15 +122,19 @@ with SdkLauncher(
     logging.info("... done!")
     logging.info(response + "\n")
 
-    logging.info("querying context info...")
+    logging.info("finding output files...")
     response = launcher.run(
-        "env",
-        "pwd",
-        "ls",
-        r'find . | sed -e "s/[^-][^\/]*\// |/g" -e "s/|\([^ ]\)/|-\1/"',
+        "find . -maxdepth 1 -type f "
+        r'\( -name "*.log" -o -name "*.pqt" -o -name "*.json" \)',
     )
     logging.info("... done!")
     logging.info(response + "\n")
+
+    for filename in response.splitlines():
+        target = f"${WORKDIR}/out/{filename}"
+        logging.info(f"retrieving file {filename} to {target}...")
+        file_contents = launcher.download_artifact(filename, target)
+        logging.info("... done!")
 
     logging.info("exiting SdkLauncher")
 
