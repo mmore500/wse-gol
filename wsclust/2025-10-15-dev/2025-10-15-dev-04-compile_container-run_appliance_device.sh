@@ -116,7 +116,7 @@ with SdkLauncher("./run", disable_version_check=True) as launcher:
     logging.info("... done!")
     logging.info(response + "\n")
 
-    command = "cs_python client.py --cmaddr %CMADDR%"
+    command = "cs_python client.py --cmaddr %CMADDR% | tee run.log"
     logging.info(f"command={command}")
     logging.info("running command...")
     response = launcher.run(command)

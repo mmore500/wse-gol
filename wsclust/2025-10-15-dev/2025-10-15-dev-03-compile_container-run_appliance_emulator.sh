@@ -118,7 +118,7 @@ with SdkLauncher(
     logging.info("... done!")
     logging.info(response + "\n")
 
-    command = "cs_python client.py"
+    command = "cs_python client.py | tee run.log"
     logging.info(f"command={command}")
     logging.info("running command...")
     response = launcher.run(command)
