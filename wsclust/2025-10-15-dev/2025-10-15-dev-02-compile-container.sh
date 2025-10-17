@@ -61,7 +61,7 @@ WORKDIR_MNT="$(realpath path)"
 WORKDIR_MNT="${WORKDIR_MNT#/}"
 WORKDIR_MNT="${WORKDIR_MNT%%/*}"
 echo "WORKDIR_MNT ${WORKDIR_MNT}"
-export SINGULARITY_BIND="${SINGULARITY_BIND:+${SINGULARITY_BIND},}/${WORKDIR_MNT}:/${WORKDIR_MNT}"
+export SINGULARITY_BIND="${SINGULARITY_BIND:+${SINGULARITY_BIND},}/${WORKDIR_MNT}:/${WORKDIR_MNT},/tmp:/tmp"
 echo "SINGULARITY_BIND ${SINGULARITY_BIND}"
 
 ###############################################################################
