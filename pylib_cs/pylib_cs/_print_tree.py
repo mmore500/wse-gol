@@ -6,12 +6,12 @@ from rich.console import Console as rich_Console
 
 
 def print_tree(path: str, ext: str) -> None:
-    path = os.path.abspath(path)
-
     # 1. Get all matching files
     matching_files = [
         os.path.normpath(os.path.join(root, f))
-        for root, _, files in os.walk(path, topdown=False, followlinks=True)
+        for root, _, files in os.walk(
+            os.path.abspath(path), topdown=False, followlinks=True
+        )
         for f in files
         if f.endswith(ext)
     ]
@@ -26,7 +26,7 @@ def print_tree(path: str, ext: str) -> None:
     }
 
     # 3. Build and print filtered tree
-    tree = rich_Tree(os.path.basename(path) or path)
+    tree = rich_Tree(path)
 
     def add_nodes(tree: rich_Tree, directory: str) -> None:
         for entry in sorted(os.listdir(directory)):
@@ -37,5 +37,5 @@ def print_tree(path: str, ext: str) -> None:
             elif full_path in matching_files:
                 tree.add(entry)
 
-    add_nodes(tree, path)
+    add_nodes(tree, os.path.abspath(path))
     rich_Console().print(tree)
