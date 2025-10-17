@@ -97,6 +97,7 @@ find "./run" | sed -e "s/[^-][^\/]*\// |/g" -e "s/|\([^ ]\)/|-\1/"
 
 python3 - << EOF
 import logging
+import os
 
 from cerebras.appliance import logger
 from cerebras.sdk.client import SdkLauncher
@@ -121,7 +122,12 @@ with SdkLauncher("./run", disable_version_check=True) as launcher:
     logging.info("... done!")
     logging.info(response + "\n")
 
-    command = "cs_python client.py --cmaddr %CMADDR% | tee run.log"
+    env_prefix = " ".join(
+        f"{key}='{value}'"
+        for key, value in os.environ.items()
+        if key.startswith("ASYNC_GA_") or key.startswith("COMPCONFENV_")
+    )
+    command = "{env_prefix} cs_python client.py --cmaddr %CMADDR% | tee run.log"
     logging.info(f"command={command}")
     logging.info("running command...")
     response = launcher.run(command)
