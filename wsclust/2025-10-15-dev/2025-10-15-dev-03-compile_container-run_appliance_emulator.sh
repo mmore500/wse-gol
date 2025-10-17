@@ -109,7 +109,7 @@ with SdkLauncher(
         "env",
         "pwd",
         "ls",
-        r"""find . | sed -e "s/[^-][^\/]*\// |/g" -e "s/|\([^ ]\)/|-\1/"""",
+        r'find . | sed -e "s/[^-][^\/]*\// |/g" -e "s/|\([^ ]\)/|-\1/"',
     )
     logging.info("... done!")
     logging.info(response + "\n")
