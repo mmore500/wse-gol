@@ -74,10 +74,10 @@ mkdir -p "${WORKDIR}/run"
 cd "${WORKDIR}/run"
 echo "PWD ${PWD}"
 
-cp -r "${WORKDIR}/source/kernel-async-ga/cerebraslib" .
-cp -r "${WORKDIR}/source/kernel-async-ga/out" .
-cp "${WORKDIR}/source/kernel-async-ga/client.py" .
-cp "${WORKDIR}/source/kernel-async-ga/compconf.json" .
+cp -rL "${WORKDIR}/source/kernel-async-ga/cerebraslib" .
+cp -rL "${WORKDIR}/source/kernel-async-ga/out" .
+cp -L "${WORKDIR}/source/kernel-async-ga/client.py" .
+cp -L "${WORKDIR}/source/kernel-async-ga/compconf.json" .
 ls
 
 "${WORKDIR}/source/kernel-async-ga/compile.sh" | tee "${WORKDIR}/compile.log"
