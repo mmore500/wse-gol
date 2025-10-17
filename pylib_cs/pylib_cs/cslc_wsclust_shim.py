@@ -28,7 +28,7 @@ if __name__ == "__main__":
 
     # adapted from https://sdk.cerebras.net/appliance-mode#compiling
     # Instantiate copmiler using a context manager
-    with SdkCompiler() as compiler:
+    with SdkCompiler(disable_version_check=True) as compiler:
 
         # Launch compile job
         logging.info("compiling...")
