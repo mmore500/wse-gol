@@ -88,7 +88,7 @@ for k, v in sorted(os.environ.items()):
 
 log("- setting up temp dir")
 # need to add polars to Cerebras python
-temp_dir = f"{os.getenv('ASYNC_GA_LOCAL_PATH')}/tmp/{uuid.uuid4()}"
+temp_dir = f"{os.getenv('ASYNC_GA_LOCAL_PATH', 'local')}/tmp/{uuid.uuid4()}"
 os.makedirs(temp_dir, exist_ok=True)
 atexit.register(shutil.rmtree, temp_dir, ignore_errors=True)
 log(f"  - {temp_dir=}")
@@ -140,7 +140,7 @@ def write_parquet_verbose(df: pl.DataFrame, file_name: str) -> None:
     log(f"saving df to {file_name=}")
     log(f"- {df.shape=}")
 
-    tmp_file = f"{os.getenv('ASYNC_GA_LOCAL_PATH')}/tmp.pqt"
+    tmp_file = f"{os.getenv('ASYNC_GA_LOCAL_PATH', 'local')}/tmp.pqt"
     df.write_parquet(tmp_file, compression="lz4")
     log("- write_parquet complete")
 
@@ -226,7 +226,7 @@ log(f" - {traitLoggerNumBits=} {traitLoggerDstreamAlgoName=}")
 
 genomeFlavor = compconf_data["ASYNC_GA_GENOME_FLAVOR:comptime_string"]
 log(f" - {genomeFlavor=}")
-genomePath = f"{os.getenv('ASYNC_GA_CEREBRASLIB_PATH')}/genome/{genomeFlavor}.csl"
+genomePath = f"{os.getenv('ASYNC_GA_CEREBRASLIB_PATH', 'cerebraslib')}/genome/{genomeFlavor}.csl"
 log(f" - reading genome data from {genomePath}")
 genomeDataRaw = "".join(
     removeprefix(line, "//!").strip()
