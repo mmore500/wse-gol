@@ -37,8 +37,7 @@ def cslc_wsclust_shim_parse_args(
 
     flags = " ".join(filter(lambda arg: arg.startswith("--"), args))
     flags = (
-        flags
-        .replace("---o=", "-o ")
+        flags.replace("---o=", "-o ")
         .replace("---import-path=", "--import-path ")
         .replace("---dropme", "")
         .strip()
