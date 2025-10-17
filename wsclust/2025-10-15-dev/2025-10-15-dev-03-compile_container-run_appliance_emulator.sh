@@ -76,14 +76,15 @@ echo "PWD ${PWD}"
 
 cp -r "${WORKDIR}/source/kernel-async-ga/cerebraslib" .
 cp -r "${WORKDIR}/source/kernel-async-ga/out" .
-cp -r "${WORKDIR}/source/kernel-async-ga/client.py" .
-cp -r "${WORKDIR}/source/kernel-async-ga/compconf.json" .
+cp "${WORKDIR}/source/kernel-async-ga/client.py" .
+cp "${WORKDIR}/source/kernel-async-ga/compconf.json" .
+ls
 
 "${WORKDIR}/source/kernel-async-ga/compile.sh" | tee "${WORKDIR}/compile.log"
 
 cd "${WORKDIR}"
 echo "PWD ${PWD}"
-ls -1 -R ./run | grep ":$" | sed -e 's/:$//' -e 's/[^-][^\/]*\//--/g' -e 's/^/   /' -e 's/-/|/'
+find . | sed -e "s/[^-][^\/]*\// |/g" -e "s/|\([^ ]\)/|-\1/"
 
 python3 - <<'EOF'
 import logging
@@ -108,14 +109,14 @@ with SdkLauncher(
         "env",
         "pwd",
         "ls",
-        """ls -R | grep ":$" | sed -e 's/:$//' -e 's/[^-][^\/]*\//--/g' -e 's/^/   /' -e 's/-/|/'""",
+        r"""find . | sed -e "s/[^-][^\/]*\// |/g" -e "s/|\([^ ]\)/|-\1/"""",
     )
     logging.info("... done!")
     logging.info(response + "\n")
 
     command = "cs_python client.py"
-    logging.info("command={command}")
-    logging.info(f"running command...")
+    logging.info(f"command={command}")
+    logging.info("running command...")
     response = launcher.run(command)
     logging.info("... done!")
     logging.info(response + "\n")
@@ -125,7 +126,7 @@ with SdkLauncher(
         "env",
         "pwd",
         "ls",
-        """ls -R | grep ":$" | sed -e 's/:$//' -e 's/[^-][^\/]*\//--/g' -e 's/^/   /' -e 's/-/|/'""",
+        r"""find . | sed -e "s/[^-][^\/]*\// |/g" -e "s/|\([^ ]\)/|-\1/"""",
     )
     logging.info("... done!")
     logging.info(response + "\n")
