@@ -44,4 +44,9 @@ echo "do compile -------------------------------------------------------------"
 export CSLC="python3 -m pylib_cs.cslc_wsclust_shim"
 echo "CSLC ${CSLC}"
 
-"${WORKDIR}/source/kernel-async-ga/compile.sh" | tee "${WORKDIR}/compile.log"
+# need to force all tmpdir files into context sent to worker
+COMPILE_TEMP="${WORKDIR}/source/kernel-async-ga/tmp"
+echo "COMPILE_TEMP ${COMPILE_TEMP}"
+mkdir -p "${WORKDIR}/source/kernel-async-ga/tmp"
+
+TMPDIR="${COMPILE_TEMP}" "${WORKDIR}/source/kernel-async-ga/compile.sh" | tee "${WORKDIR}/compile.log"

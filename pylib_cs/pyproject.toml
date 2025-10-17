@@ -15,7 +15,7 @@ dependencies = [
     "cerebras_appliance==2.5.0",
     "cerebras_sdk==2.5.0",
     # workflow dependencies
-    "compconf==0.6.0",
+    "compconf==0.6.2",
     # dev dependencies
     "black==22.10.0",
     "pytest",
