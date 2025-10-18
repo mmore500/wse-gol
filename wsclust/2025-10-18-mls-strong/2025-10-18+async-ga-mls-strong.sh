@@ -261,26 +261,26 @@ find . -type f \( -name 'a=genomes*.pqt' -o -name 'a=fossils*.pqt' \) \
             ((pl.col("data_hex").str.slice(0, 2).str.to_integer(base=16)
             ^ pl.col("flag_nand_mask_byte0"))
             & pl.lit(1))
-            * (pl.col("flag_is_focal_mask_byte0") & pl.lit(1) + pl.lit(1))
+            * ((pl.col("flag_is_focal_mask_byte0") & pl.lit(1)) + pl.lit(1))
         ).alias("byte0_bit0_trait")' \
         --with-column '(
             ((pl.col("data_hex").str.slice(0, 2).str.to_integer(base=16)
             ^ pl.col("flag_nand_mask_byte0"))
             & pl.lit(2))
-            * (pl.col("flag_is_focal_mask_byte0") & pl.lit(2) + pl.lit(2))
+            * ((pl.col("flag_is_focal_mask_byte0") & pl.lit(2)) + pl.lit(2))
             // 2
         ).alias("byte0_bit1_trait")' \
         --with-column '(
             ((pl.col("data_hex").str.slice(2, 2).str.to_integer(base=16)
             ^ pl.col("flag_nand_mask_byte1"))
             & pl.lit(1))
-            * (pl.col("flag_is_focal_mask_byte1") & pl.lit(1) + pl.lit(1))
+            * ((pl.col("flag_is_focal_mask_byte1") & pl.lit(1)) + pl.lit(1))
         ).alias("byte1_bit0_trait")' \
         --with-column '(
             ((pl.col("data_hex").str.slice(2, 2).str.to_integer(base=16)
             ^ pl.col("flag_nand_mask_byte1"))
             & pl.lit(2))
-            * (pl.col("flag_is_focal_mask_byte1") & pl.lit(2) + pl.lit(2))
+            * ((pl.col("flag_is_focal_mask_byte1") & pl.lit(2)) + pl.lit(2))
             // 2
         ).alias("byte1_bit1_trait")'
 
