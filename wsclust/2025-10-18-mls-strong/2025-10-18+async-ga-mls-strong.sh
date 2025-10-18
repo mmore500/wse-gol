@@ -57,25 +57,6 @@ rsync -a "${PWD}/" "${WORKDIR}/source/"
 echo "setup compile ----------------------------------------------------------"
 echo "SECONDS ${SECONDS}"
 ###############################################################################
-export ASYNC_GA_ARCH_FLAG="wse3"
-export ASYNC_GA_GENOME_FLAVOR="genome_mls_2025_08_15"
-export ASYNC_GA_FABRIC_DIMS="762,1172"
-export ASYNC_GA_NWAV="7"
-export ASYNC_GA_NCOL=755
-export ASYNC_GA_NCOL_SUBGRID=0
-export ASYNC_GA_NROW=1170
-export ASYNC_GA_NROW_SUBGRID=0
-export ASYNC_GA_NTRAIT=3
-export ASYNC_GA_MSEC_AT_LEAST=0
-export ASYNC_GA_NCYCLE_AT_LEAST=100000
-export ASYNC_GA_POPSIZE=404
-export ASYNC_GA_TOURNSIZE_NUMERATOR=2
-export ASYNC_GA_TOURNSIZE_DENOMINATOR=1
-export ASYNC_GA_GLOBAL_SEED=1
-
-export COMPCONFENV_CEREBRASLIB_TRAITLOGGER_DSTREAM_ALGO_NAME__comptime_string="hybrid_0_steady_1_stretched_2_algo"
-export COMPCONFENV_CEREBRASLIB_POPULATION_EXTINCTION_PROBABILITY__f32="0.01"
-
 export CSLC="${CSLC:-cslc}"
 echo "CSLC ${CSLC}"
 export ASYNC_GA_FABRIC_DIMS="762,1172"
@@ -92,12 +73,14 @@ echo "SINGULARITY_BIND ${SINGULARITY_BIND}"
 echo "config compile ---------------------------------------------------------"
 echo "SECONDS ${SECONDS}"
 ###############################################################################
+cat > "${WORKDIR}/compile.env" << 'EOF'
 export ASYNC_GA_ARCH_FLAG="wse3"
 export ASYNC_GA_GENOME_FLAVOR="genome_mls_2025_08_15"
 export ASYNC_GA_FABRIC_DIMS="762,1172"
-export ASYNC_GA_NWAV="7"
+export ASYNC_GA_NWAV=7
 export ASYNC_GA_NCOL=755
 export ASYNC_GA_NCOL_SUBGRID=0
+export ASYNC_GA_NONBLOCK=0
 export ASYNC_GA_NROW=1170
 export ASYNC_GA_NROW_SUBGRID=0
 export ASYNC_GA_NTRAIT=3
@@ -118,6 +101,7 @@ echo "ASYNC_GA_FABRIC_DIMS ${ASYNC_GA_FABRIC_DIMS}"
 echo "ASYNC_GA_NWAV ${ASYNC_GA_NWAV}"
 echo "ASYNC_GA_NCOL ${ASYNC_GA_NCOL}"
 echo "ASYNC_GA_NCOL_SUBGRID ${ASYNC_GA_NCOL_SUBGRID}"
+echo "ASYNC_GA_NONBLOCK ${ASYNC_GA_NONBLOCK}"
 echo "ASYNC_GA_NROW ${ASYNC_GA_NROW}"
 echo "ASYNC_GA_NROW_SUBGRID ${ASYNC_GA_NROW_SUBGRID}"
 echo "ASYNC_GA_NTRAIT ${ASYNC_GA_NTRAIT}"
@@ -132,6 +116,9 @@ echo "COMPCONFENV_CEREBRASLIB_CLOBBER_IMMIGRANT_P__f32 ${COMPCONFENV_CEREBRASLIB
 echo "COMPCONFENV_CEREBRASLIB_NONZERO_FIT_FUDGE__f32 ${COMPCONFENV_CEREBRASLIB_NONZERO_FIT_FUDGE__f32}"
 echo "COMPCONFENV_CEREBRASLIB_TRAITLOGGER_DSTREAM_ALGO_NAME__comptime_string ${COMPCONFENV_CEREBRASLIB_TRAITLOGGER_DSTREAM_ALGO_NAME__comptime_string}"
 echo "COMPCONFENV_CEREBRASLIB_POPULATION_EXTINCTION_PROBABILITY__f32 ${COMPCONFENV_CEREBRASLIB_POPULATION_EXTINCTION_PROBABILITY__f32}"
+EOF
+
+source "${WORKDIR}/compile.env"
 
 ###############################################################################
 echo "do compile -------------------------------------------------------------"
