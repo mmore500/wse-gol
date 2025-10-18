@@ -265,7 +265,7 @@ find . -type f \( -name 'a=genomes*.pqt' -o -name 'a=fossils*.pqt' \) \
             ^ pl.col("flag_nand_mask_byte0"))
             & pl.lit(2))
             * ((pl.col("flag_is_focal_mask_byte0") & pl.lit(2)) + pl.lit(2))
-            // 2
+            // 4
         ).alias("byte0_bit1_trait")' \
         --with-column '(
             ((pl.col("data_hex").str.slice(2, 2).str.to_integer(base=16)
@@ -278,7 +278,7 @@ find . -type f \( -name 'a=genomes*.pqt' -o -name 'a=fossils*.pqt' \) \
             ^ pl.col("flag_nand_mask_byte1"))
             & pl.lit(2))
             * ((pl.col("flag_is_focal_mask_byte1") & pl.lit(2)) + pl.lit(2))
-            // 2
+            // 4
         ).alias("byte1_bit1_trait")'
 
 ###############################################################################
