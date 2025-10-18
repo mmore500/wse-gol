@@ -139,8 +139,12 @@ inline fn _is_clear(genome: genomePtr_t) bool {
 
 // public API =================================================================
 fn elapse_inheritance_of(genome: genomePtr_t) void {
+    const pmut_log2: u32 = compconf.get_value_or( //nofmt
+        "CEREBRASLIB_LOG2_PMUT_BITWISE", 18 // nofmt
+    );
+
     if (!_is_clear(genome)) {
-        _apply_mutation(genome, 18);
+        _apply_mutation(genome, pmut_log2);
         _step_instrumentation(genome); // elapse two steps per generation
         _step_instrumentation(genome);
     }
@@ -170,9 +174,13 @@ fn initialize_one(genome: genomePtr_t) void {
 }
 
 fn clobber_immigrant(resident: genomePtr_t, immigrant: genomePtr_t) void {
-    if (!_is_clear(resident) or ( // nofmt
-        get_trait_value(immigrant) == 2 and opscalar.p(0.9)) // nofmt
-    ) {
+    const p_clobber: f32 = compconf.get_value_or( //nofmt
+        "CEREBRASLIB_CLOBBER_IMMIGRANT_P", 0.9 // nofmt
+    );
+    const is_occupied = !_is_clear(resident);
+    if (is_occupied or ( // nofmt
+        (get_trait_value(immigrant) == 2) and opscalar.p(p_clobber)))
+    {
         _clear(immigrant);
     }
 }
