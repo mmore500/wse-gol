@@ -238,11 +238,51 @@ du -ah "${SCRATCHDIR}"/*
 echo "build phylogeny --------------------------------------------------------"
 echo "SECONDS ${SECONDS}"
 ###############################################################################
-ls a=genomes+*.pqt a=fossils+*.pqt \
-    singularity exec docker://ghcr.io/mmore500/hstrat:v1.20.13 \
+cd "${SCRATCHDIR}"
+find . -type f \( -name 'a=genomes*.pqt' -o -name 'a=fossils*.pqt' \) \
+    | singularity exec docker://ghcr.io/mmore500/hstrat:v1.20.13 \
     python3 -m hstrat.dataframe.surface_build_tree \
-        "${SCRATCHDIR}/a=phylogeny+ext=.pqt" \
-        --with-column 'pl.lit(filepath).cast(pl.Categorical).alias("file")'
+        "a=phylogeny+ext=.pqt" \
+        --filter '~pl.col("data_hex").str.contains(r"^0+$")' \
+        --with-column 'pl.lit(filepath).cast(pl.Categorical).alias("file")' \
+        --with-column 'pl.sum_horizontal(
+            ((pl.col("data_hex").str.slice(2*b, 2).str.to_integer(base=16)
+            ^ pl.col(f"flag_nand_mask_byte{b}"))
+            & pl.col(f"flag_is_focal_mask_byte{b}")).cast(pl.UInt32)
+            for b in range(8)
+        ).alias("focal_trait_count")' \
+        --with-column 'pl.sum_horizontal(
+            ((pl.col("data_hex").str.slice(2*b, 2).str.to_integer(base=16)
+            ^ pl.col(f"flag_nand_mask_byte{b}"))
+            & (~pl.col(f"flag_is_focal_mask_byte{b}"))).cast(pl.UInt32)
+            for b in range(8)
+        ).alias("nonfocal_trait_count")' \
+        --with-column '(
+            ((pl.col("data_hex").str.slice(0, 2).str.to_integer(base=16)
+            ^ pl.col("flag_nand_mask_byte0"))
+            & pl.lit(1))
+            * (pl.col("flag_is_focal_mask_byte0") & pl.lit(1) + pl.lit(1))
+        ).alias("byte0_bit0_trait")' \
+        --with-column '(
+            ((pl.col("data_hex").str.slice(0, 2).str.to_integer(base=16)
+            ^ pl.col("flag_nand_mask_byte0"))
+            & pl.lit(2))
+            * (pl.col("flag_is_focal_mask_byte0") & pl.lit(2) + pl.lit(2))
+            // 2
+        ).alias("byte0_bit1_trait")' \
+        --with-column '(
+            ((pl.col("data_hex").str.slice(2, 2).str.to_integer(base=16)
+            ^ pl.col("flag_nand_mask_byte1"))
+            & pl.lit(1))
+            * (pl.col("flag_is_focal_mask_byte1") & pl.lit(1) + pl.lit(1))
+        ).alias("byte1_bit0_trait")' \
+        --with-column '(
+            ((pl.col("data_hex").str.slice(2, 2).str.to_integer(base=16)
+            ^ pl.col("flag_nand_mask_byte1"))
+            & pl.lit(2))
+            * (pl.col("flag_is_focal_mask_byte1") & pl.lit(2) + pl.lit(2))
+            // 2
+        ).alias("byte1_bit1_trait")'
 
 ###############################################################################
 echo "done! ------------------------------------------------------------------"
