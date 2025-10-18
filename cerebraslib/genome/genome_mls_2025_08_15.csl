@@ -151,7 +151,14 @@ fn elapse_inheritance_of(genome: genomePtr_t) void {
 }
 
 fn calc_fitness_of(genome: genomePtr_t) f32 {
-    return @as(f32, get_trait_value(genome));
+    const fit_fudge: f32 = compconf.get_value_or( //nofmt
+        "CEREBRASLIB_NONZERO_FIT_FUDGE", 1.0 // nofmt
+    );
+    var fitness = @as(f32, get_trait_value(genome));
+    if (fitness != 0.0) {
+        fitness += random.random_f32() * fit_fudge;
+    }
+    return fitness;
 }
 
 fn get_trait_value(genome: genomePtr_t) u32 {
