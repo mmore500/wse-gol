@@ -1,7 +1,3 @@
-#!/bin/bash
-echo ">>>fin<<<"
-
-
 #!//bin/bash
 
 set -euo pipefail
@@ -288,3 +284,5 @@ find . -type f \( -name 'a=genomes*.pqt' -o -name 'a=fossils*.pqt' \) \
 echo "done! ------------------------------------------------------------------"
 echo "SECONDS ${SECONDS}"
 ###############################################################################
+
+echo ">>>fin<<<"
