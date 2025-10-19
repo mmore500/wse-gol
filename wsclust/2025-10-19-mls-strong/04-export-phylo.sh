@@ -146,7 +146,7 @@ ls -1 "${WORKDIR}/03-build-phylo/a=phylogeny+ext=.pqt" \
         --select "origin_time" \
         --select "focal_trait_count" \
         --select "nonfocal_trait_count" \
-        --select "^byte\d+_bit\d+.*_trait" \
+        --select "^byte\d+_bit\d+.*_trait$" \
         | tee "${RESULTDIR_STEP}/joinem.log"
 
 gzip -k "${WORKDIR_STEP}/a=phylotree+ext=.nwk"
