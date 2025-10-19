@@ -2,7 +2,34 @@
 
 set -euo pipefail
 
-source "${HOME}/.env" || true
+LOG_ALL="$(mktemp)"
+LOG_ERR="$(mktemp)"
+LOG_OUT="$(mktemp)"
+
+exec > >(tee >(tee "${LOG_ALL}" >>"${LOG_OUT}")) \
+     2> >(tee >(tee -a "${LOG_ALL}" >>"${LOG_ERR}") >&2)
+on_exit() {
+    echo
+    echo "exit trap ----------------------------------------------------------"
+    echo ">>>>> ${FLOWNAME} :: ${STEPNAME} || ${SECONDS}"
+
+    LOGDIR="${HOME}/log/wse-async-ga/"
+    echo "copying logs to LOGDIR ${LOGDIR}"
+    mkdir -p "${LOGDIR}"
+
+    cp "${LOG_ALL}" \
+        "${LOGDIR}/flow=${FLOWNAME}+step=${STEPNAME}+what=stdall+ext=.log" || :
+    cp "${LOG_ERR}" \
+        "${LOGDIR}/flow=${FLOWNAME}+step=${STEPNAME}+what=stderr+ext=.log" || :
+    cp "${LOG_OUT}" \
+        "${LOGDIR}/flow=${FLOWNAME}+step=${STEPNAME}+what=stdout+ext=.log" || :
+
+    echo "copying logs to RESULTDIR_STEP ${RESULTDIR_STEP}"
+    cp "${LOG_ALL}" "${RESULTDIR_STEP}/stdall.log" || :
+    cp "${LOG_ERR}" "${RESULTDIR_STEP}/stderr.log" || :
+    cp "${LOG_OUT}" "${RESULTDIR_STEP}/stdout.log" || :
+}
+trap on_exit EXIT
 
 FLOWDIR="$(realpath "$(dirname "$0")")"
 FLOWNAME="$(basename "${FLOWDIR}")"
@@ -15,6 +42,13 @@ echo
 echo
 echo "============================================= ${FLOWNAME} :: ${STEPNAME}"
 ###############################################################################
+source "${HOME}/.env" || true
+
+###############################################################################
+echo
+echo "log context ------------------------------------------------------------"
+echo ">>>>> ${FLOWNAME} :: ${STEPNAME} || ${SECONDS}"
+###############################################################################
 echo "date $(date '+%Y-%m-%d %H:%M:%S')"
 echo "hostname $(hostname)"
 echo "SECONDS ${SECONDS}"
@@ -24,6 +58,10 @@ echo "FLOWDIR ${FLOWDIR}"
 echo "FLOWNAME ${FLOWNAME}"
 echo "WORKDIR ${WORKDIR}"
 echo "RESULTDIR ${RESULTDIR}"
+
+echo "LOG_ERR ${LOG_ERR}"
+echo "LOG_OUT ${LOG_OUT}"
+echo "LOG_ALL ${LOG_ALL}"
 
 ###############################################################################
 echo
