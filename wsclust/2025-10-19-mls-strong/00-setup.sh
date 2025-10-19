@@ -90,6 +90,7 @@ git -C "${FLOWDIR}" ls-files -z --others --exclude-standard | xargs -0 -I {} git
 SRCDIR="${WORKDIR}/src"
 echo "SRCDIR ${SRCDIR}"
 rm -rf "${SRCDIR}"
+mkdir -p "${SRCDIR}"
 rsync -a "$(git rev-parse --show-toplevel)" "${SRCDIR}"
 
 git -C "${SRCDIR}" rev-parse HEAD > "${RESULTDIR_STEP}/src-revision.txt"
