@@ -140,6 +140,7 @@ find . -type f \( -name 'a=genomes*.pqt' -o -name 'a=fossils*.pqt' \) \
         --trie-postprocessor \
             'hstrat.AssignOriginTimeNodeRankTriePostprocessor()' \
         --filter '~pl.col("data_hex").str.contains(r"^0+$")' \
+        --eager-read --eager-write \
         --with-column 'pl.lit(filepath).cast(pl.Categorical).alias("file")' \
         --with-column 'pl.sum_horizontal(
             ((pl.col("data_hex").str.slice(2*b, 2).str.to_integer(base=16)
@@ -152,14 +153,14 @@ find . -type f \( -name 'a=genomes*.pqt' -o -name 'a=fossils*.pqt' \) \
             ^ pl.col(f"flag_nand_mask_byte{b}"))
             & (~pl.col(f"flag_is_focal_mask_byte{b}"))).bitwise_count_ones()
             for b in range(8)
-        ).alias("nonfocal_trait_count")' \
+        ).cast(pl.UInt8).alias("nonfocal_trait_count")' \
         --with-column '[
             (
                 ((pl.col("data_hex").str.slice(B * 2, 2).str.to_integer(base=16)
                 ^ pl.col(f"flag_nand_mask_byte{B}"))
                 & pl.lit(1))
                 * ((pl.col(f"flag_is_focal_mask_byte{B}") & pl.lit(1)) + pl.lit(1))
-            ).alias(f"byte{B}_bit0_trait")
+            ).cast(pl.UInt8).alias(f"byte{B}_bit0_trait")
             for B in range(8)
         ]' \
         --with-column '[
