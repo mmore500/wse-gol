@@ -129,56 +129,28 @@ git -C "${SRCDIR}" ls-files -z --others --exclude-standard | xargs -0 -I {} git 
 
 ###############################################################################
 echo
-echo "build phylogeny --------------------------------------------------------"
+echo "export phylogeny -------------------------------------------------------"
 echo ">>>>> ${FLOWNAME} :: ${STEPNAME} || ${SECONDS}"
 ###############################################################################
-cd "${WORKDIR}/02-run/out"
-find . -type f \( -name 'a=genomes*.pqt' -o -name 'a=fossils*.pqt' \) \
-    | singularity exec docker://ghcr.io/mmore500/hstrat:v1.20.13 \
-    python3 -m hstrat.dataframe.surface_build_tree \
-        "${WORKDIR_STEP}/a=phylogeny+ext=.pqt" \
-        --trie-postprocessor 'hstrat.AssignOriginTimeNaiveTriePostprocessor()' \
-        --filter '~pl.col("data_hex").str.contains(r"^0+$")' \
-        --with-column 'pl.lit(filepath).cast(pl.Categorical).alias("file")' \
-        --with-column 'pl.sum_horizontal(
-            ((pl.col("data_hex").str.slice(2*b, 2).str.to_integer(base=16)
-            ^ pl.col(f"flag_nand_mask_byte{b}"))
-            & pl.col(f"flag_is_focal_mask_byte{b}")).bitwise_count_ones()
-            for b in range(8)
-        ).alias("focal_trait_count")' \
-        --with-column 'pl.sum_horizontal(
-            ((pl.col("data_hex").str.slice(2*b, 2).str.to_integer(base=16)
-            ^ pl.col(f"flag_nand_mask_byte{b}"))
-            & (~pl.col(f"flag_is_focal_mask_byte{b}"))).bitwise_count_ones()
-            for b in range(8)
-        ).alias("nonfocal_trait_count")' \
-        --with-column '(
-            ((pl.col("data_hex").str.slice(0, 2).str.to_integer(base=16)
-            ^ pl.col("flag_nand_mask_byte0"))
-            & pl.lit(1))
-            * ((pl.col("flag_is_focal_mask_byte0") & pl.lit(1)) + pl.lit(1))
-        ).alias("byte0_bit0_trait")' \
-        --with-column '(
-            ((pl.col("data_hex").str.slice(0, 2).str.to_integer(base=16)
-            ^ pl.col("flag_nand_mask_byte0"))
-            & pl.lit(2))
-            * ((pl.col("flag_is_focal_mask_byte0") & pl.lit(2)) + pl.lit(2))
-            // 4
-        ).alias("byte0_bit1_trait")' \
-        --with-column '(
-            ((pl.col("data_hex").str.slice(2, 2).str.to_integer(base=16)
-            ^ pl.col("flag_nand_mask_byte1"))
-            & pl.lit(1))
-            * ((pl.col("flag_is_focal_mask_byte1") & pl.lit(1)) + pl.lit(1))
-        ).alias("byte1_bit0_trait")' \
-        --with-column '(
-            ((pl.col("data_hex").str.slice(2, 2).str.to_integer(base=16)
-            ^ pl.col("flag_nand_mask_byte1"))
-            & pl.lit(2))
-            * ((pl.col("flag_is_focal_mask_byte1") & pl.lit(2)) + pl.lit(2))
-            // 4
-        ).alias("byte1_bit1_trait")' \
-        | tee "${RESULTDIR_STEP}/surface_build_tree.log"
+singularity exec docker://ghcr.io/mmore500/hstrat:v1.20.13 \
+    python3 -m hstrat._auxiliary_lib._alifestd_as_newick_asexual \
+        -i "${WORKDIR}/03-build-phylo/a=phylogeny+ext=.pqt" \
+        -o "${WORKDIR_STEP}/a=phylotree+ext=.nwk" \
+        -l "id" \
+        | tee "${RESULTDIR_STEP}/_alifestd_as_newick_asexual.log"
+
+ls -1  \
+    | singularity run docker://ghcr.io/mmore500/joinem:v0.11.0 \
+        a=phylometa+ext=.csv \
+        --select "id" \
+        --select "origin_time" \
+        --select "focal_trait_count" \
+        --select "nonfocal_trait_count" \
+        --select "^byte\d+_bit\d+.*_trait" \
+        | tee "${RESULTDIR_STEP}/joinem.log"
+
+gzip -k "${WORKDIR_STEP}/a=phylotree+ext=.nwk"
+gzip -k "${WORKDIR_STEP}/a=phylometa+ext=.csv"
 
 ###############################################################################
 echo
