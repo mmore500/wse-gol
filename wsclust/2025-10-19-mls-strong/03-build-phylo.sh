@@ -153,32 +153,25 @@ find . -type f \( -name 'a=genomes*.pqt' -o -name 'a=fossils*.pqt' \) \
             & (~pl.col(f"flag_is_focal_mask_byte{b}"))).bitwise_count_ones()
             for b in range(8)
         ).alias("nonfocal_trait_count")' \
-        --with-column '(
-            ((pl.col("data_hex").str.slice(0, 2).str.to_integer(base=16)
-            ^ pl.col("flag_nand_mask_byte0"))
-            & pl.lit(1))
-            * ((pl.col("flag_is_focal_mask_byte0") & pl.lit(1)) + pl.lit(1))
-        ).alias("byte0_bit0_trait")' \
-        --with-column '(
-            ((pl.col("data_hex").str.slice(0, 2).str.to_integer(base=16)
-            ^ pl.col("flag_nand_mask_byte0"))
-            & pl.lit(2))
-            * ((pl.col("flag_is_focal_mask_byte0") & pl.lit(2)) + pl.lit(2))
-            // 4
-        ).alias("byte0_bit1_trait")' \
-        --with-column '(
-            ((pl.col("data_hex").str.slice(2, 2).str.to_integer(base=16)
-            ^ pl.col("flag_nand_mask_byte1"))
-            & pl.lit(1))
-            * ((pl.col("flag_is_focal_mask_byte1") & pl.lit(1)) + pl.lit(1))
-        ).alias("byte1_bit0_trait")' \
-        --with-column '(
-            ((pl.col("data_hex").str.slice(2, 2).str.to_integer(base=16)
-            ^ pl.col("flag_nand_mask_byte1"))
-            & pl.lit(2))
-            * ((pl.col("flag_is_focal_mask_byte1") & pl.lit(2)) + pl.lit(2))
-            // 4
-        ).alias("byte1_bit1_trait")' \
+        --with-column '[
+            (
+                ((pl.col("data_hex").str.slice(B * 2, 2).str.to_integer(base=16)
+                ^ pl.col(f"flag_nand_mask_byte{B}"))
+                & pl.lit(1))
+                * ((pl.col(f"flag_is_focal_mask_byte{B}") & pl.lit(1)) + pl.lit(1))
+            ).alias(f"byte{B}_bit0_trait")
+            for B in range(8)
+        ]' \
+        --with-column '[
+            (
+                ((pl.col("data_hex").str.slice(B * 2, 2).str.to_integer(base=16)
+                ^ pl.col(f"flag_nand_mask_byte{B}"))
+                & pl.lit(2))
+                * ((pl.col(f"flag_is_focal_mask_byte{B}") & pl.lit(2)) + pl.lit(2))
+                // 4
+            ).alias(f"byte{B}_bit1_trait")
+            for B in range(8)
+        ]' \
         | tee "${RESULTDIR_STEP}/surface_build_tree.log"
 
 ###############################################################################
