@@ -134,7 +134,7 @@ echo ">>>>> ${FLOWNAME} :: ${STEPNAME} || ${SECONDS}"
 ###############################################################################
 cd "${WORKDIR}/02-run/out"
 find . -type f \( -name 'a=genomes*.pqt' -o -name 'a=fossils*.pqt' \) \
-    | singularity exec docker://ghcr.io/mmore500/hstrat:v1.20.13 \
+    | singularity exec docker://ghcr.io/mmore500/hstrat:v1.20.14 \
     python3 -m hstrat.dataframe.surface_build_tree \
         "${WORKDIR_STEP}/a=phylogeny+ext=.pqt" \
         --trie-postprocessor \
@@ -154,7 +154,7 @@ find . -type f \( -name 'a=genomes*.pqt' -o -name 'a=fossils*.pqt' \) \
             & (~pl.col(f"flag_is_focal_mask_byte{b}"))).bitwise_count_ones()
             for b in range(8)
         ).cast(pl.UInt8).alias("nonfocal_trait_count")' \
-        --with-column '[
+        --with-column '*(
             (
                 ((pl.col("data_hex").str.slice(B * 2, 2).str.to_integer(base=16)
                 ^ pl.col(f"flag_nand_mask_byte{B}"))
@@ -162,8 +162,8 @@ find . -type f \( -name 'a=genomes*.pqt' -o -name 'a=fossils*.pqt' \) \
                 * ((pl.col(f"flag_is_focal_mask_byte{B}") & pl.lit(1)) + pl.lit(1))
             ).cast(pl.UInt8).alias(f"byte{B}_bit0_trait")
             for B in range(8)
-        ]' \
-        --with-column '[
+        )' \
+        --with-column '*(
             (
                 ((pl.col("data_hex").str.slice(B * 2, 2).str.to_integer(base=16)
                 ^ pl.col(f"flag_nand_mask_byte{B}"))
@@ -172,7 +172,7 @@ find . -type f \( -name 'a=genomes*.pqt' -o -name 'a=fossils*.pqt' \) \
                 // 4
             ).alias(f"byte{B}_bit1_trait")
             for B in range(8)
-        ]' \
+        )' \
         | tee "${RESULTDIR_STEP}/surface_build_tree.log"
 
 ###############################################################################
