@@ -116,7 +116,7 @@ echo "setting up venv"
 python3 -m pip install --upgrade pip
 python3 -m pip install --upgrade uv
 python3 -m uv pip install -r "${SRCDIR}/requirements_cs.txt"
-python3 -m uv pip install ./pylib_cs
+python3 -m uv pip install "${SRCDIR}/pylib_cs"
 python3 -m uv pip freeze | tee "${RESULTDIR_STEP}/pip-freeze.txt"
 python3 -m pylib_cs.cslc_wsclust_shim  # test install
 
