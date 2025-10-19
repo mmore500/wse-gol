@@ -1,23 +1,23 @@
-#!//bin/bash
+#!/usr/bin/env bash
 
 set -euo pipefail
 
-echo "date $(date '+%Y-%m-%d %H:%M:%S')"
-echo "hostname $(hostname)"
-echo "SECONDS ${SECONDS}"
-
 source "${HOME}/.env" || true
-
-cd "$(dirname "$0")"
-echo "PWD ${PWD}"
-
-echo "git rev-parse HEAD $(git rev-parse HEAD)"
 
 FLOWDIR="$(realpath "$(dirname "$0")")"
 FLOWNAME="$(basename "${FLOWDIR}")"
 STEPNAME="$(basename "$0" .sh)"
 WORKDIR="${FLOWDIR}/workdir"
 RESULTDIR="${FLOWDIR}/resultdir"
+
+###############################################################################
+echo
+echo
+echo "============================================= ${FLOWNAME} :: ${STEPNAME}"
+###############################################################################
+echo "date $(date '+%Y-%m-%d %H:%M:%S')"
+echo "hostname $(hostname)"
+echo "SECONDS ${SECONDS}"
 
 echo "STEPNAME ${STEPNAME}"
 echo "FLOWDIR ${FLOWDIR}"
@@ -26,8 +26,10 @@ echo "WORKDIR ${WORKDIR}"
 echo "RESULTDIR ${RESULTDIR}"
 
 ###############################################################################
+echo
 echo "make and link flow work dir --------------------------------------------"
-echo "SECONDS ${SECONDS}"
+echo ">>>>> ${FLOWNAME} :: ${STEPNAME} || ${SECONDS}"
+echo
 ###############################################################################
 WORKDIR_PATH="${TMPDIR:-/tmp}/wse-async-ga/${FLOWNAME}"
 echo "WORKDIR_PATH ${WORKDIR_PATH}"
@@ -39,8 +41,10 @@ mkdir -p "${WORKDIR_PATH}"
 ln -sf "${WORKDIR_PATH}" "${WORKDIR}"
 
 ###############################################################################
+echo
 echo "make step work dir -----------------------------------------------------"
-echo "SECONDS ${SECONDS}"
+echo ">>>>> ${FLOWNAME} :: ${STEPNAME} || ${SECONDS}"
+echo
 ###############################################################################
 WORKDIR_STEP="${WORKDIR}/${STEPNAME}"
 echo "WORKDIR_STEP ${WORKDIR_STEP}"
@@ -51,8 +55,10 @@ fi
 mkdir -p "${WORKDIR_STEP}"
 
 ###############################################################################
+echo
 echo "make and link result dir -----------------------------------------------"
-echo "SECONDS ${SECONDS}"
+echo ">>>>> ${FLOWNAME} :: ${STEPNAME} || ${SECONDS}"
+echo
 ###############################################################################
 RESULTDIR_PATH="${HOME}/scratch/wse-async-ga/${FLOWNAME}"
 echo "RESULTDIR_PATH ${RESULTDIR_PATH}"
@@ -66,8 +72,10 @@ ln -sf "${RESULTDIR_PATH}" "${RESULTDIR}"
 mkdir -p "${RESULTDIR}/${FLOWNAME}  "
 
 ###############################################################################
+echo
 echo "make step result dir ---------------------------------------------------"
-echo "SECONDS ${SECONDS}"
+echo ">>>>> ${FLOWNAME} :: ${STEPNAME} || ${SECONDS}"
+echo
 ###############################################################################
 RESULTDIR_STEP="${RESULTDIR}/${STEPNAME}"
 echo "RESULTDIR_STEP ${RESULTDIR_STEP}"
@@ -78,8 +86,10 @@ fi
 mkdir -p "${RESULTDIR_STEP}"
 
 ###############################################################################
+echo
 echo "log and setup source ---------------------------------------------------"
-echo "SECONDS ${SECONDS}"
+echo ">>>>> ${FLOWNAME} :: ${STEPNAME} || ${SECONDS}"
+echo
 ###############################################################################
 git -C "${FLOWDIR}" rev-parse HEAD > "${RESULTDIR_STEP}/git-revision.txt"
 git -C "$(git -C "${FLOWDIR}" rev-parse --show-toplevel)" status \
@@ -100,8 +110,10 @@ git -C "${SRCDIR}" --no-pager diff > "${RESULTDIR_STEP}/src-status.diff"
 git -C "${SRCDIR}" ls-files -z --others --exclude-standard | xargs -0 -I {} git -C "${SRCDIR}" --no-pager diff --no-index /dev/null {} >> "${RESULTDIR_STEP}/src-status.diff"
 
 ###############################################################################
+echo
 echo "setup venv  ------------------------------------------------------------"
-echo "SECONDS ${SECONDS}"
+echo ">>>>> ${FLOWNAME} :: ${STEPNAME} || ${SECONDS}"
+echo
 ###############################################################################
 VENVDIR="${WORKDIR}/venv"
 echo "VENVDIR ${VENVDIR}"
@@ -121,8 +133,10 @@ python3 -m uv pip freeze | tee "${RESULTDIR_STEP}/pip-freeze.txt"
 python3 -m pylib_cs.cslc_wsclust_shim  # test install
 
 ###############################################################################
+echo
 echo "closeout ---------------------------------------------------------------"
-echo "SECONDS ${SECONDS}"
+echo ">>>>> ${FLOWNAME} :: ${STEPNAME} || ${SECONDS}"
+echo
 ###############################################################################
 find "${RESULTDIR_STEP}" | sed -e "s/[^-][^\/]*\// |/g" -e "s/|\([^ ]\)/|-\1/"
 du -ah "${RESULTDIR_STEP}"/*
@@ -130,8 +144,10 @@ du -ah "${RESULTDIR_STEP}"/*
 env > "${RESULTDIR_STEP}/env.txt"
 
 ###############################################################################
+echo
 echo "done! ------------------------------------------------------------------"
-echo "SECONDS ${SECONDS}"
+echo ">>>>> ${FLOWNAME} :: ${STEPNAME} || ${SECONDS}"
+echo
 ###############################################################################
 
 echo ">>>fin<<<"
