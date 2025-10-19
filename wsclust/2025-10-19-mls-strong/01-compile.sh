@@ -15,9 +15,11 @@ on_exit() {
     echo ">>>>> ${FLOWNAME} :: ${STEPNAME} || ${SECONDS}"
 
     LOGDIR="${HOME}/log/wse-async-ga/"
-    echo "copying logs to LOGDIR ${LOGDIR}"
+    echo "copying script and logs to LOGDIR ${LOGDIR}"
     mkdir -p "${LOGDIR}"
 
+    cp "$0" \
+        "${LOGDIR}/flow=${FLOWNAME}+step=${STEPNAME}+what=script+ext=.sh" || :
     cp "${LOG_ALL}" \
         "${LOGDIR}/flow=${FLOWNAME}+step=${STEPNAME}+what=stdall+ext=.log" || :
     cp "${LOG_ERR}" \
@@ -25,7 +27,8 @@ on_exit() {
     cp "${LOG_OUT}" \
         "${LOGDIR}/flow=${FLOWNAME}+step=${STEPNAME}+what=stdout+ext=.log" || :
 
-    echo "copying logs to RESULTDIR_STEP ${RESULTDIR_STEP}"
+    echo "copying script and logs to RESULTDIR_STEP ${RESULTDIR_STEP}"
+    cp "$0" "${RESULTDIR_STEP}/" || :
     cp "${LOG_ALL}" "${RESULTDIR_STEP}/stdall.log" || :
     cp "${LOG_ERR}" "${RESULTDIR_STEP}/stderr.log" || :
     cp "${LOG_OUT}" "${RESULTDIR_STEP}/stdout.log" || :
