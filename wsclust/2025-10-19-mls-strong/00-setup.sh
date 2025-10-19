@@ -29,7 +29,6 @@ echo "RESULTDIR ${RESULTDIR}"
 echo
 echo "make and link flow work dir --------------------------------------------"
 echo ">>>>> ${FLOWNAME} :: ${STEPNAME} || ${SECONDS}"
-echo
 ###############################################################################
 WORKDIR_PATH="${TMPDIR:-/tmp}/wse-async-ga/${FLOWNAME}"
 echo "WORKDIR_PATH ${WORKDIR_PATH}"
@@ -44,7 +43,6 @@ ln -sf "${WORKDIR_PATH}" "${WORKDIR}"
 echo
 echo "make step work dir -----------------------------------------------------"
 echo ">>>>> ${FLOWNAME} :: ${STEPNAME} || ${SECONDS}"
-echo
 ###############################################################################
 WORKDIR_STEP="${WORKDIR}/${STEPNAME}"
 echo "WORKDIR_STEP ${WORKDIR_STEP}"
@@ -58,7 +56,6 @@ mkdir -p "${WORKDIR_STEP}"
 echo
 echo "make and link result dir -----------------------------------------------"
 echo ">>>>> ${FLOWNAME} :: ${STEPNAME} || ${SECONDS}"
-echo
 ###############################################################################
 RESULTDIR_PATH="${HOME}/scratch/wse-async-ga/${FLOWNAME}"
 echo "RESULTDIR_PATH ${RESULTDIR_PATH}"
@@ -75,7 +72,6 @@ mkdir -p "${RESULTDIR}/${FLOWNAME}  "
 echo
 echo "make step result dir ---------------------------------------------------"
 echo ">>>>> ${FLOWNAME} :: ${STEPNAME} || ${SECONDS}"
-echo
 ###############################################################################
 RESULTDIR_STEP="${RESULTDIR}/${STEPNAME}"
 echo "RESULTDIR_STEP ${RESULTDIR_STEP}"
@@ -89,7 +85,6 @@ mkdir -p "${RESULTDIR_STEP}"
 echo
 echo "log and setup source ---------------------------------------------------"
 echo ">>>>> ${FLOWNAME} :: ${STEPNAME} || ${SECONDS}"
-echo
 ###############################################################################
 git -C "${FLOWDIR}" rev-parse HEAD > "${RESULTDIR_STEP}/git-revision.txt"
 git -C "$(git -C "${FLOWDIR}" rev-parse --show-toplevel)" status \
@@ -113,7 +108,6 @@ git -C "${SRCDIR}" ls-files -z --others --exclude-standard | xargs -0 -I {} git 
 echo
 echo "setup venv  ------------------------------------------------------------"
 echo ">>>>> ${FLOWNAME} :: ${STEPNAME} || ${SECONDS}"
-echo
 ###############################################################################
 VENVDIR="${WORKDIR}/venv"
 echo "VENVDIR ${VENVDIR}"
@@ -136,7 +130,6 @@ python3 -m pylib_cs.cslc_wsclust_shim  # test install
 echo
 echo "closeout ---------------------------------------------------------------"
 echo ">>>>> ${FLOWNAME} :: ${STEPNAME} || ${SECONDS}"
-echo
 ###############################################################################
 find "${RESULTDIR_STEP}" | sed -e "s/[^-][^\/]*\// |/g" -e "s/|\([^ ]\)/|-\1/"
 du -ah "${RESULTDIR_STEP}"/*
@@ -147,7 +140,6 @@ env > "${RESULTDIR_STEP}/env.txt"
 echo
 echo "done! ------------------------------------------------------------------"
 echo ">>>>> ${FLOWNAME} :: ${STEPNAME} || ${SECONDS}"
-echo
 ###############################################################################
 
 echo ">>>fin<<<"

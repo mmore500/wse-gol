@@ -29,7 +29,6 @@ echo "RESULTDIR ${RESULTDIR}"
 echo
 echo "make step work dir -----------------------------------------------------"
 echo ">>>>> ${FLOWNAME} :: ${STEPNAME} || ${SECONDS}"
-echo
 ###############################################################################
 WORKDIR_STEP="${WORKDIR}/${STEPNAME}"
 echo "WORKDIR_STEP ${WORKDIR_STEP}"
@@ -43,7 +42,6 @@ mkdir -p "${WORKDIR_STEP}"
 echo
 echo "make step result dir ---------------------------------------------------"
 echo ">>>>> ${FLOWNAME} :: ${STEPNAME} || ${SECONDS}"
-echo
 ###############################################################################
 RESULTDIR_STEP="${RESULTDIR}/${STEPNAME}"
 echo "RESULTDIR_STEP ${RESULTDIR_STEP}"
@@ -57,7 +55,6 @@ mkdir -p "${RESULTDIR_STEP}"
 echo
 echo "setup venv  ------------------------------------------------------------"
 echo ">>>>> ${FLOWNAME} :: ${STEPNAME} || ${SECONDS}"
-echo
 ###############################################################################
 VENVDIR="${WORKDIR}/venv"
 echo "VENVDIR ${VENVDIR}"
@@ -71,7 +68,6 @@ python3 -m pylib_cs.cslc_wsclust_shim  # test install
 echo
 echo "log source -------------------------------------------------------------"
 echo ">>>>> ${FLOWNAME} :: ${STEPNAME} || ${SECONDS}"
-echo
 ###############################################################################
 git -C "${FLOWDIR}" rev-parse HEAD > "${RESULTDIR_STEP}/git-revision.txt"
 git -C "$(git -C "${FLOWDIR}" rev-parse --show-toplevel)" status \
@@ -91,7 +87,6 @@ git -C "${SRCDIR}" ls-files -z --others --exclude-standard | xargs -0 -I {} git 
 echo
 echo "setup run --------------------------------------------------------------"
 echo ">>>>> ${FLOWNAME} :: ${STEPNAME} || ${SECONDS}"
-echo
 ###############################################################################
 source "${WORKDIR}/01-compile/env.sh"
 
@@ -114,7 +109,6 @@ find "./run" | sed -e "s/[^-][^\/]*\// |/g" -e "s/|\([^ ]\)/|-\1/"
 echo
 echo "do run -----------------------------------------------------------------"
 echo ">>>>> ${FLOWNAME} :: ${STEPNAME} || ${SECONDS}"
-echo
 ###############################################################################
 cd "${WORKDIR_STEP}"
 echo "PWD ${PWD}"
@@ -182,7 +176,6 @@ EOF
 echo
 echo "closeout ---------------------------------------------------------------"
 echo ">>>>> ${FLOWNAME} :: ${STEPNAME} || ${SECONDS}"
-echo
 ###############################################################################
 find "${WORKDIR_STEP}/out" | sed -e "s/[^-][^\/]*\// |/g" -e "s/|\([^ ]\)/|-\1/"
 du -ah "${WORKDIR_STEP}"/out/*
@@ -197,7 +190,6 @@ env > "${RESULTDIR_STEP}/env.txt"
 ###############################################################################
 echo "done! ------------------------------------------------------------------"
 echo ">>>>> ${FLOWNAME} :: ${STEPNAME} || ${SECONDS}"
-echo
 ###############################################################################
 
 echo ">>>fin<<<"
