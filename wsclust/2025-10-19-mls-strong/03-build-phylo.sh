@@ -156,24 +156,22 @@ find . -type f \( -name 'a=genomes*.pqt' -o -name 'a=fossils*.pqt' \) \
         ).cast(pl.UInt8).alias("nonfocal_trait_count")' \
         --with-column '*(
             (
-                ((pl.col("data_hex").str.slice(B * 2, 2).str.to_integer(base=16)
-                ^ pl.col(f"flag_nand_mask_byte{B}"))
-                & pl.lit(1))
-                * ((pl.col(f"flag_is_focal_mask_byte{B}") & pl.lit(1)) + pl.lit(1))
+
+                (((
+                    pl.col("data_hex")
+                    .str.slice(B * 2, 2)
+                    .str.to_integer(base=16)
+                    ^ pl.col(f"flag_nand_mask_byte{B}")
+                ) & pl.lit(1 << b)) // pl.lit(1 << b))
+                * pl.when(
+                    pl.col(f"flag_is_focal_mask_byte{B}")
+                    & pl.lit(1 << b)
+                    != 0
+                ).then(2).otherwise(1)
             ).cast(pl.UInt8).alias(alias)
             for B in range(8)
-            for alias in (f"trait_byte{B}_bit0", f"trait_num{B * 8}")
-        )' \
-        --with-column '*(
-            (
-                ((pl.col("data_hex").str.slice(B * 2, 2).str.to_integer(base=16)
-                ^ pl.col(f"flag_nand_mask_byte{B}"))
-                & pl.lit(2))
-                * ((pl.col(f"flag_is_focal_mask_byte{B}") & pl.lit(2)) + pl.lit(2))
-                // 4
-            ).cast(pl.UInt8).alias(alias)
-            for B in range(8)
-            for alias in (f"trait_byte{B}_bit1", f"trait_num{B * 8 + 1}")
+            for b in range(8)
+            for alias in (f"trait_byte{B}_bit{b}", f"trait_num{B * 8 + b}")
         )' \
         | tee "${RESULTDIR_STEP}/surface_build_tree.log"
 
