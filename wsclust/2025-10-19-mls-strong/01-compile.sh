@@ -99,7 +99,9 @@ echo "SINGULARITY_BIND ${SINGULARITY_BIND}"
 echo "config compile ---------------------------------------------------------"
 echo "SECONDS ${SECONDS}"
 ###############################################################################
-cat > "${WORKDIR_STEP}/compile.env" << 'EOF'
+cat > "${WORKDIR_STEP}/env.sh" << 'EOF'
+#!/usr/bin/env bash
+
 export ASYNC_GA_ARCH_FLAG="wse3"
 export ASYNC_GA_GENOME_FLAVOR="genome_mls_2025_08_15"
 export ASYNC_GA_FABRIC_DIMS="762,1172"
@@ -144,6 +146,7 @@ echo "COMPCONFENV_CEREBRASLIB_POPULATION_EXTINCTION_PROBABILITY__f32 ${COMPCONFE
 echo "COMPCONFENV_CEREBRASLIB_TRAITLOGGER_DSTREAM_ALGO_NAME__comptime_string ${COMPCONFENV_CEREBRASLIB_TRAITLOGGER_DSTREAM_ALGO_NAME__comptime_string}"
 EOF
 
+chmod +x "${WORKDIR_STEP}/env.sh"
 cp "${WORKDIR_STEP}/env.sh" "${RESULTDIR_STEP}/env.sh"
 source "${WORKDIR_STEP}/env.sh"
 
@@ -152,6 +155,15 @@ echo "do compile -------------------------------------------------------------"
 echo "SECONDS ${SECONDS}"
 ###############################################################################
 "${WORKDIR}/src/kernel-async-ga/compile.sh" | tee "${RESULTDIR_STEP}/compile.log"
+
+###############################################################################
+echo "closeout ---------------------------------------------------------------"
+echo "SECONDS ${SECONDS}"
+###############################################################################
+find "${RESULTDIR_STEP}" | sed -e "s/[^-][^\/]*\// |/g" -e "s/|\([^ ]\)/|-\1/"
+du -ah "${RESULTDIR_STEP}"/*
+
+env > "${RESULTDIR_STEP}/env.txt"
 
 ###############################################################################
 echo "done! ------------------------------------------------------------------"
