@@ -137,7 +137,8 @@ find . -type f \( -name 'a=genomes*.pqt' -o -name 'a=fossils*.pqt' \) \
     | singularity exec docker://ghcr.io/mmore500/hstrat:v1.20.13 \
     python3 -m hstrat.dataframe.surface_build_tree \
         "${WORKDIR_STEP}/a=phylogeny+ext=.pqt" \
-        --trie-postprocessor 'hstrat.AssignOriginTimeNaiveTriePostprocessor()' \
+        --trie-postprocessor \
+            'hstrat.AssignOriginTimeNodeRankTriePostprocessor()' \
         --filter '~pl.col("data_hex").str.contains(r"^0+$")' \
         --with-column 'pl.lit(filepath).cast(pl.Categorical).alias("file")' \
         --with-column 'pl.sum_horizontal(
