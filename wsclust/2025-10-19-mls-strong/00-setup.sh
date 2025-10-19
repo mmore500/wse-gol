@@ -91,7 +91,7 @@ SRCDIR="${WORKDIR}/src"
 echo "SRCDIR ${SRCDIR}"
 rm -rf "${SRCDIR}"
 mkdir -p "${SRCDIR}"
-rsync -a "$(git rev-parse --show-toplevel)" "${SRCDIR}"
+rsync -a "$(git rev-parse --show-toplevel)/" "${SRCDIR}"
 
 git -C "${SRCDIR}" rev-parse HEAD > "${RESULTDIR_STEP}/src-revision.txt"
 git -C "$(git -C "${SRCDIR}" rev-parse --show-toplevel)" status \
