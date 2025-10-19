@@ -6,6 +6,7 @@ LOG_ALL="$(mktemp)"
 LOG_ERR="$(mktemp)"
 LOG_OUT="$(mktemp)"
 
+# adapted from https://unix.stackexchange.com/a/61936/605206
 exec > >(tee >(tee "${LOG_ALL}" >>"${LOG_OUT}")) \
      2> >(tee >(tee -a "${LOG_ALL}" >>"${LOG_ERR}") >&2)
 on_exit() {
@@ -125,6 +126,7 @@ echo "log and setup source ---------------------------------------------------"
 echo ">>>>> ${FLOWNAME} :: ${STEPNAME} || ${SECONDS}"
 ###############################################################################
 git -C "${FLOWDIR}" rev-parse HEAD > "${RESULTDIR_STEP}/git-revision.txt"
+git -C "${FLOWDIR}" remote -v > "${RESULTDIR_STEP}/git-remote.txt"
 git -C "$(git -C "${FLOWDIR}" rev-parse --show-toplevel)" status \
     > "${RESULTDIR_STEP}/git-status.txt"
 git -C "${FLOWDIR}" --no-pager diff > "${RESULTDIR_STEP}/git-status.diff"
@@ -137,6 +139,7 @@ mkdir -p "${SRCDIR}"
 rsync -a "$(git rev-parse --show-toplevel)/" "${SRCDIR}"
 
 git -C "${SRCDIR}" rev-parse HEAD > "${RESULTDIR_STEP}/src-revision.txt"
+git -C "${SRCDIR}" remote -v > "${RESULTDIR_STEP}/src-remote.txt"
 git -C "$(git -C "${SRCDIR}" rev-parse --show-toplevel)" status \
     > "${RESULTDIR_STEP}/src-status.txt"
 git -C "${SRCDIR}" --no-pager diff > "${RESULTDIR_STEP}/src-status.diff"
