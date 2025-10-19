@@ -157,7 +157,7 @@ echo
 echo "downsample phylogeny ---------------------------------------------------"
 echo ">>>>> ${FLOWNAME} :: ${STEPNAME} || ${SECONDS}"
 ###############################################################################
-dsamp=4096
+dsamp=8192
 echo "dsamp ${dsamp}"
 
 ls -1 ${WORKDIR}/03-build-phylo/a=phylogeny+ext=.pqt \
