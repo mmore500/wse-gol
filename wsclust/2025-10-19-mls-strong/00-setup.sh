@@ -78,26 +78,6 @@ fi
 mkdir -p "${RESULTDIR_STEP}"
 
 ###############################################################################
-echo "setup venv  ------------------------------------------------------------"
-echo "SECONDS ${SECONDS}"
-###############################################################################
-VENVDIR="${WORKDIR}/venv"
-echo "VENVDIR ${VENVDIR}"
-
-echo "creating venv"
-python3.8 -m venv "${VENVDIR}"
-source "${VENVDIR}/bin/activate"
-which python3
-
-echo "setting up venv"
-python3 -m pip install --upgrade pip
-python3 -m pip install --upgrade uv
-python3 -m uv pip install -r "requirements_cs.txt"
-python3 -m uv pip install ./pylib_cs
-python3 -m uv pip freeze | tee "${RESULTDIR_STEP}/pip-freeze.txt"
-python3 -m pylib_cs.cslc_wsclust_shim  # test install
-
-###############################################################################
 echo "log and setup source ---------------------------------------------------"
 echo "SECONDS ${SECONDS}"
 ###############################################################################
@@ -109,6 +89,7 @@ git -C "${FLOWDIR}" ls-files -z --others --exclude-standard | xargs -0 -I {} git
 
 SRCDIR="${WORKDIR}/src"
 echo "SRCDIR ${SRCDIR}"
+rm -rf "${SRCDIR}"
 rsync -a "$(git rev-parse --show-toplevel)" "${SRCDIR}"
 
 git -C "${SRCDIR}" rev-parse HEAD > "${RESULTDIR_STEP}/src-revision.txt"
@@ -116,6 +97,27 @@ git -C "$(git -C "${SRCDIR}" rev-parse --show-toplevel)" status \
     > "${RESULTDIR_STEP}/src-status.txt"
 git -C "${SRCDIR}" --no-pager diff > "${RESULTDIR_STEP}/src-status.diff"
 git -C "${SRCDIR}" ls-files -z --others --exclude-standard | xargs -0 -I {} git -C "${SRCDIR}" --no-pager diff --no-index /dev/null {} >> "${RESULTDIR_STEP}/src-status.diff"
+
+###############################################################################
+echo "setup venv  ------------------------------------------------------------"
+echo "SECONDS ${SECONDS}"
+###############################################################################
+VENVDIR="${WORKDIR}/venv"
+echo "VENVDIR ${VENVDIR}"
+
+echo "creating venv"
+rm -rf "${VENVDIR}"
+python3.8 -m venv "${VENVDIR}"
+source "${VENVDIR}/bin/activate"
+which python3
+
+echo "setting up venv"
+python3 -m pip install --upgrade pip
+python3 -m pip install --upgrade uv
+python3 -m uv pip install -r "${SRCDIR}/requirements_cs.txt"
+python3 -m uv pip install ./pylib_cs
+python3 -m uv pip freeze | tee "${RESULTDIR_STEP}/pip-freeze.txt"
+python3 -m pylib_cs.cslc_wsclust_shim  # test install
 
 ###############################################################################
 echo "done! ------------------------------------------------------------------"
