@@ -173,7 +173,7 @@ find . -type f \( -name 'a=genomes*.pqt' -o -name 'a=fossils*.pqt' \) \
                 // 4
             ).cast(pl.UInt8).alias(alias)
             for B in range(8)
-            for alias in (f"trait_byte{B}_bit0", f"trait_num{B * 8 + 1}")
+            for alias in (f"trait_byte{B}_bit1", f"trait_num{B * 8 + 1}")
         )' \
         | tee "${RESULTDIR_STEP}/surface_build_tree.log"
 
