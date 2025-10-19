@@ -139,9 +139,9 @@ singularity exec docker://ghcr.io/mmore500/hstrat:v1.20.13 \
         -l "id" \
         | tee "${RESULTDIR_STEP}/_alifestd_as_newick_asexual.log"
 
-ls -1  \
+ls -1 "${WORKDIR}/03-build-phylo/a=phylogeny+ext=.pqt" \
     | singularity run docker://ghcr.io/mmore500/joinem:v0.11.0 \
-        a=phylometa+ext=.csv \
+        "a=phylometa+ext=.csv" \
         --select "id" \
         --select "origin_time" \
         --select "focal_trait_count" \
