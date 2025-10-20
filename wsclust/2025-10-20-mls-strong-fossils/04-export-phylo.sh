@@ -111,19 +111,27 @@ echo
 echo "log source -------------------------------------------------------------"
 echo ">>>>> ${FLOWNAME} :: ${STEPNAME} || ${SECONDS}"
 ###############################################################################
+echo "log revision"
 git -C "${FLOWDIR}" rev-parse HEAD > "${RESULTDIR_STEP}/git-revision.txt"
+echo "log remote"
 git -C "${FLOWDIR}" remote -v > "${RESULTDIR_STEP}/git-remote.txt"
+echo "log status"
 git -C "$(git -C "${FLOWDIR}" rev-parse --show-toplevel)" status \
     > "${RESULTDIR_STEP}/git-status.txt"
+echo "log diff"
 git -C "${FLOWDIR}" --no-pager diff > "${RESULTDIR_STEP}/git-status.diff" || :
 git -C "${FLOWDIR}" ls-files -z --others --exclude-standard | xargs -0 -I {} git -C "${FLOWDIR}" --no-pager diff --no-index /dev/null {} >> "${RESULTDIR_STEP}/git-status.diff" || :
 
 SRCDIR="${WORKDIR}/src"
 echo "SRCDIR ${SRCDIR}"
+echo "log revision"
 git -C "${SRCDIR}" rev-parse HEAD > "${RESULTDIR_STEP}/src-revision.txt"
-git -C "${SRCDIR}" remote -v > "${RESULTDIR_STEP}/git-remote.txt"
+echo "log remote"
+git -C "${SRCDIR}" remote -v > "${RESULTDIR_STEP}/src-remote.txt"
+echo "log status"
 git -C "$(git -C "${SRCDIR}" rev-parse --show-toplevel)" status \
     > "${RESULTDIR_STEP}/src-status.txt"
+echo "log diff"
 git -C "${SRCDIR}" --no-pager diff > "${RESULTDIR_STEP}/src-status.diff" || :
 git -C "${SRCDIR}" ls-files -z --others --exclude-standard | xargs -0 -I {} git -C "${SRCDIR}" --no-pager diff --no-index /dev/null {} >> "${RESULTDIR_STEP}/src-status.diff" || :
 
