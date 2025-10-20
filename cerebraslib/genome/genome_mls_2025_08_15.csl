@@ -137,17 +137,35 @@ inline fn _is_clear(genome: genomePtr_t) bool {
     return res;
 }
 
+const _pmut_log2: u8 = compconf.get_value_or( //nofmt
+    "CEREBRASLIB_LOG2_PMUT_BITWISE", // nofmt
+    @as(u8, 18), // nofmt
+);
+
+const _fit_fudge: f32 = compconf.get_value_or( //nofmt
+    "CEREBRASLIB_NONZERO_FIT_FUDGE", @as(f32, 0.0) // nofmt
+);
+
+const _p_clobber: f32 = compconf.get_value_or( //nofmt
+    "CEREBRASLIB_CLOBBER_IMMIGRANT_P", @as(f32, 0.9) // nofmt
+);
+
 // public API =================================================================
+
 fn elapse_inheritance_of(genome: genomePtr_t) void {
     if (!_is_clear(genome)) {
-        _apply_mutation(genome, 18);
+        _apply_mutation(genome, _pmut_log2);
         _step_instrumentation(genome); // elapse two steps per generation
         _step_instrumentation(genome);
     }
 }
 
 fn calc_fitness_of(genome: genomePtr_t) f32 {
-    return @as(f32, get_trait_value(genome));
+    var fitness = @as(f32, get_trait_value(genome));
+    if (fitness != 0.0) {
+        fitness += random.random_f32(0.0, _fit_fudge);
+    }
+    return fitness;
 }
 
 fn get_trait_value(genome: genomePtr_t) u32 {
@@ -170,9 +188,10 @@ fn initialize_one(genome: genomePtr_t) void {
 }
 
 fn clobber_immigrant(resident: genomePtr_t, immigrant: genomePtr_t) void {
-    if (!_is_clear(resident) or ( // nofmt
-        get_trait_value(immigrant) == 2 and opscalar.p(0.9)) // nofmt
-    ) {
+    const is_occupied = !_is_clear(resident);
+    if (is_occupied or ( // nofmt
+        (get_trait_value(immigrant) == 2) and opscalar.p(_p_clobber)))
+    {
         _clear(immigrant);
     }
 }

@@ -32,6 +32,33 @@ jobs:
       - name: Run test script
         run: ./pylib/test.sh
 
+  test-pylib_cs:
+    name: Test pylib_cs
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.8'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install --upgrade uv
+          uv pip install -r requirements_cs.txt --system
+
+      - name: Run test script
+        run: ./pylib_cs/test.sh
+
+      - name: Test install and CLI
+        run: |
+          python3 -m pip install ./pylib_cs
+          python3 -m pylib_cs.cslc_wsclust_shim
+
   test-async-ga:
     runs-on: ubuntu-latest
     strategy:
@@ -665,16 +692,20 @@ jobs:
             >/dev/null 2>&1
 
       - name: Run async-ga
-        run: |
-          export ASYNC_GA_GENOME_FLAVOR="${{ matrix.genome }}"
-          export ASYNC_GA_NONBLOCK="1"
-          export CSLC CS_PYTHON PATH ASYNC_GA_ARCH_FLAG
-          export COMPCONFENV_CEREBRASLIB_DSTREAM_VALIDATOR__comptime_string="${{ matrix.dstream_validator }}"
-          export COMPCONFENV_CEREBRASLIB_DSTREAM_EXPECTED_T__u32="${{ matrix.dstream_expected_T }}"
-          export COMPCONFENV_CEREBRASLIB_HSTRAT_DSTREAM_ALGO_NAME__comptime_string="${{ matrix.dstream_algo_name }}"
-          sudo -E env PATH=$PATH \
-            ./kernel-async-ga/execute.sh \
-            >/dev/null 2>&1
+        uses: nick-fields/retry@v3
+        with:
+          timeout_minutes: 15
+          max_attempts: 3
+          command: |
+            export ASYNC_GA_GENOME_FLAVOR="${{ matrix.genome }}"
+            export ASYNC_GA_NONBLOCK="1"
+            export CSLC CS_PYTHON PATH ASYNC_GA_ARCH_FLAG
+            export COMPCONFENV_CEREBRASLIB_DSTREAM_VALIDATOR__comptime_string="${{ matrix.dstream_validator }}"
+            export COMPCONFENV_CEREBRASLIB_DSTREAM_EXPECTED_T__u32="${{ matrix.dstream_expected_T }}"
+            export COMPCONFENV_CEREBRASLIB_HSTRAT_DSTREAM_ALGO_NAME__comptime_string="${{ matrix.dstream_algo_name }}"
+            sudo -E env PATH=$PATH \
+              ./kernel-async-ga/execute.sh \
+              >/dev/null 2>&1
 
       - name: Reconstruct from end-state genomes
         run: |
