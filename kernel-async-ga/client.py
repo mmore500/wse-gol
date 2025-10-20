@@ -39,12 +39,12 @@ def hexify_binary_data(
     verbose: bool = False,
 ) -> typing.List[str]:
     if verbose:
-        log(
-            f"- entering hexify_binary_data with nWav={nWav}, "
-            f"raw_binary_data.dtype={raw_binary_data.dtype}, "
-            f"raw_binary_data.shape={raw_binary_data.shape}, and "
-            f"raw_binar_data.ravel()[:nWav]={raw_binary_data.ravel()[:nWav]}",
-        )
+        log(f"- begin hexify_binary_data...")
+        log(f"  - raw_binary_data.dtype={raw_binary_data.dtype}")
+        log(f"  - raw_binary_data.shape={raw_binary_data.shape}")
+        log(f"  - raw_binary_data.flat[:nWav]={raw_binary_data.flat[:nWav]}")
+        log(f"  - nWav={nWav} verbose={verbose}")
+
         for word in range(nWav):
             log(f"---------------------------------------------- binary word {word}")
             values = (inner[word] for outer in raw_binary_data for inner in outer)
@@ -88,7 +88,7 @@ def hexify_binary_data(
 def hexify_genome_data(data: "np.ndarray", verbose: bool = False) -> typing.List[str]:
     if verbose:
         log("entering hexify_binary_data from hexify_genome_data...")
-    return hexify_binary_data(data, nWav=nWav, verbose=False)
+    return hexify_binary_data(data, nWav=nWav, verbose=verbose)
 
 log("- printenv")
 for k, v in sorted(os.environ.items()):
