@@ -398,7 +398,7 @@ fossils = fossils[:max_fossil_sets]
 if len(fossils):
     log(f"- {fossils[0].shape=}")
 
-    fossil_filename = "a=fossils+i=0+ext=.npy"
+    fossil_filename = "a=rawfossildat+i=0+ext=.npy"
     log(f"- saving {fossil_filename}...")
     np.save(fossil_filename, fossils[0])
 
