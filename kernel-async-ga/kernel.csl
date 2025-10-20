@@ -137,10 +137,9 @@ var ptr_tscStartBuffer : [*]u32 = &tscStartBuffer;
 ///////////////////////////////////////////////////////////////////////////////
 var busyThreads = @zeros([4]u8);  // 0, 1, 2, 3
 
-const ut_out_N: u8 = 0;  // RE: non-wse2 only
-const ut_out_S: u8 = 1;  // RE: non-wse2 only
-const ut_out_E: u8 = 2;  // RE: non-wse2 only
-const ut_out_W: u8 = 3;  // RE: non-wse2 only
+// memcpy occupies ut 0 // RE: non-wse2 only
+// ut 1 thru 3 used for output in nonBlock mode
+// ut 0 thru 3 used for output in block mode
 
 const q_out_N: output_queue = @get_output_queue(4);  // RE: non-wse2 only
 const q_out_S: output_queue = @get_output_queue(5);  // RE: non-wse2 only
@@ -238,7 +237,7 @@ fn doDispatchSend_N(comptime thread: u8) void {
   @fmovs(sendDsd_N, sendBufDsd_N,  // callback on complete
     if (@is_arch("wse2")) .{ .async = true, .activate = sendFinalizeTaskID_N, }
     else .{ .async = true, .activate = sendFinalizeTaskID_N,
-      .ut_id = @get_ut_id(ut_out_N),
+      .ut_id = @get_ut_id(thread),
     },
   );
   sendCounter_N[0] += 1;  // counter only used for telemetry
@@ -286,7 +285,7 @@ fn doDispatchSend_S(comptime thread: u8) void {
   @fmovs(sendDsd_S, sendBufDsd_S,  // callback on complete
     if (@is_arch("wse2")) .{ .async = true, .activate = sendFinalizeTaskID_S, }
     else .{ .async = true, .activate = sendFinalizeTaskID_S,
-      .ut_id = @get_ut_id(ut_out_S),
+      .ut_id = @get_ut_id(thread),
     },
   );
   sendCounter_S[0] += 1;  // counter only used for telemetry
@@ -334,7 +333,7 @@ fn doDispatchSend_E(comptime thread: u8) void {
   @fmovs(sendDsd_E, sendBufDsd_E,  // callback on complete
     if (@is_arch("wse2")) .{ .async = true, .activate = sendFinalizeTaskID_E, }
     else .{ .async = true, .activate = sendFinalizeTaskID_E,
-      .ut_id = @get_ut_id(ut_out_E),
+      .ut_id = @get_ut_id(thread),
     },
   );
   sendCounter_E[0] += 1;  // counter only used for telemetry
@@ -382,7 +381,7 @@ fn doDispatchSend_W(comptime thread: u8) void {
   @fmovs(sendDsd_W, sendBufDsd_W,  // callback on complete
     if (@is_arch("wse2")) .{ .async = true, .activate = sendFinalizeTaskID_W, }
     else .{ .async = true, .activate = sendFinalizeTaskID_W,
-      .ut_id = @get_ut_id(ut_out_W),
+      .ut_id = @get_ut_id(thread),
     },
   );
   sendCounter_W[0] += 1;  // counter only used for telemetry
@@ -599,28 +598,21 @@ task cycleTask() void {
   // handle send flags, load send buffer from pop and start next async send
   // --------------------------------------------------------------------------
   const shuf = @random16() & 3;
-  if (@is_arch("wse2")) {
-    for (@range(u16, 4)) |i| {  // send to all neighbors
-      const numBusy = (
-        busyThreads[0] + busyThreads[1] + busyThreads[2] + busyThreads[3]
-      );
-      if (numBusy == 4) break;
-      const j = (i + shuf) & 3;  // round-robin order
-      if (j == 0 and sendFlag_N == 1) {
-        if (dispatchSend_N()) { sendFlag_N = 0; }
-      } else if (j == 1 and sendFlag_S == 1) {
-        if (dispatchSend_S()) { sendFlag_S = 0; }
-      } else if (j == 2 and sendFlag_E == 1) {
-        if (dispatchSend_E()) { sendFlag_E = 0; }
-      } else if (j == 3 and sendFlag_W == 1) {
-        if (dispatchSend_W()) { sendFlag_W = 0; }
-      }
+  for (@range(u16, 4)) |i| {  // send to all neighbors
+    const numBusy = (
+      busyThreads[0] + busyThreads[1] + busyThreads[2] + busyThreads[3]
+    );
+    if (numBusy == 4) break;
+    const j = (i + shuf) & 3;  // round-robin order
+    if (j == 0 and sendFlag_N == 1) {
+      if (dispatchSend_N()) { sendFlag_N = 0; }
+    } else if (j == 1 and sendFlag_S == 1) {
+      if (dispatchSend_S()) { sendFlag_S = 0; }
+    } else if (j == 2 and sendFlag_E == 1) {
+      if (dispatchSend_E()) { sendFlag_E = 0; }
+    } else if (j == 3 and sendFlag_W == 1) {
+      if (dispatchSend_W()) { sendFlag_W = 0; }
     }
-  } else {  // non-wse2
-    if (sendFlag_N == 1) { doDispatchSend_N(255); sendFlag_N = 0; }
-    if (sendFlag_S == 1) { doDispatchSend_S(255); sendFlag_S = 0; }
-    if (sendFlag_E == 1) { doDispatchSend_E(255); sendFlag_E = 0; }
-    if (sendFlag_W == 1) { doDispatchSend_W(255); sendFlag_W = 0; }
   }
 
   // update telemetry
