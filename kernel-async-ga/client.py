@@ -39,6 +39,12 @@ def hexify_binary_data(
     verbose: bool = False,
 ) -> typing.List[str]:
     if verbose:
+        log(
+            f"- entering hexify_binary_data with nWav={nWav}, "
+            f"raw_binary_data.dtype={raw_binary_data.dtype}, "
+            f"raw_binary_data.shape={raw_binary_data.shape}, and "
+            f"raw_binar_data.ravel()[:nWav]={raw_binary_data.ravel()[:nWav]}",
+        )
         for word in range(nWav):
             log(f"---------------------------------------------- binary word {word}")
             values = (inner[word] for outer in raw_binary_data for inner in outer)
@@ -80,6 +86,8 @@ def hexify_binary_data(
 
 
 def hexify_genome_data(data: "np.ndarray", verbose: bool = False) -> typing.List[str]:
+    if verbose:
+        log("entering hexify_binary_data from hexify_genome_data...")
     return hexify_binary_data(data, nWav=nWav, verbose=False)
 
 log("- printenv")
@@ -389,13 +397,28 @@ fossils = fossils[:max_fossil_sets]
 
 if len(fossils):
     log(f"- {fossils[0].shape=}")
+
+    fossil_filename = "a=fossils+i=0+ext=.npy"
+    log(f"- saving {fossil_filename}...")
+    np.save(fossil_filename, fossils[0])
+
+    log(f"- ... saved {fossil_filename}!")
+
+    file_size_mb = os.path.getsize(fossil_filename) / (1024 * 1024)
+    log(f"- {fossil_filename} file size: {file_size_mb:.2f} MB")
+
     log("- example hexification")
     hexify_genome_data(fossils[0], verbose=True)
 
+log("- entering multiprocessing pool...")
 with multiprocessing.Pool() as pool:
+    log(f"- pool size: {pool._processes}")
+    log(f" - imap hexify_genome_data over {len(fossils)} fossils...")
     # Map our function over fossils in parallel, and use tqdm for a progress bar
     work = pool.imap(hexify_genome_data, fossils)
     fossils = [*tqdm(work, total=len(fossils), desc="hexing fossils")]
+
+log("- ... exited multiprocessing pool")
 
 log(f" - {len(fossils)=}")
 
@@ -591,6 +614,7 @@ runner.memcpy_d2h(
     nonblock=False,
 )
 raw_binary_data = out_tensors.copy()
+log("entering hexify_binary_data from wildtype traitlogs...")
 record_hex = hexify_binary_data(
     raw_binary_data.view(np.uint32), nWav=traitLoggerNumWavs, verbose=True
 )
