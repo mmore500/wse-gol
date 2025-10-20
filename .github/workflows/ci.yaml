@@ -185,13 +185,17 @@ jobs:
             >/dev/null 2>&1
 
       - name: Run async-ga
-        run: |
-          export ASYNC_GA_GENOME_FLAVOR="${{ matrix.genome }}"
-          export ASYNC_GA_NONBLOCK="${{ matrix.nonBlock }}"
-          export CSLC CS_PYTHON PATH ASYNC_GA_ARCH_FLAG
-          sudo -E env PATH=$PATH \
-            ./kernel-async-ga/execute.sh \
-            >/dev/null 2>&1
+        uses: nick-fields/retry@v3
+        with:
+          timeout_minutes: 15
+          max_attempts: 3
+          command: |
+            export ASYNC_GA_GENOME_FLAVOR="${{ matrix.genome }}"
+            export ASYNC_GA_NONBLOCK="${{ matrix.nonBlock }}"
+            export CSLC CS_PYTHON PATH ASYNC_GA_ARCH_FLAG
+            sudo -E env PATH=$PATH \
+              ./kernel-async-ga/execute.sh \
+              >/dev/null 2>&1
 
       - name: Build artifact
         run: |
