@@ -140,6 +140,7 @@ find . -type f \( -name 'a=genomes*.pqt' -o -name 'a=fossils*.pqt' \) \
         --trie-postprocessor \
             'hstrat.AssignOriginTimeNodeRankTriePostprocessor()' \
         --filter '~pl.col("data_hex").str.contains(r"^0+$")' \
+        --how "diagonal_relaxed" \
         --eager-read --eager-write \
         --with-column 'pl.lit(filepath).cast(pl.Categorical).alias("file")' \
         --with-column 'pl.sum_horizontal(
