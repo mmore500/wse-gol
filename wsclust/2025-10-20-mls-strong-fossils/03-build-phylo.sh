@@ -151,6 +151,8 @@ export SINGULARITYENV_NUMBA_NUM_THREADS="${APPTAINERENV_NUMBA_NUM_THREADS}"
 echo "SINGULARITYENV_POLARS_MAX_THREADS=${SINGULARITYENV_POLARS_MAX_THREADS}"
 echo "SINGULARITYENV_NUMBA_NUM_THREADS=${SINGULARITYENV_NUMBA_NUM_THREADS}"
 
+# TODO why are there non-empty rows with T=0? i.e., this should work:
+# --filter '~pl.col("data_hex").str.contains(r"^0+$")' \
 find . -type f \( -name 'a=genomes*.pqt' -o -name 'a=fossils*.pqt' \) \
     | singularity exec docker://ghcr.io/mmore500/hstrat:v1.20.14 \
     python3 -m hstrat.dataframe.surface_build_tree \
@@ -158,7 +160,7 @@ find . -type f \( -name 'a=genomes*.pqt' -o -name 'a=fossils*.pqt' \) \
         --trie-postprocessor \
             'hstrat.AssignOriginTimeNodeRankTriePostprocessor()' \
         --exploded-slice-size 100000 \
-        --filter '~pl.col("data_hex").str.contains(r"^0+$")' \
+        --filter 'df["data_hex"].str.slice(16, 8).str.to_integer(base=16) == 0' \
         --how "diagonal_relaxed" \
         --eager-read --eager-write --string-cache \
         --seed 1 --sample 4000000 \
