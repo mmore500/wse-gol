@@ -160,7 +160,7 @@ find . -type f \( -name 'a=genomes*.pqt' -o -name 'a=fossils*.pqt' \) \
         --trie-postprocessor \
             'hstrat.AssignOriginTimeNodeRankTriePostprocessor()' \
         --exploded-slice-size 100000 \
-        --filter 'pl.col("data_hex").str.slice(16, 8).str.to_integer(base=16) != 0)' \
+        --filter '(pl.col("data_hex").str.slice(16, 8).str.to_integer(base=16) != 0)' \
         --how "diagonal_relaxed" \
         --eager-read --eager-write --string-cache \
         --seed 1 --sample 4000000 \
