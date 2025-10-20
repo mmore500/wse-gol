@@ -410,10 +410,25 @@ if len(fossils):
     log("- example hexification")
     hexify_genome_data(fossils[0], verbose=True)
 
+log("- setting up multiprocessing pool...")
+log(f"  - os.cpu_count()={os.cpu_count()}")
+log(f"  - os.process_cpu_count()={os.process_cpu_count()}")
+log(f"  - trying multiprocessing.Pool(processes=1)...")
+with multiprocessing.Pool(processes=1) as pool:
+    log(f"  - ... pool size: {pool._processes}")
+
+if os.process_cpu_count() is not None and os.process_cpu_count() >= 24:
+    log(f"  - trying multiprocessing.Pool(processes=23)...")
+    with multiprocessing.Pool(processes=23) as pool:
+        log(f"  - ... pool size: {pool._processes}")
+
+nproc = os.getenv("ASYNC_GA_MULTIPROCESSING_NPROC", None)
+log(f"  - ASYNC_GA_MULTIPROCESSING_NPROC={nproc}")
+
 log("- entering multiprocessing pool...")
-with multiprocessing.Pool() as pool:
+with multiprocessing.Pool(processes=nproc) as pool:
     log(f"- pool size: {pool._processes}")
-    log(f" - imap hexify_genome_data over {len(fossils)} fossils...")
+    log(f"- imap hexify_genome_data over {len(fossils)} fossils...")
     # Map our function over fossils in parallel, and use tqdm for a progress bar
     work = pool.imap(hexify_genome_data, fossils)
     fossils = [*tqdm(work, total=len(fossils), desc="hexing fossils")]
