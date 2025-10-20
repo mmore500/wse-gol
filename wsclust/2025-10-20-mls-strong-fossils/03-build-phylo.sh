@@ -133,15 +133,27 @@ echo "build phylogeny --------------------------------------------------------"
 echo ">>>>> ${FLOWNAME} :: ${STEPNAME} || ${SECONDS}"
 ###############################################################################
 cd "${WORKDIR}/02-run/out"
+export APPTAINERENV_POLARS_MAX_THREADS=32
+export APPTAINERENV_NUMBA_NUM_THREADS=32
+echo "APPTAINERENV_POLARS_MAX_THREADS=${APPTAINERENV_POLARS_MAX_THREADS}"
+echo "APPTAINERENV_NUMBA_NUM_THREADS=${APPTAINERENV_NUMBA_NUMBA_NUM_THREADS}"
+
+export SINGULARITYENV_POLARS_MAX_THREADS="${APPTAINERENV_POLARS_MAX_THREADS}"
+export SINGULARITYENV_NUMBA_NUM_THREADS="${APPTAINERENV_NUMBA_NUM_THREADS}"
+echo "SINGULARITYENV_POLARS_MAX_THREADS=${SINGULARITYENV_POLARS_MAX_THREADS}"
+echo "SINGULARITYENV_NUMBA_NUM_THREADS=${SINGULARITYENV_NUMBA_NUM_THREADS}"
+
 find . -type f \( -name 'a=genomes*.pqt' -o -name 'a=fossils*.pqt' \) \
     | singularity exec docker://ghcr.io/mmore500/hstrat:v1.20.14 \
     python3 -m hstrat.dataframe.surface_build_tree \
         "${WORKDIR_STEP}/a=phylogeny+ext=.pqt" \
         --trie-postprocessor \
             'hstrat.AssignOriginTimeNodeRankTriePostprocessor()' \
+        --exploded-slice-size 100000 \
         --filter '~pl.col("data_hex").str.contains(r"^0+$")' \
         --how "diagonal_relaxed" \
-        --eager-read --eager-write \
+        --eager-read --eager-write --string-cache --delete-trunk \
+        --seed 1 --sample 4000000 \
         --with-column 'pl.lit(filepath).cast(pl.Categorical).alias("file")' \
         --with-column 'pl.sum_horizontal(
             ((pl.col("data_hex").str.slice(2*b, 2).str.to_integer(base=16)
