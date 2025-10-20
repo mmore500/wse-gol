@@ -666,7 +666,7 @@ record_hex = hexify_binary_data(
     raw_binary_data.view(np.uint32), nWav=traitLoggerNumWavs, verbose=True
 )
 
-# save genome values to a file
+# save trait logger values to a file
 df = pl.DataFrame({
     "data_hex": pl.Series(record_hex, dtype=pl.Utf8),
     "tile": pl.Series(whoami_data.ravel(), dtype=pl.UInt32),
