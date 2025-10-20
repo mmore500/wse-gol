@@ -506,6 +506,10 @@ if fossils:
     )
     log(f" - bookend check retained {len(df)} fossils")
 
+    log(f" - stripping bookends...")
+    df = df.with_columns(pl.col("data_hex").str.slice(8).str.slice(0, -8))
+    log(f" - ... done!")
+
     write_parquet_verbose(
         df,
         "a=fossils"
