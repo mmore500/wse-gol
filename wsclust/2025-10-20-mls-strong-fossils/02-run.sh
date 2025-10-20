@@ -133,7 +133,10 @@ echo "setup run --------------------------------------------------------------"
 echo ">>>>> ${FLOWNAME} :: ${STEPNAME} || ${SECONDS}"
 ###############################################################################
 source "${WORKDIR}/01-compile/env.sh"
-export ASYNC_GA_MULTIPROCESSING_NPROC=8
+
+export ASYNC_GA_MAX_FOSSIL_SETS_SPREAD=16
+export ASYNC_GA_MULTIPROCESSING_NPROC=16
+echo "ASYNC_GA_MAX_FOSSIL_SETS_SPREAD=${ASYNC_GA_MAX_FOSSIL_SETS_SPREAD}"
 echo "ASYNC_GA_MULTIPROCESSING_NPROC=${ASYNC_GA_MULTIPROCESSING_NPROC}"
 
 mkdir -p "${WORKDIR_STEP}/out"

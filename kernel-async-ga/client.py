@@ -9,6 +9,7 @@ import logging
 import multiprocessing
 import os
 import pathlib
+import random
 import uuid
 import shutil
 import subprocess
@@ -223,6 +224,10 @@ tournSize = (
 with open("compconf.json", encoding="utf-8") as json_file:
     compconf_data = json.load(json_file)
 
+log(f" - applying globalSeed={globalSeed}")
+random.seed(globalSeed)
+np.random.seed(globalSeed)
+
 log(f" - {compconf_data=}")
 
 traitLoggerNumBits = int(compconf_data["CEREBRASLIB_TRAITLOGGER_NUM_BITS:u32"])
@@ -394,6 +399,34 @@ log(f" - {len(fossils)=}")
 max_fossil_sets = int(os.environ.get("ASYNC_GA_MAX_FOSSIL_SETS", 2**32 - 1))
 log(f" - {max_fossil_sets=}")
 fossils = fossils[:max_fossil_sets]
+log(f" - {len(fossils)=}")
+
+max_fossil_sets_spread = int(os.environ.get(
+    "ASYNC_GA_MAX_FOSSIL_SETS_SPREAD", 2**32 - 1
+))
+log(f" - {max_fossil_sets_spread=}")
+m = min(max_fossil_sets_spread, len(fossils))
+if m < len(fossils):
+    log(f" - spacing to {m} fossil sets...")
+    # adapted from https://stackoverflow.com/a/9873804
+    fossils = [
+        fossils[i * len(fossils) // m + len(fossils) // (2 * m)]
+        for i in range(m)
+    ]
+    log(f" - {len(fossils)=}")
+
+max_fossil_sets_sample = int(os.environ.get(
+    "ASYNC_GA_MAX_FOSSIL_SETS_SAMPLE", 2**32 - 1
+))
+log(f" - {max_fossil_sets_sample=}")
+m = min(max_fossil_sets_sample, len(fossils))
+if m < len(fossils):
+    log(f" - sampling {m} fossil sets...")
+    fossils = [
+        fossils[i]
+        for i in sorted(random.sample(range(len(fossils)), k=m))
+    ]
+    log(f" - {len(fossils)=}")
 
 if len(fossils):
     log(f"- {fossils[0].shape=}")
