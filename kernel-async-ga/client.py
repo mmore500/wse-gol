@@ -91,6 +91,13 @@ def hexify_genome_data(data: "np.ndarray", verbose: bool = False) -> typing.List
         log("entering hexify_binary_data from hexify_genome_data...")
     return hexify_binary_data(data, nWav=nWav, verbose=verbose)
 
+def hexify_genome_bookend_data(
+    data: "np.ndarray", verbose: bool = False
+) -> typing.List[str]:
+    if verbose:
+        log("entering hexify_binary_data from hexify_genome_bookend_data...")
+    return hexify_binary_data(data, nWav=nWav + 2, verbose=verbose)
+
 log("- printenv")
 for k, v in sorted(os.environ.items()):
     log(f"  - {k}={v}")
@@ -310,11 +317,11 @@ fossils = []
 while nonBlock:
     print("1", end="", flush=True)
     memcpy_dtype = MemcpyDataType.MEMCPY_32BIT
-    out_tensors = np.zeros((nCol, nRow, nWav), np.uint32)
+    out_tensors = np.zeros((nCol, nRow, nWav + 2), np.uint32)
 
     runner.memcpy_d2h(
         out_tensors.ravel(),
-        runner.get_id("genome"),
+        runner.get_id("genomeBookend"),
         0,  # x0
         0,  # y0
         nCol,  # width
@@ -441,7 +448,7 @@ if len(fossils):
     log(f"- {fossil_filename} file size: {file_size_mb:.2f} MB")
 
     log("- example hexification")
-    hexify_genome_data(fossils[0], verbose=True)
+    hexify_genome_bookend_data(fossils[0], verbose=True)
 
 log("- setting up multiprocessing pool...")
 log(f"  - os.cpu_count()={os.cpu_count()}")
@@ -465,9 +472,9 @@ for n in (1, 7, 15, 23):
 log("- entering multiprocessing pool...")
 with multiprocessing.Pool(processes=nproc) as pool:
     log(f"- pool size: {pool._processes}")
-    log(f"- imap hexify_genome_data over {len(fossils)} fossils...")
+    log(f"- imap hexify_genome_bookend_data over {len(fossils)} fossils...")
     # Map our function over fossils in parallel, and use tqdm for a progress bar
-    work = pool.imap(hexify_genome_data, fossils)
+    work = pool.imap(hexify_genome_bookend_data, fossils)
     fossils = [*tqdm(work, total=len(fossils), desc="hexing fossils")]
 
 log("- ... exited multiprocessing pool")
@@ -486,6 +493,18 @@ if fossils:
         pl.lit(value, dtype=dtype).alias(key)
         for key, (value, dtype) in metadata.items()
     ])
+
+    len_before = len(df)
+    df = df.filter(
+        pl.col("data_hex").str.slice(0, 8)
+        !=  pl.col("data_hex").str.slice(-8, 8),
+    )
+    log(
+        " - bookend check removed "
+        f"{len_before - len(df)} / {len_before} "
+        f"({100 * (len_before - len(df)) / len_before:.1f}%) fossils",
+    )
+    log(f" - bookend check retained {len(df)} fossils")
 
     write_parquet_verbose(
         df,

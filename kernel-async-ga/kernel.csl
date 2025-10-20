@@ -117,6 +117,9 @@ var ptr_traitValues: [*]u32 = &traitValues;
 var genome = @zeros([population.gSize]u32);  // samples 0th population element
 var ptr_genome : [*]u32 = &genome;  // (which is convenient)
 
+var genomeBookend = @zeros([population.gSize + 2]u32);  // w/ bookend validation
+var ptr_genomeBookend : [*]u32 = &genome;  // for async memcpy
+
 var fitness = @zeros([1]f32);  // samples 0th population element (convenient)
 var ptr_fitness : [*]f32 = &fitness;
 
@@ -627,6 +630,12 @@ task cycleTask() void {
   }
   wildtypeLogger.update(population._get_ith_trait_value(0) == 0);
 
+  genomeBookend[population.gSize + 1] += 1;
+  for(@range(u16, population.gSize)) |i| {
+    genomeBookend[i + 1] = genome_ptr[i];
+  }
+  genomeBookend[0] += 1;
+
   // trigger next cycle
   // --------------------------------------------------------------------------
   if (!shouldHalt(cycleCounter[0])) { cycleCounter[0] += 1;  // for telemetry
@@ -779,6 +788,7 @@ comptime {  // symbols let memcpy gather end-state data from device to host
   @export_symbol(ptr_traitValues, "traitValues");
   @export_symbol(ptr_fitness, "fitness");
   @export_symbol(ptr_genome, "genome");
+  @export_symbol(ptr_genomeBookend, "genomeBookend");
   @export_symbol(ptr_whoami, "whoami");
   @export_symbol(ptr_whereami_x, "whereami_x");
   @export_symbol(ptr_whereami_y, "whereami_y");

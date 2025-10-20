@@ -68,6 +68,7 @@ layout {
   @export_name("traitValues", [*]u32, true);
   @export_name("fitness", [*]f32, true);
   @export_name("genome", [*]u32, true);
+  @export_name("genomeBookend", [*]u32, true);
   @export_name("whoami", [*]u32, true);
   @export_name("whereami_x", [*]u32, true);
   @export_name("whereami_y", [*]u32, true);
