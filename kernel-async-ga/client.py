@@ -417,6 +417,8 @@ process_cpu_count = len(os.sched_getaffinity(0))  # available py3.13+
 log(f"  - process_cpu_count={process_cpu_count}")
 nproc = os.getenv("ASYNC_GA_MULTIPROCESSING_NPROC", None)
 log(f"  - ASYNC_GA_MULTIPROCESSING_NPROC={nproc}")
+if nproc is not None:
+    nproc = int(nproc)
 
 for n in (1, 7, 15, 23):
     if n == 1 or min(process_cpu_count - 1, nproc or 2**32) >= n:
