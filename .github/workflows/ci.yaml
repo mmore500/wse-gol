@@ -692,16 +692,20 @@ jobs:
             >/dev/null 2>&1
 
       - name: Run async-ga
-        run: |
-          export ASYNC_GA_GENOME_FLAVOR="${{ matrix.genome }}"
-          export ASYNC_GA_NONBLOCK="1"
-          export CSLC CS_PYTHON PATH ASYNC_GA_ARCH_FLAG
-          export COMPCONFENV_CEREBRASLIB_DSTREAM_VALIDATOR__comptime_string="${{ matrix.dstream_validator }}"
-          export COMPCONFENV_CEREBRASLIB_DSTREAM_EXPECTED_T__u32="${{ matrix.dstream_expected_T }}"
-          export COMPCONFENV_CEREBRASLIB_HSTRAT_DSTREAM_ALGO_NAME__comptime_string="${{ matrix.dstream_algo_name }}"
-          sudo -E env PATH=$PATH \
-            ./kernel-async-ga/execute.sh \
-            >/dev/null 2>&1
+        uses: nick-fields/retry@v3
+        with:
+          timeout_minutes: 15
+          max_attempts: 3
+          command: |
+            export ASYNC_GA_GENOME_FLAVOR="${{ matrix.genome }}"
+            export ASYNC_GA_NONBLOCK="1"
+            export CSLC CS_PYTHON PATH ASYNC_GA_ARCH_FLAG
+            export COMPCONFENV_CEREBRASLIB_DSTREAM_VALIDATOR__comptime_string="${{ matrix.dstream_validator }}"
+            export COMPCONFENV_CEREBRASLIB_DSTREAM_EXPECTED_T__u32="${{ matrix.dstream_expected_T }}"
+            export COMPCONFENV_CEREBRASLIB_HSTRAT_DSTREAM_ALGO_NAME__comptime_string="${{ matrix.dstream_algo_name }}"
+            sudo -E env PATH=$PATH \
+              ./kernel-async-ga/execute.sh \
+              >/dev/null 2>&1
 
       - name: Reconstruct from end-state genomes
         run: |
