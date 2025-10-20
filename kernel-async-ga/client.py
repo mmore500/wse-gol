@@ -413,18 +413,19 @@ if len(fossils):
 log("- setting up multiprocessing pool...")
 log(f"  - os.cpu_count()={os.cpu_count()}")
 log(f"  - PYTHON_CPU_COUNT={os.getenv('PYTHON_CPU_COUNT', None)}")
-log(f"  - len(os.sched_getaffinity(0))={len(os.sched_getaffinity(0))}")
-log(f"  - trying multiprocessing.Pool(processes=1)...")
-with multiprocessing.Pool(processes=1) as pool:
-    log(f"  - ... pool size: {pool._processes}")
-
-if os.process_cpu_count() is not None and os.process_cpu_count() >= 24:
-    log(f"  - trying multiprocessing.Pool(processes=23)...")
-    with multiprocessing.Pool(processes=23) as pool:
-        log(f"  - ... pool size: {pool._processes}")
-
+process_cpu_count = len(os.sched_getaffinity(0))  # available py3.13+
+log(f"  - process_cpu_count={process_cpu_count}")
 nproc = os.getenv("ASYNC_GA_MULTIPROCESSING_NPROC", None)
 log(f"  - ASYNC_GA_MULTIPROCESSING_NPROC={nproc}")
+
+for n in (1, 7, 15, 23):
+    if n == 1 or min(process_cpu_count - 1, nproc or 2**32) >= n:
+        log(f"  - trying multiprocessing.Pool(processes={n})...")
+        with multiprocessing.Pool(processes=n) as pool:
+            log(f"  - ... pool size: {pool._processes}")
+            pool_expected = [str(i) for i in range(n)]
+            pool_result = list(pool.map(str, range(n)))
+            log(f"  - ... pool test: {pool_result == pool_expected}")
 
 log("- entering multiprocessing pool...")
 with multiprocessing.Pool(processes=nproc) as pool:
