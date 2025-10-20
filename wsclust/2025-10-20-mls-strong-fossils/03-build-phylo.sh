@@ -160,7 +160,7 @@ find . -type f \( -name 'a=genomes*.pqt' -o -name 'a=fossils*.pqt' \) \
         --exploded-slice-size 100000 \
         --filter '~pl.col("data_hex").str.contains(r"^0+$")' \
         --how "diagonal_relaxed" \
-        --eager-read --eager-write --string-cache --delete-trunk \
+        --eager-read --eager-write --string-cache \
         --seed 1 --sample 4000000 \
         --with-column 'pl.lit(filepath).cast(pl.Categorical).alias("file")' \
         --with-column 'pl.sum_horizontal(
