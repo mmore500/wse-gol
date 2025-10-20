@@ -118,7 +118,7 @@ var genome = @zeros([population.gSize]u32);  // samples 0th population element
 var ptr_genome : [*]u32 = &genome;  // (which is convenient)
 
 var genomeBookend = @zeros([population.gSize + 2]u32);  // w/ bookend validation
-var ptr_genomeBookend : [*]u32 = &genome;  // for async memcpy
+var ptr_genomeBookend : [*]u32 = &genomeBookend;  // for async memcpy
 
 var fitness = @zeros([1]f32);  // samples 0th population element (convenient)
 var ptr_fitness : [*]f32 = &fitness;
