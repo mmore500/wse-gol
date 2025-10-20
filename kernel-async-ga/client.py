@@ -412,7 +412,8 @@ if len(fossils):
 
 log("- setting up multiprocessing pool...")
 log(f"  - os.cpu_count()={os.cpu_count()}")
-log(f"  - os.process_cpu_count()={os.process_cpu_count()}")
+log(f"  - PYTHON_CPU_COUNT={os.getenv('PYTHON_CPU_COUNT', None)}")
+log(f"  - len(os.sched_getaffinity(0))={len(os.sched_getaffinity(0))}")
 log(f"  - trying multiprocessing.Pool(processes=1)...")
 with multiprocessing.Pool(processes=1) as pool:
     log(f"  - ... pool size: {pool._processes}")
