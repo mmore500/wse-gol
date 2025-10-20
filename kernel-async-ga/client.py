@@ -326,7 +326,7 @@ while nonBlock:
         0,  # y0
         nCol,  # width
         nRow,  # height
-        nWav,  # num wavelets
+        nWav + 2,  # num wavelets
         streaming=False,
         data_type=memcpy_dtype,
         order=MemcpyOrder.ROW_MAJOR,
