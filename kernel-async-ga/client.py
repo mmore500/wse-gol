@@ -507,7 +507,7 @@ if fossils:
 
     log(f" - stripping bookends...")
     df = df.with_columns(pl.col("data_hex").str.head(-8).str.tail(-8))
-    assert (df["data_hex"].str.len() == nWav * 8).all()
+    assert (df["data_hex"].str.len_chars() == nWav * 8).all()
     log(f" - ... done!")
 
     write_parquet_verbose(
