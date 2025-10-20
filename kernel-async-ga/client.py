@@ -396,12 +396,12 @@ while nonBlock:
 log("fossils ====================================================")
 log(f" - {len(fossils)=}")
 
-max_fossil_sets = int(os.environ.get("ASYNC_GA_MAX_FOSSIL_SETS", 2**32 - 1))
+max_fossil_sets = int(os.getenv("ASYNC_GA_MAX_FOSSIL_SETS", 2**32 - 1))
 log(f" - {max_fossil_sets=}")
 fossils = fossils[:max_fossil_sets]
 log(f" - {len(fossils)=}")
 
-max_fossil_sets_spread = int(os.environ.get(
+max_fossil_sets_spread = int(os.getenv(
     "ASYNC_GA_MAX_FOSSIL_SETS_SPREAD", 2**32 - 1
 ))
 log(f" - {max_fossil_sets_spread=}")
@@ -415,7 +415,7 @@ if m < len(fossils):
     ]
     log(f" - {len(fossils)=}")
 
-max_fossil_sets_sample = int(os.environ.get(
+max_fossil_sets_sample = int(os.getenv(
     "ASYNC_GA_MAX_FOSSIL_SETS_SAMPLE", 2**32 - 1
 ))
 log(f" - {max_fossil_sets_sample=}")
