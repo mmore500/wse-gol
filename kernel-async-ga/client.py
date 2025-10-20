@@ -485,11 +485,6 @@ if fossils:
     }).with_columns([
         pl.lit(value, dtype=dtype).alias(key)
         for key, (value, dtype) in metadata.items()
-        if (
-            key.startswith("dstream_")
-            or key.startswith("downstream_")
-            or key in ("genomeFlavor",)
-        )
     ])
 
     write_parquet_verbose(
