@@ -496,8 +496,7 @@ if fossils:
 
     len_before = len(df)
     df = df.filter(
-        pl.col("data_hex").str.slice(0, 8)
-        !=  pl.col("data_hex").str.slice(-8, 8),
+        pl.col("data_hex").str.head(8) !=  pl.col("data_hex").str.tail(8),
     )
     log(
         " - bookend check removed "
@@ -507,7 +506,7 @@ if fossils:
     log(f" - bookend check retained {len(df)} fossils")
 
     log(f" - stripping bookends...")
-    df = df.with_columns(pl.col("data_hex").str.slice(8).str.slice(0, -8))
+    df = df.with_columns(pl.col("data_hex").str.head(-8).str.tail(-8))
     log(f" - ... done!")
 
     write_parquet_verbose(
