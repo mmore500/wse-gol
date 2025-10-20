@@ -77,4 +77,5 @@ layout {
   @export_name("tscStartBuffer", [*]u32, true);
   @export_name("wildtypeLoggerRecord", [*]u16, true);
   @export_name("dolaunch", fn()void);
+  @export_name("dorefresh", fn()void);
 }

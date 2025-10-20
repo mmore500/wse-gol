@@ -365,6 +365,8 @@ while nonBlock:
         print("!", flush=True)
         break
     else:
+        print("6", end="", flush=True)
+        runner.launch("dorefresh", nonblock=False)
         print("|", end="", flush=True)
         continue
 

@@ -623,14 +623,7 @@ task cycleTask() void {
   for (@range(u16, popSize)) |i| {  // will record last cycle traits were seen
     traitCycles[population._get_ith_trait_value(i)] = cycleCounter[0];
   }
-  // sample 0th element of population for telemetry
-  const genome_ptr = population._get_ith_genome(0);
-  genomeBookend[population.gSize + 1] += 1;
-  for(@range(u16, population.gSize)) |i| {
-    genome[i] = genome_ptr[i];
-    genomeBookend[i + 1] = genome_ptr[i];
-  }
-  genomeBookend[0] += 1;
+
   wildtypeLogger.update(population._get_ith_trait_value(0) == 0);
 
   // trigger next cycle
@@ -649,6 +642,12 @@ task cycleTask() void {
     // record trait values
     for (@range(u32, nTraitVals)) |i| { traitValues[i] = i; }
 
+    // sample 0th element of population for telemetry
+    const genome_ptr = population._get_ith_genome(0);
+    for(@range(u16, population.gSize)) |i| {
+      genome[i] = genome_ptr[i];
+    }
+
     // trigger closeout cycle
     // ------------------------------------------------------------------------
     @activate(closeoutTaskID);  // trigger closeout cycle
@@ -660,6 +659,20 @@ task cycleTask() void {
 // appears to prevent hardware simulation crash, will consume different
 // numbers of cycles on different PEs at launch to desynchronize them at startup
 fn desync() void { for (@range(u16, @random16() % 256)) |i| { @random16(); } }
+
+fn genomerefresh() void {
+  const genome_ptr = population._get_ith_genome(0);
+  genomeBookend[population.gSize + 1] += 1;
+  for(@range(u16, population.gSize)) |i| {
+    genomeBookend[i + 1] = genome_ptr[i];
+  }
+  genomeBookend[0] += 1;
+}
+
+fn dorefresh() void {  // launched by RPC (remote procedure call)
+  genomerefresh();
+  memcpy.unblock_cmd_stream();
+}
 
 fn dolaunch() void {  // launched by RPC (remote procedure call)
   time.enable_tsc();
@@ -699,13 +712,7 @@ fn dolaunch() void {  // launched by RPC (remote procedure call)
   desync();
   population.init_module();
   // initialize genome telemetry
-  const genome_ptr = population._get_ith_genome(0);
-  genomeBookend[population.gSize + 1] += 1;
-  for (@range(u16, population.gSize)) |i| {
-    genome[i] = genome_ptr[i];
-    genomeBookend[i + 1] = genome_ptr[i];
-  }
-  genomeBookend[0] += 1;
+  genomerefresh();
   // open initial recv requests, never-filled recv requests on edges ok
   dispatchRecv_N(); dispatchRecv_S(); dispatchRecv_E(); dispatchRecv_W();
   @activate(cycleTaskID);  // trigger first cycle
@@ -801,4 +808,5 @@ comptime {  // symbols let memcpy gather end-state data from device to host
   @export_symbol(ptr_tscEndBuffer, "tscEndBuffer");
   @export_symbol(ptr_tscStartBuffer, "tscStartBuffer");
   @export_symbol(dolaunch);
+  @export_symbol(dorefresh);
 }
