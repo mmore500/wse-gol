@@ -108,8 +108,6 @@ fi
 mkdir -p "${RESULTDIR_PATH}"
 ln -sf "${RESULTDIR_PATH}" "${RESULTDIR}"
 
-mkdir -p "${RESULTDIR}/${FLOWNAME}  "
-
 ###############################################################################
 echo
 echo "make step result dir ---------------------------------------------------"
