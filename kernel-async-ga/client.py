@@ -34,13 +34,13 @@ def removeprefix(text: str, prefix: str) -> str:
     return text
 
 
-def hexify_binary_data(
+def assemble_binary_data(
     raw_binary_data: "np.ndarray",
     nWav: int,
     verbose: bool = False,
-) -> typing.List[str]:
+) -> "np.ndarray":
     if verbose:
-        log(f"- begin hexify_binary_data...")
+        log(f"- begin assemble_binary_data...")
         log(f"  - raw_binary_data.dtype={raw_binary_data.dtype}")
         log(f"  - raw_binary_data.shape={raw_binary_data.shape}")
         log(f"  - raw_binary_data.flat[:nWav]={raw_binary_data.flat[:nWav]}")
@@ -52,51 +52,47 @@ def hexify_binary_data(
             log(str([*it.islice(values, 10)]))
 
     shape = raw_binary_data.shape
-    binary_ints = raw_binary_data.astype(">u4").reshape(-1, shape[-1])
+    binary_ints = np.ascontiguousarray(
+        raw_binary_data.astype(">u4").reshape(-1, shape[-1]),
+    )
+
     assert len(binary_ints) == nRow * nCol
     if verbose:
         log("------------------------------------------------ binary u32 ints")
         for binary_int in binary_ints[:10]:
             log(f"{len(binary_ints)=} {binary_int=}")
 
-    binary_hex = binary_ints.tobytes().hex()
-    if verbose:
-        log("---------------------------------------------- binary hex string")
-        log(f"{len(binary_hex)=} {binary_hex[:100]=}")
+    bytes_per_string = nWav * binary_ints.itemsize
 
-    binary_bytes = bytearray(binary_hex, "ascii")
     if verbose:
-        log("--------------------------------------------------- binary bytes")
-        log(f"{len(binary_bytes)=} {binary_bytes[:100]=}")
+        log("--------------------------------------------------- creating view")
+        log(f"  - Input array shape for view: {binary_ints.shape}")
+        log(f"  - Target dtype: S{bytes_per_string}")
 
-    binary_chars = np.frombuffer(binary_bytes, dtype="S1").astype(str)
-    if verbose:
-        log("--------------------------------------------------- binary chars")
-        log(f"{len(binary_chars)=} {binary_chars[:100]=}")
+    byte_string_view = binary_ints.view(f'S{bytes_per_string}')
+    assert byte_string_view.shape == (nRow * nCol, 1)
 
-    chunk_size = nWav * wavSize // 4
-    reshaped = binary_chars.reshape(-1, chunk_size)
-    binary_strings = np.apply_along_axis("".join, 1, reshaped)
-    assert len(binary_strings) == nRow * nCol
+    binary_strings = byte_string_view.reshape(-1)
+    assert binary_strings.shape == (nRow * nCol,)
+
     if verbose:
-        log("--------------------------------------------- binary hex strings")
+        log("--------------------------------------------- raw byte strings")
         for binary_string in binary_strings[:10]:
             log(f"{binary_string=}")
 
     return binary_strings
 
 
-def hexify_genome_data(data: "np.ndarray", verbose: bool = False) -> typing.List[str]:
-    if verbose:
-        log("entering hexify_binary_data from hexify_genome_data...")
-    return hexify_binary_data(data, nWav=nWav, verbose=verbose)
+def assemble_genome_data(
+        data: "np.ndarray", verbose: bool = False
+) -> typing.List[str]:
+    return assemble_binary_data(data, nWav=nWav, verbose=verbose)
 
-def hexify_genome_bookend_data(
+
+def assemble_genome_bookend_data(
     data: "np.ndarray", verbose: bool = False
 ) -> typing.List[str]:
-    if verbose:
-        log("entering hexify_binary_data from hexify_genome_bookend_data...")
-    return hexify_binary_data(data, nWav=nWav + 2, verbose=verbose)
+    return assemble_binary_data(data, nWav=nWav + 2, verbose=verbose)
 
 log("- printenv")
 for k, v in sorted(os.environ.items()):
@@ -449,8 +445,8 @@ if len(fossils):
     file_size_mb = os.path.getsize(fossil_filename) / (1024 * 1024)
     log(f"- {fossil_filename} file size: {file_size_mb:.2f} MB")
 
-    log("- example hexification")
-    hexify_genome_bookend_data(fossils[0], verbose=True)
+    log("- example assembly")
+    assemble_genome_bookend_data(fossils[0], verbose=True)
 
 log("- setting up multiprocessing pool...")
 log(f"  - os.cpu_count()={os.cpu_count()}")
@@ -474,10 +470,10 @@ for n in (1, 7, 15, 23):
 log("- entering multiprocessing pool...")
 with multiprocessing.Pool(processes=nproc) as pool:
     log(f"- pool size: {pool._processes}")
-    log(f"- imap hexify_genome_bookend_data over {len(fossils)} fossils...")
+    log(f"- imap assemble_genome_bookend_data over {len(fossils)} fossils...")
     # Map our function over fossils in parallel, and use tqdm for a progress bar
-    work = pool.imap(hexify_genome_bookend_data, fossils)
-    fossils = [*tqdm(work, total=len(fossils), desc="hexing fossils")]
+    work = pool.imap(assemble_genome_bookend_data, fossils)
+    fossils = [*tqdm(work, total=len(fossils), desc="assembling fossils")]
 
 log("- ... exited multiprocessing pool")
 
@@ -487,7 +483,7 @@ if fossils:
     fossils = np.array(fossils)
     layers, positions = np.indices(fossils.shape)
     df = pl.DataFrame({
-        "data_hex": pl.Series(fossils.ravel(), dtype=pl.Utf8),
+        "data_raw": pl.Series(fossils.ravel(), dtype=pl.Binary),
         "is_extant": False,
         "layer": pl.Series(layers.ravel(), dtype=pl.UInt32),
         "position": pl.Series(positions.ravel(), dtype=pl.UInt32),
@@ -495,6 +491,12 @@ if fossils:
         pl.lit(value, dtype=dtype).alias(key)
         for key, (value, dtype) in metadata.items()
     ])
+
+    log(f" - encoding {len(df)} binary fossil rows to hex...")
+    df = df.with_columns(
+        data_hex=pl.col("data_raw").bin.encode("hex"),
+    ).drop("data_raw")
+    log(f" - ... done!")
 
     len_before = len(df)
     df = df.filter(
@@ -686,21 +688,22 @@ runner.memcpy_d2h(
     nonblock=False,
 )
 raw_binary_data = out_tensors.copy()
-log("entering hexify_binary_data from wildtype traitlogs...")
-record_hex = hexify_binary_data(
+log("entering assemble_binary_data from wildtype traitlogs...")
+record_raw = assemble_binary_data(
     raw_binary_data.view(np.uint32), nWav=traitLoggerNumWavs, verbose=True
 )
 
 # save trait logger values to a file
 df = pl.DataFrame({
-    "data_hex": pl.Series(record_hex, dtype=pl.Utf8),
+    "data_raw": pl.Series(record_raw, dtype=pl.Binary),
     "tile": pl.Series(whoami_data.ravel(), dtype=pl.UInt32),
     "row": pl.Series(whereami_y_data.ravel(), dtype=pl.UInt16),
     "col": pl.Series(whereami_x_data.ravel(), dtype=pl.UInt16),
-}).with_columns([
+}).with_columns(
     pl.lit(value, dtype=dtype).alias(key)
     for key, (value, dtype) in metadata.items()
-]).with_columns(
+).with_columns(
+    data_hex=pl.col("data_raw").bin.encode("hex"),
     dstream_algo=pl.lit(
         f"dstream.{traitLoggerDstreamAlgoName}", dtype=pl.Categorical
     ),
@@ -710,7 +713,7 @@ df = pl.DataFrame({
     dstream_T_bitoffset=pl.lit(traitLoggerNumBits, dtype=pl.UInt16),
     dstream_T_bitwidth=pl.lit(32, dtype=pl.UInt16),
     trait_value=pl.lit(0, dtype=pl.UInt16),
-)
+).drop("data_raw")
 
 write_parquet_verbose(
     df,
@@ -720,7 +723,7 @@ write_parquet_verbose(
     f"+ncycle={nCycleAtLeast}"
     "+ext=.pqt",
 )
-del df, raw_binary_data, record_hex
+del df, raw_binary_data, record_raw
 
 log("fitness ===================================================")
 memcpy_dtype = MemcpyDataType.MEMCPY_32BIT
@@ -760,20 +763,23 @@ runner.memcpy_d2h(
     nonblock=False,
 )
 raw_genome_data = out_tensors.copy()
-genome_hex = hexify_genome_data(raw_genome_data, verbose=True)
+genome_raw = assemble_genome_data(raw_genome_data, verbose=True)
 
 # save genome values to a file
 df = pl.DataFrame({
-    "data_hex": pl.Series(genome_hex, dtype=pl.Utf8),
+    "data_raw": pl.Series(genome_raw, dtype=pl.Binary),
     "is_extant": True,
     "fitness": pl.Series(fitness_data.ravel(), dtype=pl.Float32),
     "tile": pl.Series(whoami_data.ravel(), dtype=pl.UInt32),
     "row": pl.Series(whereami_y_data.ravel(), dtype=pl.UInt16),
     "col": pl.Series(whereami_x_data.ravel(), dtype=pl.UInt16),
-}).with_columns([
-    pl.lit(value, dtype=dtype).alias(key)
-    for key, (value, dtype) in metadata.items()
-])
+}).with_columns(
+    *(
+        pl.lit(value, dtype=dtype).alias(key)
+        for key, (value, dtype) in metadata.items()
+    ),
+    data_hex=pl.col("data_raw").bin.encode("hex"),
+).drop("data_raw")
 
 write_parquet_verbose(
     df,
@@ -783,7 +789,7 @@ write_parquet_verbose(
     f"+ncycle={nCycleAtLeast}"
     "+ext=.pqt",
 )
-del df, fitness_data, genome_hex
+del df, fitness_data, genome_raw
 
 log("cycle counter =============================================")
 memcpy_dtype = MemcpyDataType.MEMCPY_32BIT
