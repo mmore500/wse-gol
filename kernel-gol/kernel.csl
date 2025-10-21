@@ -274,6 +274,13 @@ task start_next_gen() void {
       states[0] = if (current_sum == 3) 1 else 0;
     }
 
+    if (states[0] == 0) {
+      // Cell is dead; clear out hstrat instrumentation
+      for (@range(i16, N_STATES)) |j| {
+        states[j] = 0;
+      }
+    }
+
     for (@range(i16, 3)) |j| {
     const num_options: u16 = (
       @as(u16, num_west_recv > 0 and west0_states[0] != 0)
@@ -397,7 +404,9 @@ task start_next_gen() void {
       }
     }
 
-    @assert(states[1] * N_STATES == @as(u32, current_iter));
+    if (states[0] != 0) {
+      @assert(states[1] * N_STATES == @as(u32, current_iter));
+    }
   }
 
   current_iter += 1;
