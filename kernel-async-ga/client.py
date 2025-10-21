@@ -9,6 +9,7 @@ import logging
 import multiprocessing
 import os
 import pathlib
+import random
 import uuid
 import shutil
 import subprocess
@@ -39,6 +40,12 @@ def hexify_binary_data(
     verbose: bool = False,
 ) -> typing.List[str]:
     if verbose:
+        log(f"- begin hexify_binary_data...")
+        log(f"  - raw_binary_data.dtype={raw_binary_data.dtype}")
+        log(f"  - raw_binary_data.shape={raw_binary_data.shape}")
+        log(f"  - raw_binary_data.flat[:nWav]={raw_binary_data.flat[:nWav]}")
+        log(f"  - nWav={nWav} verbose={verbose}")
+
         for word in range(nWav):
             log(f"---------------------------------------------- binary word {word}")
             values = (inner[word] for outer in raw_binary_data for inner in outer)
@@ -80,7 +87,16 @@ def hexify_binary_data(
 
 
 def hexify_genome_data(data: "np.ndarray", verbose: bool = False) -> typing.List[str]:
-    return hexify_binary_data(data, nWav=nWav, verbose=False)
+    if verbose:
+        log("entering hexify_binary_data from hexify_genome_data...")
+    return hexify_binary_data(data, nWav=nWav, verbose=verbose)
+
+def hexify_genome_bookend_data(
+    data: "np.ndarray", verbose: bool = False
+) -> typing.List[str]:
+    if verbose:
+        log("entering hexify_binary_data from hexify_genome_bookend_data...")
+    return hexify_binary_data(data, nWav=nWav + 2, verbose=verbose)
 
 log("- printenv")
 for k, v in sorted(os.environ.items()):
@@ -215,6 +231,10 @@ tournSize = (
 with open("compconf.json", encoding="utf-8") as json_file:
     compconf_data = json.load(json_file)
 
+log(f" - applying globalSeed={globalSeed}")
+random.seed(globalSeed)
+np.random.seed(globalSeed)
+
 log(f" - {compconf_data=}")
 
 traitLoggerNumBits = int(compconf_data["CEREBRASLIB_TRAITLOGGER_NUM_BITS:u32"])
@@ -297,16 +317,16 @@ fossils = []
 while nonBlock:
     print("1", end="", flush=True)
     memcpy_dtype = MemcpyDataType.MEMCPY_32BIT
-    out_tensors = np.zeros((nCol, nRow, nWav), np.uint32)
+    out_tensors = np.zeros((nCol, nRow, nWav + 2), np.uint32)
 
     runner.memcpy_d2h(
         out_tensors.ravel(),
-        runner.get_id("genome"),
+        runner.get_id("genomeBookend"),
         0,  # x0
         0,  # y0
         nCol,  # width
         nRow,  # height
-        nWav,  # num wavelets
+        nWav + 2,  # num wavelets
         streaming=False,
         data_type=memcpy_dtype,
         order=MemcpyOrder.ROW_MAJOR,
@@ -345,6 +365,8 @@ while nonBlock:
         print("!", flush=True)
         break
     else:
+        print("6", end="", flush=True)
+        runner.launch("dorefresh", nonblock=False)
         print("|", end="", flush=True)
         continue
 
@@ -383,19 +405,81 @@ while nonBlock:
 log("fossils ====================================================")
 log(f" - {len(fossils)=}")
 
-max_fossil_sets = int(os.environ.get("ASYNC_GA_MAX_FOSSIL_SETS", 2**32 - 1))
+max_fossil_sets = int(os.getenv("ASYNC_GA_MAX_FOSSIL_SETS", 2**32 - 1))
 log(f" - {max_fossil_sets=}")
 fossils = fossils[:max_fossil_sets]
+log(f" - {len(fossils)=}")
+
+max_fossil_sets_spread = int(os.getenv(
+    "ASYNC_GA_MAX_FOSSIL_SETS_SPREAD", 2**32 - 1
+))
+log(f" - {max_fossil_sets_spread=}")
+m = min(max_fossil_sets_spread, len(fossils))
+if m < len(fossils):
+    log(f" - spacing to {m} fossil sets...")
+    # adapted from https://stackoverflow.com/a/9873804
+    fossils = [
+        fossils[i * len(fossils) // m + len(fossils) // (2 * m)]
+        for i in range(m)
+    ]
+    log(f" - {len(fossils)=}")
+
+max_fossil_sets_sample = int(os.getenv(
+    "ASYNC_GA_MAX_FOSSIL_SETS_SAMPLE", 2**32 - 1
+))
+log(f" - {max_fossil_sets_sample=}")
+m = min(max_fossil_sets_sample, len(fossils))
+if m < len(fossils):
+    log(f" - sampling {m} fossil sets...")
+    fossils = [
+        fossils[i]
+        for i in sorted(random.sample(range(len(fossils)), k=m))
+    ]
+    log(f" - {len(fossils)=}")
 
 if len(fossils):
     log(f"- {fossils[0].shape=}")
-    log("- example hexification")
-    hexify_genome_data(fossils[0], verbose=True)
 
-with multiprocessing.Pool() as pool:
+    fossil_filename = "a=rawfossildat+i=0+ext=.npy"
+    log(f"- saving {fossil_filename}...")
+    np.save(fossil_filename, fossils[0])
+
+    log(f"- ... saved {fossil_filename}!")
+
+    file_size_mb = os.path.getsize(fossil_filename) / (1024 * 1024)
+    log(f"- {fossil_filename} file size: {file_size_mb:.2f} MB")
+
+    log("- example hexification")
+    hexify_genome_bookend_data(fossils[0], verbose=True)
+
+log("- setting up multiprocessing pool...")
+log(f"  - os.cpu_count()={os.cpu_count()}")
+log(f"  - PYTHON_CPU_COUNT={os.getenv('PYTHON_CPU_COUNT', None)}")
+process_cpu_count = len(os.sched_getaffinity(0))  # available py3.13+
+log(f"  - process_cpu_count={process_cpu_count}")
+nproc = os.getenv("ASYNC_GA_MULTIPROCESSING_NPROC", None)
+log(f"  - ASYNC_GA_MULTIPROCESSING_NPROC={nproc}")
+if nproc is not None:
+    nproc = int(nproc)
+
+for n in (1, 7, 15, 23):
+    if n == 1 or min(process_cpu_count - 1, nproc or 2**32) >= n:
+        log(f"  - trying multiprocessing.Pool(processes={n})...")
+        with multiprocessing.Pool(processes=n) as pool:
+            log(f"  - ... pool size: {pool._processes}")
+            pool_expected = [str(i) for i in range(n)]
+            pool_result = list(pool.map(str, range(n)))
+            log(f"  - ... pool test: {pool_result == pool_expected}")
+
+log("- entering multiprocessing pool...")
+with multiprocessing.Pool(processes=nproc) as pool:
+    log(f"- pool size: {pool._processes}")
+    log(f"- imap hexify_genome_bookend_data over {len(fossils)} fossils...")
     # Map our function over fossils in parallel, and use tqdm for a progress bar
-    work = pool.imap(hexify_genome_data, fossils)
+    work = pool.imap(hexify_genome_bookend_data, fossils)
     fossils = [*tqdm(work, total=len(fossils), desc="hexing fossils")]
+
+log("- ... exited multiprocessing pool")
 
 log(f" - {len(fossils)=}")
 
@@ -410,12 +494,23 @@ if fossils:
     }).with_columns([
         pl.lit(value, dtype=dtype).alias(key)
         for key, (value, dtype) in metadata.items()
-        if (
-            key.startswith("dstream_")
-            or key.startswith("downstream_")
-            or key in ("genomeFlavor",)
-        )
     ])
+
+    len_before = len(df)
+    df = df.filter(
+        pl.col("data_hex").str.head(8) ==  pl.col("data_hex").str.tail(8),
+    )
+    log(
+        " - bookend check removed "
+        f"{len_before - len(df)} / {len_before} "
+        f"({100 * (len_before - len(df)) / len_before:.1f}%) fossils",
+    )
+    log(f" - bookend check retained {len(df)} fossils")
+
+    log(f" - stripping bookends...")
+    df = df.with_columns(pl.col("data_hex").str.head(-8).str.tail(-8))
+    assert (df["data_hex"].str.len_chars() == nWav * 8).all()
+    log(f" - ... done!")
 
     write_parquet_verbose(
         df,
@@ -591,11 +686,12 @@ runner.memcpy_d2h(
     nonblock=False,
 )
 raw_binary_data = out_tensors.copy()
+log("entering hexify_binary_data from wildtype traitlogs...")
 record_hex = hexify_binary_data(
     raw_binary_data.view(np.uint32), nWav=traitLoggerNumWavs, verbose=True
 )
 
-# save genome values to a file
+# save trait logger values to a file
 df = pl.DataFrame({
     "data_hex": pl.Series(record_hex, dtype=pl.Utf8),
     "tile": pl.Series(whoami_data.ravel(), dtype=pl.UInt32),

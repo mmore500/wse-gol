@@ -137,74 +137,107 @@ git -C "${SRCDIR}" ls-files -z --others --exclude-standard | xargs -0 -I {} git 
 
 ###############################################################################
 echo
-echo "export phylogeny -------------------------------------------------------"
+echo "setup run --------------------------------------------------------------"
 echo ">>>>> ${FLOWNAME} :: ${STEPNAME} || ${SECONDS}"
 ###############################################################################
-singularity exec docker://ghcr.io/mmore500/hstrat:v1.20.13 \
-    python3 -m hstrat._auxiliary_lib._alifestd_as_newick_asexual \
-        -i "${WORKDIR}/03-build-phylo/a=phylogeny+ext=.pqt" \
-        -o "${WORKDIR_STEP}/a=phylotree+ext=.nwk" \
-        -l "id" \
-        | tee "${RESULTDIR_STEP}/_alifestd_as_newick_asexual.log"
+source "${WORKDIR}/01-compile/env.sh"
 
-ls -1 "${WORKDIR}/03-build-phylo/a=phylogeny+ext=.pqt" \
-    | singularity run docker://ghcr.io/mmore500/joinem:v0.11.0 \
-        "${WORKDIR_STEP}/a=phylometa+ext=.csv" \
-        --select "id" \
-        --select "origin_time" \
-        --select "focal_trait_count" \
-        --select "nonfocal_trait_count" \
-        --select "^byte\d+_bit\d+.*_trait$" \
-        | tee "${RESULTDIR_STEP}/joinem.log"
+export ASYNC_GA_MAX_FOSSIL_SETS_SPREAD=16
+export ASYNC_GA_MULTIPROCESSING_NPROC=16
+echo "ASYNC_GA_MAX_FOSSIL_SETS_SPREAD=${ASYNC_GA_MAX_FOSSIL_SETS_SPREAD}"
+echo "ASYNC_GA_MULTIPROCESSING_NPROC=${ASYNC_GA_MULTIPROCESSING_NPROC}"
 
-gzip -k "${WORKDIR_STEP}/a=phylotree+ext=.nwk"
-gzip -k "${WORKDIR_STEP}/a=phylometa+ext=.csv"
+mkdir -p "${WORKDIR_STEP}/out"
+mkdir -p "${WORKDIR_STEP}/run"
+
+cd "${WORKDIR_STEP}/run"
+echo "PWD ${PWD}"
+cp -rL "${WORKDIR}/src/kernel-async-ga/cerebraslib" .
+cp -rL "${WORKDIR}/src/kernel-async-ga/out" .
+cp -L "${WORKDIR}/src/kernel-async-ga/client.py" .
+cp -L "${WORKDIR}/src/kernel-async-ga/compconf.json" .
+ls
+
+cd "${WORKDIR_STEP}"
+echo "PWD ${PWD}"
+find "./run" | sed -e "s/[^-][^\/]*\// |/g" -e "s/|\([^ ]\)/|-\1/"
 
 ###############################################################################
 echo
-echo "downsample phylogeny ---------------------------------------------------"
+echo "do run -----------------------------------------------------------------"
 echo ">>>>> ${FLOWNAME} :: ${STEPNAME} || ${SECONDS}"
 ###############################################################################
-dsamp=8192
-echo "dsamp ${dsamp}"
+cd "${WORKDIR_STEP}"
+echo "PWD ${PWD}"
 
-ls -1 ${WORKDIR}/03-build-phylo/a=phylogeny+ext=.pqt \
-    | singularity exec docker://ghcr.io/mmore500/hstrat:v1.20.13 \
-    python3 -m hstrat._auxiliary_lib._alifestd_downsample_tips_asexual \
-        -n "${dsamp}" \
-        "${WORKDIR_STEP}/a=phylogeny+dsamp=${dsamp}+ext=.pqt" \
-        | tee "${RESULTDIR_STEP}/_alifestd_downsample_tips_asexual${dsamp}.log"
+which python3
+python3 - << EOF
+import logging
+import os
 
-singularity exec docker://ghcr.io/mmore500/hstrat:v1.20.13 \
-    python3 -m hstrat._auxiliary_lib._alifestd_as_newick_asexual \
-        -i "${WORKDIR_STEP}/a=phylogeny+dsamp=${dsamp}+ext=.pqt" \
-        -o "${WORKDIR_STEP}/a=phylotree+dsamp=${dsamp}+ext=.nwk" \
-        -l "id" \
-        | tee "${RESULTDIR_STEP}/_alifestd_as_newick_asexual_dsamp${dsamp}.log"
+from cerebras.appliance import logger
+from cerebras.sdk.client import SdkLauncher
 
-ls -1 "${WORKDIR_STEP}/a=phylogeny+dsamp=${dsamp}+ext=.pqt" \
-    | singularity run docker://ghcr.io/mmore500/joinem:v0.11.0 \
-        "${WORKDIR_STEP}/a=phylometa+dsamp=${dsamp}+ext=.csv" \
-        --select "id" \
-        --select "origin_time" \
-        --select "focal_trait_count" \
-        --select "nonfocal_trait_count" \
-        --select "^trait_byte\d+_bit\d+$" \
-        --select "^trait_num\d+$" \
-        | tee "${RESULTDIR_STEP}/joinem_dsamp${dsamp}.log"
 
-gzip -k "${WORKDIR_STEP}/a=phylotree+dsamp=${dsamp}+ext=.nwk"
-gzip -k "${WORKDIR_STEP}/a=phylometa+dsamp=${dsamp}+ext=.csv"
+logging.basicConfig(
+    datefmt="%Y-%m-%d %H:%M:%S",
+    format="%(asctime)s %(levelname)-8s %(message)s",
+    level=logging.INFO,
+)
+
+logging.info("entering SdkLauncher")
+with SdkLauncher("./run", disable_version_check=True) as launcher:
+
+    logging.info("querying context info...")
+    response = launcher.run(
+        "env",
+        "pwd",
+        "ls",
+        r'find . | sed -e "s/[^-][^\/]*\// |/g" -e "s/|\([^ ]\)/|-\1/"',
+    )
+    logging.info("... done!")
+    logging.info(response + "\n")
+
+    env_prefix = " ".join(
+        f"{key}='{value}'"
+        for key, value in os.environ.items()
+        if key.startswith("ASYNC_GA_") or key.startswith("COMPCONFENV_")
+    )
+    command = f"{env_prefix} cs_python client.py --cmaddr %CMADDR% 2>&1 | tee run.log"
+    logging.info(f"command={command}")
+    logging.info("running command...")
+    response = launcher.run(command)
+    logging.info("... done!")
+    logging.info(response + "\n")
+
+    logging.info("finding output files...")
+    response = launcher.run(
+        "find . -maxdepth 1 -type f "
+        r'\( -name "*.log" -o -name "*.pqt" -o -name "*.json" -o -name "*.npy" \)',
+    )
+    logging.info("... done!")
+    logging.info(response + "\n")
+
+    for filename in response.splitlines():
+        target = f"${WORKDIR_STEP}/out/{filename}"
+        logging.info(f"retrieving file {filename} to {target}...")
+        file_contents = launcher.download_artifact(filename, target)
+        logging.info("... done!")
+
+    logging.info("exiting SdkLauncher")
+
+logging.info("exited SdkLauncher")
+EOF
 
 ###############################################################################
 echo
 echo "closeout ---------------------------------------------------------------"
 echo ">>>>> ${FLOWNAME} :: ${STEPNAME} || ${SECONDS}"
 ###############################################################################
-find "${WORKDIR_STEP}" | sed -e "s/[^-][^\/]*\// |/g" -e "s/|\([^ ]\)/|-\1/"
-du -ah "${WORKDIR_STEP}"/*
+find "${WORKDIR_STEP}/out" | sed -e "s/[^-][^\/]*\// |/g" -e "s/|\([^ ]\)/|-\1/"
+du -ah "${WORKDIR_STEP}"/out/*
 
-cp "${WORKDIR_STEP}"/* "${RESULTDIR_STEP}"
+cp "${WORKDIR_STEP}"/out/* "${RESULTDIR_STEP}"
 
 find "${RESULTDIR_STEP}" | sed -e "s/[^-][^\/]*\// |/g" -e "s/|\([^ ]\)/|-\1/"
 du -ah "${RESULTDIR_STEP}"/*
@@ -212,7 +245,6 @@ du -ah "${RESULTDIR_STEP}"/*
 env > "${RESULTDIR_STEP}/env.txt"
 
 ###############################################################################
-echo
 echo "done! ------------------------------------------------------------------"
 echo ">>>>> ${FLOWNAME} :: ${STEPNAME} || ${SECONDS}"
 ###############################################################################

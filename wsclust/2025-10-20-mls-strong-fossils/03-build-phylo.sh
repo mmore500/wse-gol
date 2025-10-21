@@ -137,64 +137,64 @@ git -C "${SRCDIR}" ls-files -z --others --exclude-standard | xargs -0 -I {} git 
 
 ###############################################################################
 echo
-echo "export phylogeny -------------------------------------------------------"
+echo "build phylogeny --------------------------------------------------------"
 echo ">>>>> ${FLOWNAME} :: ${STEPNAME} || ${SECONDS}"
 ###############################################################################
-singularity exec docker://ghcr.io/mmore500/hstrat:v1.20.13 \
-    python3 -m hstrat._auxiliary_lib._alifestd_as_newick_asexual \
-        -i "${WORKDIR}/03-build-phylo/a=phylogeny+ext=.pqt" \
-        -o "${WORKDIR_STEP}/a=phylotree+ext=.nwk" \
-        -l "id" \
-        | tee "${RESULTDIR_STEP}/_alifestd_as_newick_asexual.log"
+cd "${WORKDIR}/02-run/out"
+export APPTAINERENV_POLARS_MAX_THREADS=32
+export APPTAINERENV_NUMBA_NUM_THREADS=32
+echo "APPTAINERENV_POLARS_MAX_THREADS=${APPTAINERENV_POLARS_MAX_THREADS}"
+echo "APPTAINERENV_NUMBA_NUM_THREADS=${APPTAINERENV_NUMBA_NUM_THREADS}"
 
-ls -1 "${WORKDIR}/03-build-phylo/a=phylogeny+ext=.pqt" \
-    | singularity run docker://ghcr.io/mmore500/joinem:v0.11.0 \
-        "${WORKDIR_STEP}/a=phylometa+ext=.csv" \
-        --select "id" \
-        --select "origin_time" \
-        --select "focal_trait_count" \
-        --select "nonfocal_trait_count" \
-        --select "^byte\d+_bit\d+.*_trait$" \
-        | tee "${RESULTDIR_STEP}/joinem.log"
+export SINGULARITYENV_POLARS_MAX_THREADS="${APPTAINERENV_POLARS_MAX_THREADS}"
+export SINGULARITYENV_NUMBA_NUM_THREADS="${APPTAINERENV_NUMBA_NUM_THREADS}"
+echo "SINGULARITYENV_POLARS_MAX_THREADS=${SINGULARITYENV_POLARS_MAX_THREADS}"
+echo "SINGULARITYENV_NUMBA_NUM_THREADS=${SINGULARITYENV_NUMBA_NUM_THREADS}"
 
-gzip -k "${WORKDIR_STEP}/a=phylotree+ext=.nwk"
-gzip -k "${WORKDIR_STEP}/a=phylometa+ext=.csv"
+find . -type f \( -name 'a=genomes*.pqt' -o -name 'a=fossils*.pqt' \) \
+    | singularity exec docker://ghcr.io/mmore500/hstrat:v1.20.14 \
+    python3 -m hstrat.dataframe.surface_build_tree \
+        "${WORKDIR_STEP}/a=phylogeny+ext=.pqt" \
+        --trie-postprocessor \
+            'hstrat.AssignOriginTimeNodeRankTriePostprocessor()' \
+        --exploded-slice-size 100000 \
+        --filter '~pl.col("data_hex").str.contains(r"^0+$")' \
+        --how "diagonal_relaxed" \
+        --eager-read --eager-write --string-cache \
+        --seed 1 --sample 4000000 \
+        --with-column 'pl.lit(filepath).cast(pl.Categorical).alias("file")' \
+        --with-column 'pl.sum_horizontal(
+            ((pl.col("data_hex").str.slice(2*b, 2).str.to_integer(base=16)
+            ^ pl.col(f"flag_nand_mask_byte{b}"))
+            & pl.col(f"flag_is_focal_mask_byte{b}")).bitwise_count_ones()
+            for b in range(8)
+        ).alias("focal_trait_count")' \
+        --with-column 'pl.sum_horizontal(
+            ((pl.col("data_hex").str.slice(2*b, 2).str.to_integer(base=16)
+            ^ pl.col(f"flag_nand_mask_byte{b}"))
+            & (~pl.col(f"flag_is_focal_mask_byte{b}"))).bitwise_count_ones()
+            for b in range(8)
+        ).cast(pl.UInt8).alias("nonfocal_trait_count")' \
+        --with-column '*(
+            (
 
-###############################################################################
-echo
-echo "downsample phylogeny ---------------------------------------------------"
-echo ">>>>> ${FLOWNAME} :: ${STEPNAME} || ${SECONDS}"
-###############################################################################
-dsamp=8192
-echo "dsamp ${dsamp}"
-
-ls -1 ${WORKDIR}/03-build-phylo/a=phylogeny+ext=.pqt \
-    | singularity exec docker://ghcr.io/mmore500/hstrat:v1.20.13 \
-    python3 -m hstrat._auxiliary_lib._alifestd_downsample_tips_asexual \
-        -n "${dsamp}" \
-        "${WORKDIR_STEP}/a=phylogeny+dsamp=${dsamp}+ext=.pqt" \
-        | tee "${RESULTDIR_STEP}/_alifestd_downsample_tips_asexual${dsamp}.log"
-
-singularity exec docker://ghcr.io/mmore500/hstrat:v1.20.13 \
-    python3 -m hstrat._auxiliary_lib._alifestd_as_newick_asexual \
-        -i "${WORKDIR_STEP}/a=phylogeny+dsamp=${dsamp}+ext=.pqt" \
-        -o "${WORKDIR_STEP}/a=phylotree+dsamp=${dsamp}+ext=.nwk" \
-        -l "id" \
-        | tee "${RESULTDIR_STEP}/_alifestd_as_newick_asexual_dsamp${dsamp}.log"
-
-ls -1 "${WORKDIR_STEP}/a=phylogeny+dsamp=${dsamp}+ext=.pqt" \
-    | singularity run docker://ghcr.io/mmore500/joinem:v0.11.0 \
-        "${WORKDIR_STEP}/a=phylometa+dsamp=${dsamp}+ext=.csv" \
-        --select "id" \
-        --select "origin_time" \
-        --select "focal_trait_count" \
-        --select "nonfocal_trait_count" \
-        --select "^trait_byte\d+_bit\d+$" \
-        --select "^trait_num\d+$" \
-        | tee "${RESULTDIR_STEP}/joinem_dsamp${dsamp}.log"
-
-gzip -k "${WORKDIR_STEP}/a=phylotree+dsamp=${dsamp}+ext=.nwk"
-gzip -k "${WORKDIR_STEP}/a=phylometa+dsamp=${dsamp}+ext=.csv"
+                (((
+                    pl.col("data_hex")
+                    .str.slice(B * 2, 2)
+                    .str.to_integer(base=16)
+                    ^ pl.col(f"flag_nand_mask_byte{B}")
+                ) & pl.lit(1 << b)) // pl.lit(1 << b))
+                * pl.when(
+                    pl.col(f"flag_is_focal_mask_byte{B}")
+                    & pl.lit(1 << b)
+                    != 0
+                ).then(2).otherwise(1)
+            ).cast(pl.UInt8).alias(alias)
+            for B in range(8)
+            for b in range(8)
+            for alias in (f"trait_byte{B}_bit{b}", f"trait_num{B * 8 + b}")
+        )' \
+        | tee "${RESULTDIR_STEP}/surface_build_tree.log"
 
 ###############################################################################
 echo

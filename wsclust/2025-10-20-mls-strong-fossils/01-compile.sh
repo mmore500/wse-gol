@@ -95,7 +95,7 @@ mkdir -p "${RESULTDIR_STEP}"
 
 ###############################################################################
 echo
-echo "setup venv  ------------------------------------------------------------"
+echo "setup venv -------------------------------------------------------------"
 echo ">>>>> ${FLOWNAME} :: ${STEPNAME} || ${SECONDS}"
 ###############################################################################
 VENVDIR="${WORKDIR}/venv"
@@ -137,75 +137,89 @@ git -C "${SRCDIR}" ls-files -z --others --exclude-standard | xargs -0 -I {} git 
 
 ###############################################################################
 echo
-echo "export phylogeny -------------------------------------------------------"
+echo "setup compile ----------------------------------------------------------"
 echo ">>>>> ${FLOWNAME} :: ${STEPNAME} || ${SECONDS}"
 ###############################################################################
-singularity exec docker://ghcr.io/mmore500/hstrat:v1.20.13 \
-    python3 -m hstrat._auxiliary_lib._alifestd_as_newick_asexual \
-        -i "${WORKDIR}/03-build-phylo/a=phylogeny+ext=.pqt" \
-        -o "${WORKDIR_STEP}/a=phylotree+ext=.nwk" \
-        -l "id" \
-        | tee "${RESULTDIR_STEP}/_alifestd_as_newick_asexual.log"
+export CSLC="${CSLC:-cslc}"
+echo "CSLC ${CSLC}"
+export ASYNC_GA_FABRIC_DIMS="762,1172"
+echo "ASYNC_GA_FABRIC_DIMS ${ASYNC_GA_FABRIC_DIMS}"
 
-ls -1 "${WORKDIR}/03-build-phylo/a=phylogeny+ext=.pqt" \
-    | singularity run docker://ghcr.io/mmore500/joinem:v0.11.0 \
-        "${WORKDIR_STEP}/a=phylometa+ext=.csv" \
-        --select "id" \
-        --select "origin_time" \
-        --select "focal_trait_count" \
-        --select "nonfocal_trait_count" \
-        --select "^byte\d+_bit\d+.*_trait$" \
-        | tee "${RESULTDIR_STEP}/joinem.log"
-
-gzip -k "${WORKDIR_STEP}/a=phylotree+ext=.nwk"
-gzip -k "${WORKDIR_STEP}/a=phylometa+ext=.csv"
+WORKDIR_MNT="$(realpath path)"
+WORKDIR_MNT="${WORKDIR_MNT#/}"
+WORKDIR_MNT="${WORKDIR_MNT%%/*}"
+echo "WORKDIR_MNT ${WORKDIR_MNT}"
+export SINGULARITY_BIND="${SINGULARITY_BIND:+${SINGULARITY_BIND},}/${WORKDIR_MNT}:/${WORKDIR_MNT},/tmp:/tmp"
+echo "SINGULARITY_BIND ${SINGULARITY_BIND}"
 
 ###############################################################################
 echo
-echo "downsample phylogeny ---------------------------------------------------"
+echo "config compile ---------------------------------------------------------"
 echo ">>>>> ${FLOWNAME} :: ${STEPNAME} || ${SECONDS}"
 ###############################################################################
-dsamp=8192
-echo "dsamp ${dsamp}"
+cat > "${WORKDIR_STEP}/env.sh" << 'EOF'
+#!/usr/bin/env bash
 
-ls -1 ${WORKDIR}/03-build-phylo/a=phylogeny+ext=.pqt \
-    | singularity exec docker://ghcr.io/mmore500/hstrat:v1.20.13 \
-    python3 -m hstrat._auxiliary_lib._alifestd_downsample_tips_asexual \
-        -n "${dsamp}" \
-        "${WORKDIR_STEP}/a=phylogeny+dsamp=${dsamp}+ext=.pqt" \
-        | tee "${RESULTDIR_STEP}/_alifestd_downsample_tips_asexual${dsamp}.log"
+export ASYNC_GA_ARCH_FLAG="wse3"
+export ASYNC_GA_GENOME_FLAVOR="genome_mls_2025_08_15"
+export ASYNC_GA_FABRIC_DIMS="762,1172"
+export ASYNC_GA_NWAV=7
+export ASYNC_GA_NCOL=755
+export ASYNC_GA_NCOL_SUBGRID=0
+export ASYNC_GA_NONBLOCK=1
+export ASYNC_GA_NROW=1170
+export ASYNC_GA_NROW_SUBGRID=0
+export ASYNC_GA_NTRAIT=3
+export ASYNC_GA_MSEC_AT_LEAST=0
+export ASYNC_GA_NCYCLE_AT_LEAST=100000
+export ASYNC_GA_POPSIZE=404
+export ASYNC_GA_TOURNSIZE_NUMERATOR=2
+export ASYNC_GA_TOURNSIZE_DENOMINATOR=1
+export ASYNC_GA_GLOBAL_SEED=1
+export COMPCONFENV_CEREBRASLIB_CLOBBER_IMMIGRANT_P__f32="1.0"
+export COMPCONFENV_CEREBRASLIB_NONZERO_FIT_FUDGE__f32="4.0"
+export COMPCONFENV_CEREBRASLIB_POPULATION_EXTINCTION_PROBABILITY__f32="0.01"
+export COMPCONFENV_CEREBRASLIB_TRAITLOGGER_DSTREAM_ALGO_NAME__comptime_string="hybrid_0_steady_1_stretched_2_algo"
 
-singularity exec docker://ghcr.io/mmore500/hstrat:v1.20.13 \
-    python3 -m hstrat._auxiliary_lib._alifestd_as_newick_asexual \
-        -i "${WORKDIR_STEP}/a=phylogeny+dsamp=${dsamp}+ext=.pqt" \
-        -o "${WORKDIR_STEP}/a=phylotree+dsamp=${dsamp}+ext=.nwk" \
-        -l "id" \
-        | tee "${RESULTDIR_STEP}/_alifestd_as_newick_asexual_dsamp${dsamp}.log"
+echo "ASYNC_GA_ARCH_FLAG ${ASYNC_GA_ARCH_FLAG}"
+echo "ASYNC_GA_GENOME_FLAVOR ${ASYNC_GA_GENOME_FLAVOR}"
+echo "ASYNC_GA_FABRIC_DIMS ${ASYNC_GA_FABRIC_DIMS}"
+echo "ASYNC_GA_NWAV ${ASYNC_GA_NWAV}"
+echo "ASYNC_GA_NCOL ${ASYNC_GA_NCOL}"
+echo "ASYNC_GA_NCOL_SUBGRID ${ASYNC_GA_NCOL_SUBGRID}"
+echo "ASYNC_GA_NONBLOCK ${ASYNC_GA_NONBLOCK}"
+echo "ASYNC_GA_NROW ${ASYNC_GA_NROW}"
+echo "ASYNC_GA_NROW_SUBGRID ${ASYNC_GA_NROW_SUBGRID}"
+echo "ASYNC_GA_NTRAIT ${ASYNC_GA_NTRAIT}"
+echo "ASYNC_GA_MSEC_AT_LEAST ${ASYNC_GA_MSEC_AT_LEAST}"
+echo "ASYNC_GA_NCYCLE_AT_LEAST ${ASYNC_GA_NCYCLE_AT_LEAST}"
+echo "ASYNC_GA_POPSIZE ${ASYNC_GA_POPSIZE}"
+echo "ASYNC_GA_TOURNSIZE_NUMERATOR ${ASYNC_GA_TOURNSIZE_NUMERATOR}"
+echo "ASYNC_GA_TOURNSIZE_DENOMINATOR ${ASYNC_GA_TOURNSIZE_DENOMINATOR}"
+echo "ASYNC_GA_GLOBAL_SEED ${ASYNC_GA_GLOBAL_SEED}"
+echo "ASYNC_GA_ARCH_FLAG ${ASYNC_GA_ARCH_FLAG}"
+echo "COMPCONFENV_CEREBRASLIB_CLOBBER_IMMIGRANT_P__f32 ${COMPCONFENV_CEREBRASLIB_CLOBBER_IMMIGRANT_P__f32}"
+echo "COMPCONFENV_CEREBRASLIB_NONZERO_FIT_FUDGE__f32 ${COMPCONFENV_CEREBRASLIB_NONZERO_FIT_FUDGE__f32}"
+echo "COMPCONFENV_CEREBRASLIB_POPULATION_EXTINCTION_PROBABILITY__f32 ${COMPCONFENV_CEREBRASLIB_POPULATION_EXTINCTION_PROBABILITY__f32}"
+echo "COMPCONFENV_CEREBRASLIB_TRAITLOGGER_DSTREAM_ALGO_NAME__comptime_string ${COMPCONFENV_CEREBRASLIB_TRAITLOGGER_DSTREAM_ALGO_NAME__comptime_string}"
+EOF
 
-ls -1 "${WORKDIR_STEP}/a=phylogeny+dsamp=${dsamp}+ext=.pqt" \
-    | singularity run docker://ghcr.io/mmore500/joinem:v0.11.0 \
-        "${WORKDIR_STEP}/a=phylometa+dsamp=${dsamp}+ext=.csv" \
-        --select "id" \
-        --select "origin_time" \
-        --select "focal_trait_count" \
-        --select "nonfocal_trait_count" \
-        --select "^trait_byte\d+_bit\d+$" \
-        --select "^trait_num\d+$" \
-        | tee "${RESULTDIR_STEP}/joinem_dsamp${dsamp}.log"
+chmod +x "${WORKDIR_STEP}/env.sh"
+cp "${WORKDIR_STEP}/env.sh" "${RESULTDIR_STEP}/env.sh"
+source "${WORKDIR_STEP}/env.sh"
 
-gzip -k "${WORKDIR_STEP}/a=phylotree+dsamp=${dsamp}+ext=.nwk"
-gzip -k "${WORKDIR_STEP}/a=phylometa+dsamp=${dsamp}+ext=.csv"
+###############################################################################
+echo
+echo "do compile -------------------------------------------------------------"
+echo ">>>>> ${FLOWNAME} :: ${STEPNAME} || ${SECONDS}"
+###############################################################################
+"${WORKDIR}/src/kernel-async-ga/compile.sh" | tee "${RESULTDIR_STEP}/compile.log"
 
 ###############################################################################
 echo
 echo "closeout ---------------------------------------------------------------"
 echo ">>>>> ${FLOWNAME} :: ${STEPNAME} || ${SECONDS}"
 ###############################################################################
-find "${WORKDIR_STEP}" | sed -e "s/[^-][^\/]*\// |/g" -e "s/|\([^ ]\)/|-\1/"
-du -ah "${WORKDIR_STEP}"/*
-
-cp "${WORKDIR_STEP}"/* "${RESULTDIR_STEP}"
-
 find "${RESULTDIR_STEP}" | sed -e "s/[^-][^\/]*\// |/g" -e "s/|\([^ ]\)/|-\1/"
 du -ah "${RESULTDIR_STEP}"/*
 

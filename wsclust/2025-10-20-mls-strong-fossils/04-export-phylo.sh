@@ -165,7 +165,7 @@ echo
 echo "downsample phylogeny ---------------------------------------------------"
 echo ">>>>> ${FLOWNAME} :: ${STEPNAME} || ${SECONDS}"
 ###############################################################################
-dsamp=8192
+for dsamp in 8192 32768 131072 262144; do
 echo "dsamp ${dsamp}"
 
 ls -1 ${WORKDIR}/03-build-phylo/a=phylogeny+ext=.pqt \
@@ -195,6 +195,8 @@ ls -1 "${WORKDIR_STEP}/a=phylogeny+dsamp=${dsamp}+ext=.pqt" \
 
 gzip -k "${WORKDIR_STEP}/a=phylotree+dsamp=${dsamp}+ext=.nwk"
 gzip -k "${WORKDIR_STEP}/a=phylometa+dsamp=${dsamp}+ext=.csv"
+
+done
 
 ###############################################################################
 echo
