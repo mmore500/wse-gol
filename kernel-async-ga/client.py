@@ -6,7 +6,6 @@ from collections import Counter
 import itertools as it
 import json
 import logging
-import multiprocessing
 import os
 import pathlib
 import random
@@ -448,34 +447,9 @@ if len(fossils):
     log("- example assembly")
     assemble_genome_bookend_data(fossils[0], verbose=True)
 
-log("- setting up multiprocessing pool...")
-log(f"  - os.cpu_count()={os.cpu_count()}")
-log(f"  - PYTHON_CPU_COUNT={os.getenv('PYTHON_CPU_COUNT', None)}")
-process_cpu_count = len(os.sched_getaffinity(0))  # available py3.13+
-log(f"  - process_cpu_count={process_cpu_count}")
-nproc = os.getenv("ASYNC_GA_MULTIPROCESSING_NPROC", None)
-log(f"  - ASYNC_GA_MULTIPROCESSING_NPROC={nproc}")
-if nproc is not None:
-    nproc = int(nproc)
-
-for n in (1, 7, 15, 23):
-    if n == 1 or min(process_cpu_count - 1, nproc or 2**32) >= n:
-        log(f"  - trying multiprocessing.Pool(processes={n})...")
-        with multiprocessing.Pool(processes=n) as pool:
-            log(f"  - ... pool size: {pool._processes}")
-            pool_expected = [str(i) for i in range(n)]
-            pool_result = list(pool.map(str, range(n)))
-            log(f"  - ... pool test: {pool_result == pool_expected}")
-
-log("- entering multiprocessing pool...")
-with multiprocessing.Pool(processes=nproc) as pool:
-    log(f"- pool size: {pool._processes}")
-    log(f"- imap assemble_genome_bookend_data over {len(fossils)} fossils...")
-    # Map our function over fossils in parallel, and use tqdm for a progress bar
-    work = pool.imap(assemble_genome_bookend_data, fossils)
+    log(f"- map assemble_genome_bookend_data over {len(fossils)} fossils...")
+    work = map(assemble_genome_bookend_data, fossils)
     fossils = [*tqdm(work, total=len(fossils), desc="assembling fossils")]
-
-log("- ... exited multiprocessing pool")
 
 log(f" - {len(fossils)=}")
 
