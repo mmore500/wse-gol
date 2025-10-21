@@ -195,7 +195,7 @@ jobs:
             export CSLC CS_PYTHON PATH ASYNC_GA_ARCH_FLAG
             sudo -E env PATH=$PATH \
               ./kernel-async-ga/execute.sh \
-              >/dev/null 2>&1
+              # >/dev/null 2>&1
 
       - name: Build artifact
         run: |
@@ -709,7 +709,7 @@ jobs:
             export COMPCONFENV_CEREBRASLIB_HSTRAT_DSTREAM_ALGO_NAME__comptime_string="${{ matrix.dstream_algo_name }}"
             sudo -E env PATH=$PATH \
               ./kernel-async-ga/execute.sh \
-              >/dev/null 2>&1
+              # >/dev/null 2>&1
 
       - name: Reconstruct from end-state genomes
         run: |
