@@ -3,6 +3,8 @@
 // which is distributed by Cerebras Systems under Apache 2.0 License
 // https://github.com/Cerebras/csl-examples/blob/v1.4.0/LICENSE
 
+const opscalar = @import_module("cerebraslib/opscalar.csl");
+
 param memcpy_params: comptime_struct;
 
 param is_east_edge:  bool;
@@ -264,6 +266,102 @@ task start_next_gen() void {
     // Previous generation of cell is dead
     } else {
       states[0] = if (current_sum == 3) 1 else 0;
+    }
+
+
+    while (states[0] != 0 and (current_iter > 0)) {
+      const num_options: u16 = (
+        @as(u16, num_west_recv > 0 and west0_states[0] != 0)
+        + @as(u16, num_west_recv > 1 and west1_states[0] != 0)
+        + @as(u16, num_west_recv > 2 and west2_states[0] != 0)
+        + @as(u16, num_east_recv > 0 and east0_states[0] != 0)
+        + @as(u16, num_east_recv > 1 and east1_states[0] != 0)
+        + @as(u16, num_east_recv > 2 and east2_states[0] != 0)
+        + @as(u16, !is_north_edge and north_states[0] != 0)
+        + @as(u16, !is_south_edge and south_states[0] != 0)
+      );
+      var choice = opscalar.unif16(num_options);
+
+      if (num_west_recv > 0 and west0_states[0] != 0) {
+        if (choice == 0) {
+          for (@range(i16, N_STATES - 1)) |i| {
+            states[i + 1] = west0_states[i + 1];
+          }
+          break;
+        }
+        choice -= 1;
+      }
+
+      if (num_west_recv > 1 and west1_states[0] != 0) {
+        if (choice == 0) {
+          for (@range(i16, N_STATES - 1)) |i| {
+            states[i + 1] = west1_states[i + 1];
+          }
+          break;
+        }
+        choice -= 1;
+      }
+
+      if (num_west_recv > 2 and west2_states[0] != 0) {
+        if (choice == 0) {
+          for (@range(i16, N_STATES - 1)) |i| {
+            states[i + 1] = west2_states[i + 1];
+          }
+          break;
+        }
+        choice -= 1;
+      }
+
+      if (num_east_recv > 0 and east0_states[0] != 0) {
+        if (choice == 0) {
+          for (@range(i16, N_STATES - 1)) |i| {
+            states[i + 1] = east0_states[i + 1];
+          }
+          break;
+        }
+        choice -= 1;
+      }
+
+      if (num_east_recv > 1 and east1_states[0] != 0) {
+        if (choice == 0) {
+          for (@range(i16, N_STATES - 1)) |i| {
+            states[i + 1] = east1_states[i + 1];
+          }
+          break;
+        }
+        choice -= 1;
+      }
+
+      if (num_east_recv > 2 and east2_states[0] != 0) {
+        if (choice == 0) {
+          for (@range(i16, N_STATES - 1)) |i| {
+            states[i + 1] = east2_states[i + 1];
+          }
+          break;
+        }
+        choice -= 1;
+      }
+
+      if (!is_north_edge and north_states[0] != 0) {
+        if (choice == 0) {
+          for (@range(i16, N_STATES - 1)) |i| {
+            states[i + 1] = north_states[i + 1];
+          }
+          break;
+        }
+        choice -= 1;
+      }
+
+      if (!is_south_edge and south_states[0] != 0) {
+        if (choice == 0) {
+          for (@range(i16, N_STATES - 1)) |i| {
+            states[i + 1] = south_states[i + 1];
+          }
+          break;
+        }
+        choice -= 1;
+      }
+      @assert(false); // Should never reach here
     }
 
   }
