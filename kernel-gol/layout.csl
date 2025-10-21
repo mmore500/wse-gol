@@ -51,6 +51,7 @@ layout {
     .recv_south_color = north_color_1, .recv_north_color = south_color_0,
   };
 
+  var whoami_counter: u32 = 0;
   for (@range(i16, x_dim)) |pe_x| {
     const west_edge = (pe_x == 0);
     const east_edge = (pe_x == x_dim-1);
@@ -70,11 +71,12 @@ layout {
       const y_color_params = if (pe_y % 2 == 0) y_even_params else y_odd_params;
 
       const y_params = @concat_structs(
-                         .{ .is_north_edge = north_edge, .is_south_edge = south_edge },
+                         .{ .is_north_edge = north_edge, .is_south_edge = south_edge, .whoami = whoami_counter },
                          y_color_params
                        );
 
       @set_tile_code(pe_x, pe_y, "kernel.csl", @concat_structs(x_params, y_params));
+      whoami_counter += 1;
     }
   }
 
