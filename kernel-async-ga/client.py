@@ -46,48 +46,37 @@ def assemble_binary_data(
         log(f"  - nWav={nWav} verbose={verbose}")
 
         for word in range(nWav):
-            log(f"---------------------------------------------- binary word {word}")
+            log(f"---------------------------------------- binary word {word}")
             values = (inner[word] for outer in raw_binary_data for inner in outer)
             log(str([*it.islice(values, 10)]))
 
     binary_ints = np.ascontiguousarray(raw_binary_data.astype(">u4").ravel())
-
-    assert len(binary_ints) == nRow * nCol * nWav
+    assert binary_ints.shape == (nRow * nCol * nWav,)
     if verbose:
         log("------------------------------------------------ binary u32 ints")
-        for binary_int in binary_ints[:5]:
+        for binary_int in binary_ints[:10]:
             log(f"{len(binary_ints)=} {binary_int=}")
 
-    bytes_per_string = nWav * binary_ints.itemsize
+    binary_strings = binary_ints.view(f'V{nWav * 4}')
+    assert binary_strings.shape == (nRow * nCol, )
     if verbose:
-        log("--------------------------------------------------- creating view")
-        log(f"  - Input array shape for view: {binary_ints.shape}")
-        log(f"  - Target dtype: S{bytes_per_string}")
-
-    binary_strings = (
-        binary_ints
-        .view(np.uint8)
-        .view(f'S{bytes_per_string}')
-    ).ravel()
-    assert binary_strings.shape == (nRow * nCol,), f"{binary_strings.shape=}"
-
-    if verbose:
-        log("--------------------------------------------- raw byte strings")
-        for binary_string in binary_strings[:5]:
-            log(f"{nWav=} {len(binary_string)=} {binary_string=}")
+        log("------------------------------------------------- binary strings")
+        log(f"  - target dtype: V{nWav * 4}")
+        for binary_string in binary_strings[:10]:
+            log(f"{binary_string=}")
 
     return binary_strings
 
 
 def assemble_genome_data(
         data: "np.ndarray", verbose: bool = False
-) -> typing.List[str]:
+) -> "np.ndarray":
     return assemble_binary_data(data, nWav=nWav, verbose=verbose)
 
 
 def assemble_genome_bookend_data(
     data: "np.ndarray", verbose: bool = False
-) -> typing.List[str]:
+) -> "np.ndarray":
     return assemble_binary_data(data, nWav=nWav + 2, verbose=verbose)
 
 log("- printenv")
@@ -452,7 +441,11 @@ log(f" - {len(fossils)=}")
 
 if fossils:
     fossils = np.array(fossils)
+    log(f" - casting genome_raw to object")
+    genome_raw = fossils.astype(object)
+    log(" - creating indices")
     layers, positions = np.indices(fossils.shape)
+    log(" - creating DataFrame")
     df = pl.DataFrame({
         "data_raw": pl.Series(fossils.ravel(), dtype=pl.Binary),
         "is_extant": False,
@@ -674,8 +667,11 @@ log("entering assemble_binary_data from wildtype traitlogs...")
 record_raw = assemble_binary_data(
     raw_binary_data.view(np.uint32), nWav=traitLoggerNumWavs, verbose=True
 )
+log(f" - casting record_raw to object")
+record_raw = record_raw.astype(object)
 
 # save trait logger values to a file
+log(" - creating DataFrame")
 df = pl.DataFrame({
     "data_raw": pl.Series(record_raw, dtype=pl.Binary),
     "tile": pl.Series(whoami_data.ravel(), dtype=pl.UInt32),
@@ -754,8 +750,11 @@ runner.memcpy_d2h(
 )
 raw_genome_data = out_tensors.copy()
 genome_raw = assemble_genome_data(raw_genome_data, verbose=True)
+log(f" - casting genome_raw to object")
+genome_raw = genome_raw.astype(object)
 
 # save genome values to a file
+log(" - creating DataFrame")
 df = pl.DataFrame({
     "data_raw": pl.Series(genome_raw, dtype=pl.Binary),
     "is_extant": True,
