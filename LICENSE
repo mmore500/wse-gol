@@ -19,3 +19,11 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+
+Major elements of this work are adapted from
+
+https://sdk.cerebras.net/csl/code-examples/benchmark-game-of-life.html
+
+which is distributed by Cerebras Systems under Apache 2.0 License
+
+https://github.com/Cerebras/csl-examples/blob/v1.4.0/LICENSE

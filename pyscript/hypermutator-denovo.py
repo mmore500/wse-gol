@@ -7,18 +7,18 @@ import uuid
 
 # log environment variables
 print("- log environment variables")
-print(f"{os.environ['ASYNC_GA_NCOL']=}")
-print(f"{os.environ['ASYNC_GA_NROW']=}")
-print(f"{os.environ['ASYNC_GA_NCOL_SUBGRID']=}")
-print(f"{os.environ['ASYNC_GA_NROW_SUBGRID']=}")
-print(f"{os.environ['ASYNC_GA_MSEC_AT_LEAST']=}")
-print(f"{os.environ['ASYNC_GA_TSC_AT_LEAST']=}")
-print(f"{os.environ['ASYNC_GA_NCYCLE_AT_LEAST']=}")
-print(f"{os.environ['ASYNC_GA_GLOBAL_SEED']=}")
-print(f"{os.environ['ASYNC_GA_GENOME_FLAVOR']=}")
-print(f"{os.environ['ASYNC_GA_POPSIZE']=}")
-print(f"{os.environ['ASYNC_GA_TOURNSIZE_NUMERATOR']=}")
-print(f"{os.environ['ASYNC_GA_TOURNSIZE_DENOMINATOR']=}")
+print(f"{os.environ['WSE_GOL_NCOL']=}")
+print(f"{os.environ['WSE_GOL_NROW']=}")
+print(f"{os.environ['WSE_GOL_NCOL_SUBGRID']=}")
+print(f"{os.environ['WSE_GOL_NROW_SUBGRID']=}")
+print(f"{os.environ['WSE_GOL_MSEC_AT_LEAST']=}")
+print(f"{os.environ['WSE_GOL_TSC_AT_LEAST']=}")
+print(f"{os.environ['WSE_GOL_NCYCLE_AT_LEAST']=}")
+print(f"{os.environ['WSE_GOL_GLOBAL_SEED']=}")
+print(f"{os.environ['WSE_GOL_GENOME_FLAVOR']=}")
+print(f"{os.environ['WSE_GOL_POPSIZE']=}")
+print(f"{os.environ['WSE_GOL_TOURNSIZE_NUMERATOR']=}")
+print(f"{os.environ['WSE_GOL_TOURNSIZE_DENOMINATOR']=}")
 print(f"{os.environ['NBEN']=}")
 
 
@@ -69,10 +69,10 @@ def add_bool_arg(parser, name, default=False):
 
 print("- reading env variables")
 # number of rows, columns, and genome words
-nCol = int(os.getenv("ASYNC_GA_NCOL", 3))
-nRow = int(os.getenv("ASYNC_GA_NROW", 3))
-nWav = int(os.getenv("ASYNC_GA_NWAV", 4))
-nTrait = int(os.getenv("ASYNC_GA_NTRAIT", 1))
+nCol = int(os.getenv("WSE_GOL_NCOL", 3))
+nRow = int(os.getenv("WSE_GOL_NROW", 3))
+nWav = int(os.getenv("WSE_GOL_NWAV", 4))
+nTrait = int(os.getenv("WSE_GOL_NTRAIT", 1))
 print(f"{nCol=}, {nRow=}, {nWav=}, {nTrait=}")
 
 print("- setting global variables")
@@ -83,17 +83,17 @@ tscTicksPerSecond = 850 * 10**6  # 850 MHz
 
 
 print("metadata =============================================================")
-globalSeed = int(os.environ["ASYNC_GA_GLOBAL_SEED"])
-nCycleAtLeast = int(os.environ["ASYNC_GA_NCYCLE_AT_LEAST"])
-msecAtLeast = int(os.environ["ASYNC_GA_MSEC_AT_LEAST"])
-tscAtLeast = int(os.environ["ASYNC_GA_TSC_AT_LEAST"])
-nColSubgrid = int(os.environ["ASYNC_GA_NCOL_SUBGRID"])
-nRowSubgrid = int(os.environ["ASYNC_GA_NROW_SUBGRID"])
-tilePopSize = int(os.environ["ASYNC_GA_POPSIZE"])
-tournSize = int(os.environ["ASYNC_GA_TOURNSIZE_NUMERATOR"]) / int(
-    os.environ["ASYNC_GA_TOURNSIZE_DENOMINATOR"]
+globalSeed = int(os.environ["WSE_GOL_GLOBAL_SEED"])
+nCycleAtLeast = int(os.environ["WSE_GOL_NCYCLE_AT_LEAST"])
+msecAtLeast = int(os.environ["WSE_GOL_MSEC_AT_LEAST"])
+tscAtLeast = int(os.environ["WSE_GOL_TSC_AT_LEAST"])
+nColSubgrid = int(os.environ["WSE_GOL_NCOL_SUBGRID"])
+nRowSubgrid = int(os.environ["WSE_GOL_NROW_SUBGRID"])
+tilePopSize = int(os.environ["WSE_GOL_POPSIZE"])
+tournSize = int(os.environ["WSE_GOL_TOURNSIZE_NUMERATOR"]) / int(
+    os.environ["WSE_GOL_TOURNSIZE_DENOMINATOR"]
 )
-genomeFlavor = os.environ["ASYNC_GA_GENOME_FLAVOR"]
+genomeFlavor = os.environ["WSE_GOL_GENOME_FLAVOR"]
 nBen = int(os.environ["NBEN"])
 
 # save genome values to a file

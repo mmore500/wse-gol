@@ -70,7 +70,7 @@ jobs:
       CSLC: cslc
       CS_PYTHON: cs_python
       APPTAINERENV_CSL_SUPPRESS_SIMFAB_TRACE: 1
-      ASYNC_GA_ARCH_FLAG: ${{ matrix.arch }}
+      WSE_GOL_ARCH_FLAG: ${{ matrix.arch }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
@@ -157,7 +157,7 @@ jobs:
 
       - name: Compile async-ga
         run: |
-          export CSLC CS_PYTHON PATH ASYNC_GA_ARCH_FLAG
+          export CSLC CS_PYTHON PATH WSE_GOL_ARCH_FLAG
           sudo -E env PATH=$PATH \
             ./kernel-gol/compile.sh \
             >/dev/null 2>&1
@@ -168,7 +168,7 @@ jobs:
           timeout_minutes: 15
           max_attempts: 3
           command: |
-            export CSLC CS_PYTHON PATH ASYNC_GA_ARCH_FLAG
+            export CSLC CS_PYTHON PATH WSE_GOL_ARCH_FLAG
             sudo -E env PATH=$PATH \
               ./kernel-gol/execute.sh \
               # >/dev/null 2>&1

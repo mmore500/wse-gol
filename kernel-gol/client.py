@@ -1,19 +1,21 @@
-print("kernel-gol/client.py ############################################")
+# Major elements of this work are adapted from
+# https://sdk.cerebras.net/csl/code-examples/benchmark-game-of-life.html
+# which is distributed by Cerebras Systems under Apache 2.0 License
+# https://github.com/Cerebras/csl-examples/blob/v1.4.0/LICENSE
+
+print("kernel-gol/client.py #################################################")
 print("######################################################################")
 import argparse
 import atexit
-from collections import Counter
 import itertools as it
 import json
 import logging
 import os
-import pathlib
 import random
 import uuid
 import shutil
 import subprocess
 import sys
-import typing
 
 logging.basicConfig(
     datefmt="%Y-%m-%d %H:%M:%S",
@@ -79,13 +81,45 @@ def assemble_genome_bookend_data(
 ) -> "np.ndarray":
     return assemble_binary_data(data, nWav=nWav + 2, verbose=verbose)
 
+
+def create_initial_state(state_type, x_dim, y_dim):
+  """Generate intitial state for Game of Life"""
+
+  initial_state = np.zeros((x_dim, y_dim), dtype=np.uint32)
+
+  if state_type == 'glider':
+    assert x_dim >= 4 and y_dim >=4, \
+           'For glider initial state, x_dim and y_dim must be at least 4'
+
+    glider = np.array([[0, 0, 1],
+                       [1, 0, 1],
+                       [0, 1, 1]])
+
+    for i in range(x_dim//4):
+      for j in range(y_dim//4):
+        if i%2 == 0 and j%2 == 0:
+          initial_state[4*i:4*i+3, 4*j:4*j+3] = glider
+        elif i%2 == 0 and j%2 == 1:
+          initial_state[4*i:4*i+3, 4*j:4*j+3] = glider[:,::-1]
+        elif i%2 == 1 and j%2 == 0:
+          initial_state[4*i:4*i+3, 4*j:4*j+3] = glider[::-1,:]
+        elif i%2 == 1 and j%2 == 1:
+          initial_state[4*i:4*i+3, 4*j:4*j+3] = glider[::-1,:]
+
+  else: # state_type == 'random'
+    np.random.seed(seed=7)
+    initial_state = np.random.binomial(1, 0.5, (x_dim, y_dim)).astype(np.uint32)
+
+  return initial_state
+
+
 log("- printenv")
 for k, v in sorted(os.environ.items()):
     log(f"  - {k}={v}")
 
 log("- setting up temp dir")
 # need to add polars to Cerebras python
-temp_dir = f"{os.getenv('ASYNC_GA_LOCAL_PATH', 'local')}/tmp/{uuid.uuid4()}"
+temp_dir = f"{os.getenv('WSE_GOL_LOCAL_PATH', 'local')}/tmp/{uuid.uuid4()}"
 os.makedirs(temp_dir, exist_ok=True)
 atexit.register(shutil.rmtree, temp_dir, ignore_errors=True)
 log(f"  - {temp_dir=}")
@@ -137,7 +171,7 @@ def write_parquet_verbose(df: pl.DataFrame, file_name: str) -> None:
     log(f"saving df to {file_name=}")
     log(f"- {df.shape=}")
 
-    tmp_file = f"{os.getenv('ASYNC_GA_LOCAL_PATH', 'local')}/tmp.pqt"
+    tmp_file = f"{os.getenv('WSE_GOL_LOCAL_PATH', 'local')}/tmp.pqt"
     df.write_parquet(tmp_file, compression="lz4")
     log("- write_parquet complete")
 
@@ -169,11 +203,15 @@ def add_bool_arg(parser, name, default=False):
 
 log("- reading env variables")
 # number of rows, columns, and genome words
-nCol = int(os.getenv("ASYNC_GA_NCOL", 3))
-nRow = int(os.getenv("ASYNC_GA_NROW", 3))
-nWav = int(os.getenv("ASYNC_GA_NWAV", -1))
-nTrait = int(os.getenv("ASYNC_GA_NTRAIT", 1))
+nCol = int(os.getenv("WSE_GOL_NCOL", 3))
+nRow = int(os.getenv("WSE_GOL_NROW", 3))
+nWav = int(os.getenv("WSE_GOL_NWAV", -1))
+nTrait = int(os.getenv("WSE_GOL_NTRAIT", 1))
 log(f"{nCol=}, {nRow=}, {nWav=}, {nTrait=}")
+
+# PE grid dimensions
+x_dim = nCol
+y_dim = nRow
 
 log("- setting global variables")
 wavSize = 32  # number of bits in a wavelet
@@ -198,16 +236,6 @@ with open(f"{args.name}/out.json", encoding="utf-8") as json_file:
 
 globalSeed = int(compile_data["params"]["globalSeed"])
 nCycleAtLeast = int(compile_data["params"]["nCycleAtLeast"])
-msecAtLeast = int(compile_data["params"]["msecAtLeast"])
-tscAtLeast = int(compile_data["params"]["tscAtLeast"])
-nColSubgrid = int(compile_data["params"]["nColSubgrid"])
-nRowSubgrid = int(compile_data["params"]["nRowSubgrid"])
-nonBlock = bool(int(compile_data["params"]["nonBlock"]))
-tilePopSize = int(compile_data["params"]["popSize"])
-tournSize = (
-    float(compile_data["params"]["tournSizeNumerator"])
-    / float(compile_data["params"]["tournSizeDenominator"])
-)
 
 with open("compconf.json", encoding="utf-8") as json_file:
     compconf_data = json.load(json_file)
@@ -218,45 +246,21 @@ np.random.seed(globalSeed)
 
 log(f" - {compconf_data=}")
 
-traitLoggerNumBits = int(compconf_data["CEREBRASLIB_TRAITLOGGER_NUM_BITS:u32"])
-assert bin(traitLoggerNumBits)[2:].count("1") == 1
-traitLoggerDstreamAlgoName = compconf_data[
-    "CEREBRASLIB_TRAITLOGGER_DSTREAM_ALGO_NAME:comptime_string"
-]
-log(f" - {traitLoggerNumBits=} {traitLoggerDstreamAlgoName=}")
-
-genomeFlavor = compconf_data["ASYNC_GA_GENOME_FLAVOR:comptime_string"]
-log(f" - {genomeFlavor=}")
-genomePath = f"{os.getenv('ASYNC_GA_CEREBRASLIB_PATH', 'cerebraslib')}/genome/{genomeFlavor}.csl"
-log(f" - reading genome data from {genomePath}")
-genomeDataRaw = "".join(
-    removeprefix(line, "//!").strip()
-    for line in pathlib.Path(genomePath).read_text().split("\n")
-    if line.startswith("//!")
-) or "{}"
-genomeData = eval(genomeDataRaw, {"compconf_data": compconf_data, "pl": pl})
-log(f" - {genomeData=}")
-
-assert nWav in (genomeData["nWav"][0], -1)
-nWav = genomeData["nWav"][0]
+# traitLoggerNumBits = int(compconf_data["CEREBRASLIB_TRAITLOGGER_NUM_BITS:u32"])
+# assert bin(traitLoggerNumBits)[2:].count("1") == 1
+# traitLoggerDstreamAlgoName = compconf_data[
+#     "CEREBRASLIB_TRAITLOGGER_DSTREAM_ALGO_NAME:comptime_string"
+# ]
+# log(f" - {traitLoggerNumBits=} {traitLoggerDstreamAlgoName=}")
 
 metadata = {
-    "genomeFlavor": (genomeFlavor, pl.Categorical),
     "globalSeed": (globalSeed, pl.UInt32),
     "nCol": (nCol, pl.UInt16),
     "nRow": (nRow, pl.UInt16),
     "nWav": (nWav, pl.UInt8),
     "nTrait": (nTrait, pl.UInt8),
     "nCycle": (nCycleAtLeast, pl.UInt32),
-    "nColSubgrid": (nColSubgrid, pl.UInt16),
-    "nRowSubgrid": (nRowSubgrid, pl.UInt16),
-    "nonBlock": (nonBlock, pl.Boolean),
-    "tilePopSize": (tilePopSize, pl.UInt16),
-    "tournSize": (tournSize, pl.Float32),
-    "msec": (msecAtLeast, pl.Float32),
-    "tsc": (tscAtLeast, pl.UInt64),
     "replicate": (str(uuid.uuid4()), pl.Categorical),
-    **genomeData,
     **{
         k.split(":")[0]: {
             "bool": lambda: (json.loads(v), pl.Boolean),
@@ -290,840 +294,30 @@ log("- runner loaded")
 runner.run()
 log("- runner run ran")
 
-runner.launch("dolaunch", nonblock=False)
-log("- runner launch complete")
-
-log(f"- {nonBlock=}, if True waiting for first kernel to finish...")
-fossils = []
-while nonBlock:
-    print("1", end="", flush=True)
-    memcpy_dtype = MemcpyDataType.MEMCPY_32BIT
-    out_tensors = np.zeros((nCol, nRow, nWav + 2), np.uint32)
-
-    runner.memcpy_d2h(
-        out_tensors.ravel(),
-        runner.get_id("genomeBookend"),
-        0,  # x0
-        0,  # y0
-        nCol,  # width
-        nRow,  # height
-        nWav + 2,  # num wavelets
-        streaming=False,
-        data_type=memcpy_dtype,
-        order=MemcpyOrder.ROW_MAJOR,
-        nonblock=False,
-    )
-    print("2", end="", flush=True)
-
-    genome_data = out_tensors.copy()
-    fossils.append(genome_data)
-    print("3", end="", flush=True)
-
-    memcpy_dtype = MemcpyDataType.MEMCPY_32BIT
-    out_tensors = np.zeros((nCol, nRow, 1), np.uint32)
-    runner.memcpy_d2h(
-        out_tensors.ravel(),
-        runner.get_id("cycleCounter"),
-        0,  # x0
-        0,  # y0
-        nCol,  # width
-        nRow,  # height
-        1,  # num wavelets
-        streaming=False,
-        data_type=memcpy_dtype,
-        order=MemcpyOrder.ROW_MAJOR,
-        nonblock=False,
-    )
-    print("4", end="", flush=True)
-
-    cycle_counts = out_tensors.ravel().copy()
-    num_complete = np.sum(cycle_counts >= nCycleAtLeast)
-    print("5", end="", flush=True)
-
-    should_break = num_complete > 0
-    print(f"({num_complete/cycle_counts.size * 100}%)", end="", flush=True)
-    if should_break:
-        print("!", flush=True)
-        break
-    else:
-        print("6", end="", flush=True)
-        runner.launch("dorefresh", nonblock=False)
-        print("|", end="", flush=True)
-        continue
-
-log(f"- {nonBlock=}, if True waiting for last kernel to finish...")
-while nonBlock:
-    print("1", end="", flush=True)
-    memcpy_dtype = MemcpyDataType.MEMCPY_32BIT
-    out_tensors = np.zeros((nCol, nRow, 1), np.uint32)
-    runner.memcpy_d2h(
-        out_tensors.ravel(),
-        runner.get_id("cycleCounter"),
-        0,  # x0
-        0,  # y0
-        nCol,  # width
-        nRow,  # height
-        1,  # num wavelets
-        streaming=False,
-        data_type=memcpy_dtype,
-        order=MemcpyOrder.ROW_MAJOR,
-        nonblock=False,
-    )
-    print("2", end="", flush=True)
-
-    cycle_counts = out_tensors.ravel().copy()
-    num_complete = np.sum(cycle_counts >= nCycleAtLeast)
-    print("3", end="", flush=True)
-    should_break = (num_complete == cycle_counts.size)
-    print(f"({num_complete/cycle_counts.size * 100}%)", end="", flush=True)
-    if should_break:
-        print("!", flush=True)
-        break
-    else:
-        print("|", end="", flush=True)
-        continue
-
-log("fossils ====================================================")
-log(f" - {len(fossils)=}")
-
-max_fossil_sets = int(os.getenv("ASYNC_GA_MAX_FOSSIL_SETS", 2**32 - 1))
-log(f" - {max_fossil_sets=}")
-fossils = fossils[:max_fossil_sets]
-log(f" - {len(fossils)=}")
-
-max_fossil_sets_spread = int(os.getenv(
-    "ASYNC_GA_MAX_FOSSIL_SETS_SPREAD", 2**32 - 1
-))
-log(f" - {max_fossil_sets_spread=}")
-m = min(max_fossil_sets_spread, len(fossils))
-if m < len(fossils):
-    log(f" - spacing to {m} fossil sets...")
-    # adapted from https://stackoverflow.com/a/9873804
-    fossils = [
-        fossils[i * len(fossils) // m + len(fossils) // (2 * m)]
-        for i in range(m)
-    ]
-    log(f" - {len(fossils)=}")
-
-max_fossil_sets_sample = int(os.getenv(
-    "ASYNC_GA_MAX_FOSSIL_SETS_SAMPLE", 2**32 - 1
-))
-log(f" - {max_fossil_sets_sample=}")
-m = min(max_fossil_sets_sample, len(fossils))
-if m < len(fossils):
-    log(f" - sampling {m} fossil sets...")
-    fossils = [
-        fossils[i]
-        for i in sorted(random.sample(range(len(fossils)), k=m))
-    ]
-    log(f" - {len(fossils)=}")
-
-if len(fossils):
-    log(f"- {fossils[0].shape=}")
-
-    fossil_filename = "a=rawfossildat+i=0+ext=.npy"
-    log(f"- saving {fossil_filename}...")
-    np.save(fossil_filename, fossils[0])
-
-    log(f"- ... saved {fossil_filename}!")
-
-    file_size_mb = os.path.getsize(fossil_filename) / (1024 * 1024)
-    log(f"- {fossil_filename} file size: {file_size_mb:.2f} MB")
-
-    log("- example assembly")
-    assemble_genome_bookend_data(fossils[0], verbose=True)
-
-    log(f"- map assemble_genome_bookend_data over {len(fossils)} fossils...")
-    work = map(assemble_genome_bookend_data, fossils)
-    fossils = [*tqdm(work, total=len(fossils), desc="assembling fossils")]
-
-log(f" - {len(fossils)=}")
-
-if fossils:
-    fossils = np.array(fossils)
-    log(f" - casting genome_raw to object")
-    fossils = fossils.astype(object)
-    log(" - creating indices")
-    layers, positions = np.indices(fossils.shape)
-    log(" - creating DataFrame")
-    df = pl.DataFrame({
-        "data_raw": pl.Series(fossils.ravel(), dtype=pl.Binary),
-        "is_extant": False,
-        "layer": pl.Series(layers.ravel(), dtype=pl.UInt32),
-        "position": pl.Series(positions.ravel(), dtype=pl.UInt32),
-    }).with_columns([
-        pl.lit(value, dtype=dtype).alias(key)
-        for key, (value, dtype) in metadata.items()
-    ])
-    log(f" - data_raw: {df['data_raw'].head(3)}")
-    assert (df["data_raw"].bin.size(unit="b") == (nWav + 2) * 4).all()
-
-    log(f" - encoding {len(df)} binary fossil rows to hex...")
-    df = df.with_columns(
-        data_hex=pl.col("data_raw").bin.encode("hex"),
-    ).drop("data_raw")
-    log(f" - ... done!")
-
-    log(f" - data_hex: {df['data_hex'].head(3)}")
-    assert (df["data_hex"].str.len_chars() == (nWav + 2) * 8).all()
-    assert (df["data_hex"].str.len_bytes() == (nWav + 2) * 8).all()
-    assert (df["data_hex"].str.contains("^[0-9a-fA-F]+$")).all()
-
-    len_before = len(df)
-    df = df.filter(
-        pl.col("data_hex").str.head(8) ==  pl.col("data_hex").str.tail(8),
-    )
-    log(
-        " - bookend check removed "
-        f"{len_before - len(df)} / {len_before} "
-        f"({100 * (len_before - len(df)) / len_before:.1f}%) fossils",
-    )
-    log(f" - bookend check retained {len(df)} fossils")
-
-    log(f" - stripping bookends...")
-    df = df.with_columns(pl.col("data_hex").str.head(-8).str.tail(-8))
-    log(f" - ... done!")
-
-    log(f" - data_hex: {df['data_hex'].head(3)}")
-    assert (df["data_hex"].str.len_chars() == nWav * 8).all()
-    assert (df["data_hex"].str.len_bytes() == nWav * 8).all()
-    assert (df["data_hex"].str.contains("^[0-9a-fA-F]+$")).all()
-
-    write_parquet_verbose(
-        df,
-        "a=fossils"
-        f"+flavor={genomeFlavor}"
-        f"+seed={globalSeed}"
-        f"+ncycle={nCycleAtLeast}"
-        "+ext=.pqt",
-    )
-
-    del df
-
-del fossils
-
-log("whoami =====================================================")
-memcpy_dtype = MemcpyDataType.MEMCPY_32BIT
-out_tensors = np.zeros((nCol, nRow), np.uint32)
-
-runner.memcpy_d2h(
-    out_tensors.ravel(),
-    runner.get_id("whoami"),
-    0,  # x0
-    0,  # y0
-    nCol,  # width
-    nRow,  # height
-    1,  # num wavelets
-    streaming=False,
-    data_type=memcpy_dtype,
-    order=MemcpyOrder.ROW_MAJOR,
-    nonblock=False,
-)
-whoami_data = out_tensors.copy()
-log(whoami_data[:20,:20])
-
-log("whereami x =================================================")
-memcpy_dtype = MemcpyDataType.MEMCPY_32BIT
-out_tensors = np.zeros((nCol, nRow), np.uint32)
-
-runner.memcpy_d2h(
-    out_tensors.ravel(),
-    runner.get_id("whereami_x"),
-    0,  # x0
-    0,  # y0
-    nCol,  # width
-    nRow,  # height
-    1,  # num wavelets
-    streaming=False,
-    data_type=memcpy_dtype,
-    order=MemcpyOrder.ROW_MAJOR,
-    nonblock=False,
-)
-whereami_x_data = out_tensors.copy()
-log(whereami_x_data[:20,:20])
-
-log("whereami y =================================================")
-memcpy_dtype = MemcpyDataType.MEMCPY_32BIT
-out_tensors = np.zeros((nCol, nRow), np.uint32)
-
-runner.memcpy_d2h(
-    out_tensors.ravel(),
-    runner.get_id("whereami_y"),
-    0,  # x0
-    0,  # y0
-    nCol,  # width
-    nRow,  # height
-    1,  # num wavelets
-    streaming=False,
-    data_type=memcpy_dtype,
-    order=MemcpyOrder.ROW_MAJOR,
-    nonblock=False,
-)
-whereami_y_data = out_tensors.copy()
-log(whereami_y_data[:20,:20])
-
-log("trait data =================================================")
-memcpy_dtype = MemcpyDataType.MEMCPY_32BIT
-out_tensors = np.zeros((nCol, nRow, nTrait), np.uint32)
-runner.memcpy_d2h(
-    out_tensors.ravel(),
-    runner.get_id("traitCounts"),
-    0,  # x0
-    0,  # y0
-    nCol,  # width
-    nRow,  # height
-    nTrait,  # num possible trait values
-    streaming=False,
-    data_type=memcpy_dtype,
-    order=MemcpyOrder.ROW_MAJOR,
-    nonblock=False,
-)
-traitCounts_data = out_tensors.copy()
-log(f"traitCounts_data {Counter(traitCounts_data.ravel())}")
-
-memcpy_dtype = MemcpyDataType.MEMCPY_32BIT
-out_tensors = np.zeros((nCol, nRow, nTrait), np.uint32)
-runner.memcpy_d2h(
-    out_tensors.ravel(),
-    runner.get_id("traitCycles"),
-    0,  # x0
-    0,  # y0
-    nCol,  # width
-    nRow,  # height
-    nTrait,  # num possible trait values
-    streaming=False,
-    data_type=memcpy_dtype,
-    order=MemcpyOrder.ROW_MAJOR,
-    nonblock=False,
-)
-traitCycles_data = out_tensors.copy()
-log(f"traitCycles_data {Counter(traitCycles_data.ravel())}")
-
-memcpy_dtype = MemcpyDataType.MEMCPY_32BIT
-out_tensors = np.zeros((nCol, nRow, nTrait), np.uint32)
-runner.memcpy_d2h(
-    out_tensors.ravel(),
-    runner.get_id("traitValues"),
-    0,  # x0
-    0,  # y0
-    nCol,  # width
-    nRow,  # height
-    nTrait,  # num possible trait values
-    streaming=False,
-    data_type=memcpy_dtype,
-    order=MemcpyOrder.ROW_MAJOR,
-    nonblock=False,
-)
-traitValues_data = out_tensors.copy()
-log(f"traitValues_data {str(Counter(traitValues_data.ravel()))[:500]}")
-
-# save trait data values to a file
-df = pl.DataFrame({
-    "trait count": pl.Series(traitCounts_data.ravel(), dtype=pl.UInt16),
-    "trait cycle last seen": pl.Series(traitCycles_data.ravel(), dtype=pl.UInt32),
-    "trait value": pl.Series(traitValues_data.ravel(), dtype=pl.UInt8),
-    "tile": pl.Series(np.repeat(whoami_data.ravel(), nTrait), dtype=pl.UInt32),
-    "row": pl.Series(np.repeat(whereami_y_data.ravel(), nTrait), dtype=pl.UInt16),
-    "col": pl.Series(np.repeat(whereami_x_data.ravel(), nTrait), dtype=pl.UInt16),
-}).with_columns([
-    pl.lit(value, dtype=dtype).alias(key)
-    for key, (value, dtype) in metadata.items()
-])
-
-
-for trait, group in df.group_by("trait value"):
-    log(f"trait {trait} total count is {group['trait count'].sum()}")
-
-write_parquet_verbose(
-    df,
-    "a=traits"
-    f"+flavor={genomeFlavor}"
-    f"+seed={globalSeed}"
-    f"+ncycle={nCycleAtLeast}"
-    "+ext=.pqt",
-)
-del df, traitCounts_data, traitCycles_data, traitValues_data
-
-log("wildtype traitlogs ==============================================")
-memcpy_dtype = MemcpyDataType.MEMCPY_32BIT
-traitLoggerNumWavs = traitLoggerNumBits // wavSize + 1  # +1 for dstream_T
-out_tensors = np.zeros((nCol, nRow, traitLoggerNumWavs), np.uint32)
-
-runner.memcpy_d2h(
-    out_tensors.ravel(),
-    runner.get_id("wildtypeLoggerRecord"),
-    0,  # x0
-    0,  # y0
-    nCol,  # width
-    nRow,  # height
-    traitLoggerNumWavs,  # num elements
-    streaming=False,
-    data_type=memcpy_dtype,
-    order=MemcpyOrder.ROW_MAJOR,
-    nonblock=False,
-)
-raw_binary_data = out_tensors.copy()
-log("entering assemble_binary_data from wildtype traitlogs...")
-record_raw = assemble_binary_data(
-    raw_binary_data.view(np.uint32), nWav=traitLoggerNumWavs, verbose=True
-)
-log(f" - casting record_raw to object")
-record_raw = record_raw.astype(object)
-
-# save trait logger values to a file
-log(" - creating DataFrame")
-df = pl.DataFrame({
-    "data_raw": pl.Series(record_raw, dtype=pl.Binary),
-    "tile": pl.Series(whoami_data.ravel(), dtype=pl.UInt32),
-    "row": pl.Series(whereami_y_data.ravel(), dtype=pl.UInt16),
-    "col": pl.Series(whereami_x_data.ravel(), dtype=pl.UInt16),
-}).with_columns(
-    pl.lit(value, dtype=dtype).alias(key)
-    for key, (value, dtype) in metadata.items()
-)
-log(f" - data_raw: {df['data_raw'].head(3)}")
-assert (df["data_raw"].bin.size(unit="b") == traitLoggerNumWavs * 4).all()
-df = df.with_columns(
-    data_hex=pl.col("data_raw").bin.encode("hex"),
-    dstream_algo=pl.lit(
-        f"dstream.{traitLoggerDstreamAlgoName}", dtype=pl.Categorical
-    ),
-    dstream_storage_bitoffset=pl.lit(0, dtype=pl.UInt16),
-    dstream_storage_bitwidth=pl.lit(traitLoggerNumBits, dtype=pl.UInt16),
-    dstream_S=pl.lit(traitLoggerNumBits, dtype=pl.UInt16),
-    dstream_T_bitoffset=pl.lit(traitLoggerNumBits, dtype=pl.UInt16),
-    dstream_T_bitwidth=pl.lit(32, dtype=pl.UInt16),
-    trait_value=pl.lit(0, dtype=pl.UInt16),
-).drop("data_raw")
-
-log(f" - data_hex: {df['data_hex'].head(3)}")
-assert (df["data_hex"].str.len_chars() == traitLoggerNumWavs * 8).all()
-assert (df["data_hex"].str.len_bytes() == traitLoggerNumWavs * 8).all()
-assert (df["data_hex"].str.contains("^[0-9a-fA-F]+$")).all()
-
-write_parquet_verbose(
-    df,
-    "a=traitloggerRecord"
-    f"+flavor={genomeFlavor}"
-    f"+seed={globalSeed}"
-    f"+ncycle={nCycleAtLeast}"
-    "+ext=.pqt",
-)
-del df, raw_binary_data, record_raw
-
-log("fitness ===================================================")
-memcpy_dtype = MemcpyDataType.MEMCPY_32BIT
-out_tensors = np.zeros((nCol, nRow), np.float32)
-
-runner.memcpy_d2h(
-    out_tensors.ravel(),
-    runner.get_id("fitness"),
-    0,  # x0
-    0,  # y0
-    nCol,  # width
-    nRow,  # height
-    1,  # num wavelets
-    streaming=False,
-    data_type=memcpy_dtype,
-    order=MemcpyOrder.ROW_MAJOR,
-    nonblock=False,
-)
-fitness_data = out_tensors.copy()
-log(fitness_data[:20,:20])
-
-log("genome values ==============================================")
-memcpy_dtype = MemcpyDataType.MEMCPY_32BIT
-out_tensors = np.zeros((nCol, nRow, nWav), np.uint32)
-
-runner.memcpy_d2h(
-    out_tensors.ravel(),
-    runner.get_id("genome"),
-    0,  # x0
-    0,  # y0
-    nCol,  # width
-    nRow,  # height
-    nWav,  # num wavelets
-    streaming=False,
-    data_type=memcpy_dtype,
-    order=MemcpyOrder.ROW_MAJOR,
-    nonblock=False,
-)
-raw_genome_data = out_tensors.copy()
-genome_raw = assemble_genome_data(raw_genome_data, verbose=True)
-log(f" - casting genome_raw to object")
-genome_raw = genome_raw.astype(object)
-
-# save genome values to a file
-log(" - creating DataFrame")
-df = pl.DataFrame({
-    "data_raw": pl.Series(genome_raw, dtype=pl.Binary),
-    "is_extant": True,
-    "fitness": pl.Series(fitness_data.ravel(), dtype=pl.Float32),
-    "tile": pl.Series(whoami_data.ravel(), dtype=pl.UInt32),
-    "row": pl.Series(whereami_y_data.ravel(), dtype=pl.UInt16),
-    "col": pl.Series(whereami_x_data.ravel(), dtype=pl.UInt16),
-})
-log(f" - data_raw: {df['data_raw'].head(3)}")
-assert (df["data_raw"].bin.size(unit="b") == nWav * 4).all()
-df = df.with_columns(
-    *(
-        pl.lit(value, dtype=dtype).alias(key)
-        for key, (value, dtype) in metadata.items()
-    ),
-    data_hex=pl.col("data_raw").bin.encode("hex"),
-).drop("data_raw")
-
-log(f" - data_hex: {df['data_hex'].head(3)}")
-assert (df["data_hex"].str.len_chars() == nWav * 8).all()
-assert (df["data_hex"].str.len_bytes() == nWav * 8).all()
-assert (df["data_hex"].str.contains("^[0-9a-fA-F]+$")).all()
-
-write_parquet_verbose(
-    df,
-    "a=genomes"
-    f"+flavor={genomeFlavor}"
-    f"+seed={globalSeed}"
-    f"+ncycle={nCycleAtLeast}"
-    "+ext=.pqt",
-)
-del df, fitness_data, genome_raw
-
-log("cycle counter =============================================")
-memcpy_dtype = MemcpyDataType.MEMCPY_32BIT
-out_tensors = np.zeros((nCol, nRow), np.uint32)
-
-runner.memcpy_d2h(
-    out_tensors.ravel(),
-    runner.get_id("cycleCounter"),
-    0,  # x0
-    0,  # y0
-    nCol,  # width
-    nRow,  # height
-    1,  # num wavelets
-    streaming=False,
-    data_type=memcpy_dtype,
-    order=MemcpyOrder.ROW_MAJOR,
-    nonblock=False,
-)
-cycle_counts = out_tensors.ravel().copy()
-log(cycle_counts[:100])
-
-
-log("recv counter N ==============================================")
-memcpy_dtype = MemcpyDataType.MEMCPY_32BIT
-out_tensors = np.zeros((nCol, nRow), np.uint32)
-
-runner.memcpy_d2h(
-    out_tensors.ravel(),
-    runner.get_id("recvCounter_N"),
-    0,  # x0
-    0,  # y0
-    nCol,  # width
-    nRow,  # height
-    1,  # num wavelets
-    streaming=False,
-    data_type=memcpy_dtype,
-    order=MemcpyOrder.ROW_MAJOR,
-    nonblock=False,
-)
-recvN = out_tensors.copy()
-log(recvN[:20,:20])
-
-log("recv counter S ==============================================")
-memcpy_dtype = MemcpyDataType.MEMCPY_32BIT
-out_tensors = np.zeros((nCol, nRow), np.uint32)
-
-runner.memcpy_d2h(
-    out_tensors.ravel(),
-    runner.get_id("recvCounter_S"),
-    0,  # x0
-    0,  # y0
-    nCol,  # width
-    nRow,  # height
-    1,  # num wavelets
-    streaming=False,
-    data_type=memcpy_dtype,
-    order=MemcpyOrder.ROW_MAJOR,
-    nonblock=False,
-)
-recvS = out_tensors.copy()
-log(recvS[:20,:20])
-
-log("recv counter E ==============================================")
-memcpy_dtype = MemcpyDataType.MEMCPY_32BIT
-out_tensors = np.zeros((nCol, nRow), np.uint32)
-
-runner.memcpy_d2h(
-    out_tensors.ravel(),
-    runner.get_id("recvCounter_E"),
-    0,  # x0
-    0,  # y0
-    nCol,  # width
-    nRow,  # height
-    1,  # num wavelets
-    streaming=False,
-    data_type=memcpy_dtype,
-    order=MemcpyOrder.ROW_MAJOR,
-    nonblock=False,
-)
-recvE = out_tensors.copy()
-log(recvE[:20,:20])
-
-log("recv counter W ==============================================")
-memcpy_dtype = MemcpyDataType.MEMCPY_32BIT
-out_tensors = np.zeros((nCol, nRow), np.uint32)
-
-runner.memcpy_d2h(
-    out_tensors.ravel(),
-    runner.get_id("recvCounter_W"),
-    0,  # x0
-    0,  # y0
-    nCol,  # width
-    nRow,  # height
-    1,  # num wavelets
-    streaming=False,
-    data_type=memcpy_dtype,
-    order=MemcpyOrder.ROW_MAJOR,
-    nonblock=False,
-)
-recvW = out_tensors.copy()
-log(recvW[:20,:20])
-
-log("recv counter sum ===========================================")
-recvSum = [*map(sum, zip(recvN.ravel(), recvS.ravel(), recvE.ravel(), recvW.ravel()))]
-log(recvSum[:100])
-log(f"{np.mean(recvSum)=} {np.std(recvSum)=} {sps.sem(recvSum)=}")
-
-log("send counter N ==============================================")
-memcpy_dtype = MemcpyDataType.MEMCPY_32BIT
-out_tensors = np.zeros((nCol, nRow), np.uint32)
-
-runner.memcpy_d2h(
-    out_tensors.ravel(),
-    runner.get_id("sendCounter_N"),
-    0,  # x0
-    0,  # y0
-    nCol,  # width
-    nRow,  # height
-    1,  # num wavelets
-    streaming=False,
-    data_type=memcpy_dtype,
-    order=MemcpyOrder.ROW_MAJOR,
-    nonblock=False,
-)
-sendN = out_tensors.copy()
-log(sendN[:20,:20])
-
-log("send counter S ==============================================")
-memcpy_dtype = MemcpyDataType.MEMCPY_32BIT
-out_tensors = np.zeros((nCol, nRow), np.uint32)
-
-runner.memcpy_d2h(
-    out_tensors.ravel(),
-    runner.get_id("sendCounter_S"),
-    0,  # x0
-    0,  # y0
-    nCol,  # width
-    nRow,  # height
-    1,  # num wavelets
-    streaming=False,
-    data_type=memcpy_dtype,
-    order=MemcpyOrder.ROW_MAJOR,
-    nonblock=False,
-)
-sendS = out_tensors.copy()
-log(sendS[:20,:20])
-
-log("send counter E ==============================================")
-memcpy_dtype = MemcpyDataType.MEMCPY_32BIT
-out_tensors = np.zeros((nCol, nRow), np.uint32)
-
-runner.memcpy_d2h(
-    out_tensors.ravel(),
-    runner.get_id("sendCounter_E"),
-    0,  # x0
-    0,  # y0
-    nCol,  # width
-    nRow,  # height
-    1,  # num wavelets
-    streaming=False,
-    data_type=memcpy_dtype,
-    order=MemcpyOrder.ROW_MAJOR,
-    nonblock=False,
-)
-sendE = out_tensors.copy()
-log(sendE[:20,:20])
-
-log("send counter W ==============================================")
-memcpy_dtype = MemcpyDataType.MEMCPY_32BIT
-out_tensors = np.zeros((nCol, nRow), np.uint32)
-
-runner.memcpy_d2h(
-    out_tensors.ravel(),
-    runner.get_id("sendCounter_W"),
-    0,  # x0
-    0,  # y0
-    nCol,  # width
-    nRow,  # height
-    1,  # num wavelets
-    streaming=False,
-    data_type=memcpy_dtype,
-    order=MemcpyOrder.ROW_MAJOR,
-    nonblock=False,
-)
-sendW = out_tensors.copy()
-log(sendW[:20,:20])
-
-log("send counter sum ===========================================")
-sendSum = [*map(sum, zip(sendN.ravel(), sendS.ravel(), sendE.ravel(), sendW.ravel()))]
-log(sendSum[:100])
-log(f"{np.mean(sendSum)=} {np.std(sendSum)=} {sps.sem(sendSum)=}")
-
-log("tscControl values ==========================================")
-memcpy_dtype = MemcpyDataType.MEMCPY_32BIT
-out_tensors = np.zeros((nCol, nRow, tscSizeWords // 2), np.uint32)
-
-runner.memcpy_d2h(
-    out_tensors.ravel(),
-    runner.get_id("tscControlBuffer"),
-    0,  # x0
-    0,  # y0
-    nCol,  # width
-    nRow,  # height
-    tscSizeWords // 2,  # num values
-    streaming=False,
-    data_type=memcpy_dtype,
-    order=MemcpyOrder.ROW_MAJOR,
-    nonblock=False,
-)
-data = out_tensors
-tscControl_bytes = [
-    inner.view(np.uint8).tobytes() for outer in data for inner in outer
-]
-tscControl_ints = [
-    int.from_bytes(genome, byteorder="little") for genome in tscControl_bytes
-]
-log(tscControl_ints[:100])
-
-log("tscStart values ============================================")
-memcpy_dtype = MemcpyDataType.MEMCPY_32BIT
-out_tensors = np.zeros((nCol, nRow, tscSizeWords // 2), np.uint32)
-
-runner.memcpy_d2h(
-    out_tensors.ravel(),
-    runner.get_id("tscStartBuffer"),
-    0,  # x0
-    0,  # y0
-    nCol,  # width
-    nRow,  # height
-    tscSizeWords // 2,  # num values
-    streaming=False,
-    data_type=memcpy_dtype,
-    order=MemcpyOrder.ROW_MAJOR,
-    nonblock=False,
-)
-data = out_tensors
-tscStart_bytes = [
-    inner.view(np.uint8).tobytes() for outer in data for inner in outer
-]
-tscStart_ints = [
-    int.from_bytes(genome, byteorder="little") for genome in tscStart_bytes
-]
-log(tscStart_ints[:100])
-
-log("tscEnd values ==============================================")
-memcpy_dtype = MemcpyDataType.MEMCPY_32BIT
-out_tensors = np.zeros((nCol, nRow, tscSizeWords // 2), np.uint32)
-
-runner.memcpy_d2h(
-    out_tensors.ravel(),
-    runner.get_id("tscEndBuffer"),
-    0,  # x0
-    0,  # y0
-    nCol,  # width
-    nRow,  # height
-    tscSizeWords // 2,  # num values
-    streaming=False,
-    data_type=memcpy_dtype,
-    order=MemcpyOrder.ROW_MAJOR,
-    nonblock=False,
-)
-data = out_tensors
-tscEnd_bytes = [
-    inner.view(np.uint8).tobytes() for outer in data for inner in outer
-]
-tscEnd_ints = [
-    int.from_bytes(genome, byteorder="little") for genome in tscEnd_bytes
-]
-log(tscEnd_ints[:100])
-
-log("tsc diffs ==================================================")
-log("--------------------------------------------------------- ticks")
-tsc_ticks = [end - start for start, end in zip(tscStart_ints, tscEnd_ints)]
-log(tsc_ticks[:100])
-log(f"{np.mean(tsc_ticks)=} {np.std(tsc_ticks)=} {sps.sem(tsc_ticks)=}")
-
-log("------------------------------------------------------ seconds")
-tsc_sec = [diff / tscTicksPerSecond for diff in tsc_ticks]
-log(tsc_sec[:100])
-log(f"{np.mean(tsc_sec)=} {np.std(tsc_sec)=} {sps.sem(tsc_sec)=}")
-
-log("-------------------------------------------- seconds per cycle")
-tsc_cysec = [sec / ncy for (sec, ncy) in zip(tsc_sec, cycle_counts)]
-log(tsc_cysec[:100])
-log(f"{np.mean(tsc_cysec)=} {np.std(tsc_cysec)=} {sps.sem(tsc_cysec)=}")
-
-log("-------------------------------------------------- cycle hertz")
-tsc_cyhz = [1 / cysec for cysec in tsc_cysec]
-log(tsc_cyhz[:100])
-log(f"{np.mean(tsc_cyhz)=} {np.std(tsc_cyhz)=} {sps.sem(tsc_cyhz)=}")
-
-log("------------------------------------------------- ns per cycle")
-tsc_cyns = [cysec * 1e9 for cysec in tsc_cysec]
-log(tsc_cyns[:100])
-log(f"{np.mean(tsc_cyns)=} {np.std(tsc_cyns)=} {sps.sem(tsc_cyns)=}")
-
-log("perf ======================================================")
-# save performance metrics to a file
-df = pl.DataFrame({
-    "tsc ticks": pl.Series(tsc_ticks, dtype=pl.UInt64),
-    "tsc seconds": pl.Series(tsc_sec, dtype=pl.Float32),
-    "tsc seconds per cycle": pl.Series(tsc_cysec, dtype=pl.Float32),
-    "tsc cycle hertz": pl.Series(tsc_cyhz, dtype=pl.Float32),
-    "tsc ns per cycle": pl.Series(tsc_cyns, dtype=pl.Float32),
-    "recv sum": pl.Series(recvSum, dtype=pl.UInt32),
-    "send sum": pl.Series(sendSum, dtype=pl.UInt32),
-    "cycle count": pl.Series(cycle_counts, dtype=pl.UInt32),
-    "tsc start": pl.Series(tscStart_ints, dtype=pl.UInt64),
-    "tsc end": pl.Series(tscEnd_ints, dtype=pl.UInt64),
-    "send N": pl.Series(sendN.ravel(), dtype=pl.UInt32),
-    "send S": pl.Series(sendS.ravel(), dtype=pl.UInt32),
-    "send E": pl.Series(sendE.ravel(), dtype=pl.UInt32),
-    "send W": pl.Series(sendW.ravel(), dtype=pl.UInt32),
-    "recv N": pl.Series(recvN.ravel(), dtype=pl.UInt32),
-    "recv S": pl.Series(recvS.ravel(), dtype=pl.UInt32),
-    "recv E": pl.Series(recvE.ravel(), dtype=pl.UInt32),
-    "recv W": pl.Series(recvW.ravel(), dtype=pl.UInt32),
-    "tile": pl.Series(whoami_data.ravel(), dtype=pl.UInt32),
-    "row": pl.Series(whereami_y_data.ravel(), dtype=pl.UInt16),
-    "col": pl.Series(whereami_x_data.ravel(), dtype=pl.UInt16),
-})
-df.with_columns([
-    pl.lit(value, dtype=dtype).alias(key)
-    for key, (value, dtype) in metadata.items()
-])
-write_parquet_verbose(
-    df,
-    "a=perf"
-    f"+flavor={genomeFlavor}"
-    f"+seed={globalSeed}"
-    f"+ncycle={nCycleAtLeast}"
-    "+ext=.pqt",
-)
-del df, tsc_ticks, tsc_sec, tsc_cysec, tsc_cyhz, tsc_cyns, tscStart_ints, tscEnd_ints
-
-# runner.dump("corefile.cs1")
+states_symbol = runner.get_id('states')
+
+print('Copy initial state to device...')
+initial_state = create_initial_state('glider', x_dim, y_dim)
+# Copy initial state into all PEs
+runner.memcpy_h2d(states_symbol, initial_state.flatten(), 0, 0, x_dim, y_dim, 1,
+streaming=False, order=MemcpyOrder.ROW_MAJOR, data_type=MemcpyDataType.MEMCPY_32BIT,nonblock=False)
+
+print(f'Run for {nCycleAtLeast} generations...')
+# Launch the generate function on device
+runner.launch('generate', np.uint16(nCycleAtLeast), nonblock=False)
+
+# Copy states back
+states_result = np.zeros([x_dim * y_dim * nCycleAtLeast], dtype=np.uint32)
+runner.memcpy_d2h(states_result, states_symbol, 0, 0, x_dim, y_dim, nCycleAtLeast, streaming=False,
+order=MemcpyOrder.ROW_MAJOR, data_type=MemcpyDataType.MEMCPY_32BIT, nonblock=False)
+
+# Stop the program
 runner.stop()
+
+print('Create output...')
+
+# Reshape states results to x_dim x y_dim frames
+all_states = states_result.reshape((x_dim, y_dim, nCycleAtLeast))
 
 # Ensure that the result matches our expectation
 log("SUCCESS!")

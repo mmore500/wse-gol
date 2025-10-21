@@ -1,812 +1,309 @@
-// Distributed genetic algorithm simulations across the processing elements
-// (PEs). The kernel enables each PE to manage a local population, simulate
-// generational evolution, and migrate genomes to/from neighboring PEs.
-//
-// main program cycle:
-// 1. check N/S/E/W recv flags; for any completed,
-//    - harvest genomes from completed recv buffer into population
-//    - open new async request to recv from that neighbor into buffer
-//    - when async recv request completes, callback task sets receive flag
-// 2. elapse population generation using tournament selection; for each
-//    tournament,
-//    - sample two candidate parents
-//    - create two offspring by copying and mutating parent genomes
-//    - select the fittest offspring to replace a random population member
-// 3. check N/S/E/W send flags; for any completed,
-//    - update send buffer with genomes from current population
-//    - open new async request to send from buffer to that neighbor
-//    - when async send request completes, callback task sets send flag
-// 4. trigger next iteration of main cycle
+// Major elements of this work are adapted from
+// https://sdk.cerebras.net/csl/code-examples/benchmark-game-of-life.html
+// which is distributed by Cerebras Systems under Apache 2.0 License
+// https://github.com/Cerebras/csl-examples/blob/v1.4.0/LICENSE
 
-// layout parameters ==========================================================
-///////////////////////////////////////////////////////////////////////////////
-param nCycleAtLeast: u32;  // how many self-activation cycles to run for?
-param msecAtLeast: u32;  // how many real-time milliseconds to run for?
-param tscAtLeast: u32;  // how many timestamp counter ticks to run for?
-param nRow: i16;  // how big is PE array?
-param nCol: i16;
-param nRowSubgrid: i16;  // if n, disable migration between PEs every n rows
-param nColSubgrid: i16;  // if n, disable migration between PEs every n cols
-param nonBlock: u8;  // if true, unblock memcpy command stream at startup
-param popSize: u16;  // how many genomes in each local population?
-param tournSize: f32;  // how many genomes compete for selection?
-param memcpy_params: comptime_struct;  // parameters for memcpy layout
-param globalSeed: u16;
-param colorSwapParity: bool;  // is "black" or "white" tile in checkerboard?
+param memcpy_params: comptime_struct;
 
-// module imports =============================================================
-///////////////////////////////////////////////////////////////////////////////
-const math = @import_module("<math>");
-// memcpy module for copying data and launching functions from the host
-const layout_module = @import_module("<layout>");
-const memcpy = @import_module("<memcpy/memcpy>", memcpy_params);
-const random = @import_module("<random>");
-const time = @import_module("<time>");
+param is_east_edge:  bool;
+param is_west_edge:  bool;
+param is_south_edge: bool;
+param is_north_edge: bool;
 
-const compconf = @import_module("<compconf>");
-comptime {  // access via get_value for logging...
-  const _ = compconf.get_value("ASYNC_GA_GENOME_FLAVOR", comptime_string);
-}  // ... raw string works around sdk v1.0.0 limitation
-const compconf_raw = @import_module("<compconf_raw>");
-const genome_ = @import_module(
-  @strcat(
-    "cerebraslib/genome/",
-    compconf_raw.ASYNC_GA_GENOME_FLAVOR,
-    ".csl",
-  ),
-);
-// TODO why can't this be genomes have an even number of words?
-// TODO see https://github.com/mmore500/wse-async-ga/issues/4
-comptime { @comptime_assert(genome_.gSize % 2 == 1); }
+// Colors
+param send_east_color:  color;
+param send_west_color:  color;
+param send_south_color: color;
+param send_north_color: color;
 
-const nTraitVals = genome_.nTraitVals;
-const pExtinction = compconf.get_value_or(
-    "CEREBRASLIB_POPULATION_EXTINCTION_PROBABILITY",
-    @as(f32, 0.0),
-);
+param recv_east_color:  color;
+param recv_west_color:  color;
+param recv_south_color: color;
+param recv_north_color: color;
 
-const population = @import_module("cerebraslib/population.csl", .{
-  .gSize = genome_.gSize, .popSize = popSize,
-  .pExtinction = pExtinction,
-  .tournamentSize = tournSize,
-  .fitFun = genome_.calc_fitness_of,
-  .immClobber = genome_.hasImmClobber,
-  .immClobberFun = genome_.clobber_immigrant,
-  .inheritFun = genome_.elapse_inheritance_of,
-  .initFun = genome_.initialize_one,
-  .traitFun = genome_.get_trait_value,
-});
-const wildtypeLogger = @import_module(
-  "cerebraslib/traitlogger.csl", .{ .symbolName = "wildtypeLoggerRecord" }
-);
-const ctrl = @import_module("cerebraslib/ctrl.csl");
-const optime = @import_module("cerebraslib/optime.csl");
+// Queue IDs
+const send_east_oq:  output_queue = @get_output_queue(2);
+const send_west_oq:  output_queue = @get_output_queue(3);
+const send_south_oq: output_queue = @get_output_queue(4);
+const send_north_oq: output_queue = @get_output_queue(5);
 
-// global output variables ====================================================
-// for end-state telemetry, ptrs are necessary for memcpy infrastructure
-///////////////////////////////////////////////////////////////////////////////
-var x: i16 = 0; var y: i16 = 0;  // PE array coordinates
-var cycleCounter = @zeros([1]u32);  // how many self-activation cycles elapse?
-var ptr_cycleCounter : [*]u32 = &cycleCounter;
+const recv_east_iq:  input_queue  = @get_input_queue(2);
+const recv_west_iq:  input_queue  = @get_input_queue(3);
+const recv_south_iq: input_queue  = @get_input_queue(4);
+const recv_north_iq: input_queue  = @get_input_queue(5);
 
-var recvCounter_N = @zeros([1]u32);  // number recv's opened + number filled
-var ptr_recvCounter_N : [*]u32 = &recvCounter_N;
-var recvCounter_S = @zeros([1]u32);
-var ptr_recvCounter_S : [*]u32 = &recvCounter_S;
-var recvCounter_E = @zeros([1]u32);
-var ptr_recvCounter_E : [*]u32 = &recvCounter_E;
-var recvCounter_W = @zeros([1]u32);
-var ptr_recvCounter_W : [*]u32 = &recvCounter_W;
+// Task IDs
+const send_task_id:           local_task_id = @get_local_task_id(8);
+const sync_send_task_id:      local_task_id = @get_local_task_id(9);
+const sync_fwd_task_id:       local_task_id = @get_local_task_id(10);
+const start_next_gen_task_id: local_task_id = @get_local_task_id(11);
+const fwd_east_west_task_id:  local_task_id = @get_local_task_id(12);
+const exit_task_id:           local_task_id = @get_local_task_id(13);
 
-var sendCounter_N = @zeros([1]u32);  // number send's opened + number filled
-var ptr_sendCounter_N : [*]u32 = &sendCounter_N;
-var sendCounter_S = @zeros([1]u32);
-var ptr_sendCounter_S : [*]u32 = &sendCounter_S;
-var sendCounter_E = @zeros([1]u32);
-var ptr_sendCounter_E : [*]u32 = &sendCounter_E;
-var sendCounter_W = @zeros([1]u32);
-var ptr_sendCounter_W : [*]u32 = &sendCounter_W;
+// On WSE-2, data task IDs are created from colors; on WSE-3, from input queues
+const recv_east_task_id: data_task_id =
+  if      (@is_arch("wse2")) @get_data_task_id(recv_east_color)
+  else if (@is_arch("wse3")) @get_data_task_id(recv_east_iq);
+const recv_west_task_id: data_task_id =
+  if      (@is_arch("wse2")) @get_data_task_id(recv_west_color)
+  else if (@is_arch("wse3")) @get_data_task_id(recv_west_iq);
+const recv_south_task_id: data_task_id =
+  if      (@is_arch("wse2")) @get_data_task_id(recv_south_color)
+  else if (@is_arch("wse3")) @get_data_task_id(recv_south_iq);
+const recv_north_task_id: data_task_id =
+  if      (@is_arch("wse2")) @get_data_task_id(recv_north_color)
+  else if (@is_arch("wse3")) @get_data_task_id(recv_north_iq);
 
-var traitCounts = @zeros([nTraitVals]u32);
-var ptr_traitCounts : [*]u32 = &traitCounts;
-var traitCycles = @zeros([nTraitVals]u32);
-var ptr_traitCycles: [*]u32 = &traitCycles;
-var traitValues = @zeros([nTraitVals]u32);
-var ptr_traitValues: [*]u32 = &traitValues;
 
-var genome = @zeros([population.gSize]u32);  // samples 0th population element
-var ptr_genome : [*]u32 = &genome;  // (which is convenient)
+// memcpy module provides infrastructure for copying data
+// and launching functions from the host
+const sys_mod = @import_module("<memcpy/memcpy>", memcpy_params);
+const layout_mod = @import_module("<layout>");
 
-var genomeBookend = @zeros([population.gSize + 2]u32);  // w/ bookend validation
-var ptr_genomeBookend : [*]u32 = &genomeBookend;  // for async memcpy
+const MAX_GENERATIONS = 1000; // Max num total generations that can be stored
 
-var fitness = @zeros([1]f32);  // samples 0th population element (convenient)
-var ptr_fitness : [*]f32 = &fitness;
+// Number of neighboring PEs for this cell
+const num_neighbors: u16 = (if (is_west_edge)  0 else 1) + (if (is_east_edge)  0 else 1) // W, E
+                         + (if (is_north_edge) 0 else 1) + (if (is_south_edge) 0 else 1) // N, S
+                         + (if (is_north_edge or is_west_edge) 0 else 1)  // NW
+                         + (if (is_north_edge or is_east_edge) 0 else 1)  // NE
+                         + (if (is_south_edge or is_west_edge) 0 else 1)  // SW
+                         + (if (is_south_edge or is_east_edge) 0 else 1); // SE
 
-// report back layout params (sanity check)
-var whoami = @zeros([1]u32); var ptr_whoami : [*]u32 = &whoami;
-var whereami_x = @zeros([1]u32); var ptr_whereami_x : [*]u32 = &whereami_x;
-var whereami_y = @zeros([1]u32); var ptr_whereami_y : [*]u32 = &whereami_y;
+const num_west_nbrs: u16 = if (is_west_edge) 0
+                           else (1 + (if (is_north_edge) 0 else 1) + (if (is_south_edge) 0 else 1));
+const num_east_nbrs: u16 = if (is_east_edge) 0
+                           else (1 + (if (is_north_edge) 0 else 1) + (if (is_south_edge) 0 else 1));
 
-// timestamp buffers, ensure an even number for 32-bit word memcpy
-var tscControlBuffer = @zeros([(time.tsc_size_words + 1) / 2]u32);
-var ptr_tscControlBuffer : [*]u32 = &tscControlBuffer;
-var tscEndBuffer = @zeros([(time.tsc_size_words + 1) / 2]u32);
-var ptr_tscEndBuffer : [*]u32 = &tscEndBuffer;
-var tscStartBuffer = @zeros([(time.tsc_size_words + 1) / 2]u32);
-var ptr_tscStartBuffer : [*]u32 = &tscStartBuffer;
+const num_ns_nbrs: u16 = (if (is_north_edge) 0 else 1) + (if (is_south_edge) 0 else 1);
 
-// queue IDs ==================================================================
-///////////////////////////////////////////////////////////////////////////////
-var busyThreads = @zeros([4]u8);  // 0, 1, 2, 3
+var iters: u16 = 0; // Number of generations for current run
+var current_iter: u16 = 0; // Track num generations completed so far
 
-// memcpy occupies ut 0 // RE: non-wse2 only
-// ut 1 thru 3 used for output in nonBlock mode
-// ut 0 thru 3 used for output in block mode
+// Store states of all cells for each generation
+var states: [MAX_GENERATIONS]u32;
+var states_ptr: [*]u32 = &states;
+var state_dsd = @get_dsd(mem1d_dsd, .{ .tensor_access = |i|{1} -> states[i] });
 
-const q_out_N: output_queue = @get_output_queue(4);  // RE: non-wse2 only
-const q_out_S: output_queue = @get_output_queue(5);  // RE: non-wse2 only
-const q_out_E: output_queue = @get_output_queue(6);  // RE: non-wse2 only
-const q_out_W: output_queue = @get_output_queue(7);  // RE: non-wse2 only
+// For current generation, track received states from neighbors
+var num_recv: u16 = 0;
+var current_sum: u32 = 0;
 
-const ut_in_N: u8 = 4;  // RE: non-wse2 only
-const ut_in_S: u8 = 5;  // RE: non-wse2 only
-const ut_in_E: u8 = 6;  // RE: non-wse2 only
-const ut_in_W: u8 = 7;  // RE: non-wse2 only
+var num_west_recv: u16 = 0;
+var num_east_recv: u16 = 0;
+var num_ns_recv: u16 = 0;
 
-const q_in_N: input_queue = @get_input_queue(4);
-const q_in_S: input_queue = @get_input_queue(5);
-const q_in_E: input_queue = @get_input_queue(6);
-const q_in_W: input_queue = @get_input_queue(7);
+// Store values received from N and S to forward E and W
+var fwd_vals: [2]u32;
 
-// task IDs ===================================================================
-///////////////////////////////////////////////////////////////////////////////
-const sendColor_N: color = @get_color(if (colorSwapParity) 0 else 1);
-const recvColor_S: color = @get_color(if (colorSwapParity) 1 else 0);
-const ignRecvTaskID_S: data_task_id = (
-  if (@is_arch("wse2")) @get_data_task_id(recvColor_S)
-  else @get_data_task_id(q_in_S)
-);
+// DSDs for sending values to N, S, E, W neighbors
+const send_west_dsd = @get_dsd(fabout_dsd, .{
+  .fabric_color = send_west_color, .extent = 1, .output_queue = send_west_oq });
+const send_east_dsd = @get_dsd(fabout_dsd, .{
+  .fabric_color = send_east_color, .extent = 1, .output_queue = send_east_oq });
+const send_north_dsd = @get_dsd(fabout_dsd, .{
+  .fabric_color = send_north_color, .extent = 1, .output_queue = send_north_oq });
+const send_south_dsd = @get_dsd(fabout_dsd, .{
+  .fabric_color = send_south_color, .extent = 1, .output_queue = send_south_oq });
 
-const sendColor_E: color = @get_color(if (colorSwapParity) 2 else 3);
-const recvColor_W: color = @get_color(if (colorSwapParity) 3 else 2);
-const ignRecvTaskID_W: data_task_id = (
-  if (@is_arch("wse2")) @get_data_task_id(recvColor_W)
-  else @get_data_task_id(q_in_W)
-);
+// Send current state to all four neighbors
+task send() void {
+  if (!is_north_edge) @fmovs(send_north_dsd, state_dsd, .{ .async = true });
+  if (!is_south_edge) @fmovs(send_south_dsd, state_dsd, .{ .async = true });
 
-const recvColor_N: color = @get_color(if (colorSwapParity) 4 else 5);
-const sendColor_S: color = @get_color(if (colorSwapParity) 5 else 4);
-const ignRecvTaskID_N: data_task_id = (
-  if (@is_arch("wse2")) @get_data_task_id(recvColor_N)
-  else @get_data_task_id(q_in_N)
-);
+  // When sending to E and W finishes, allow sync_fwd task to proceed
+  // sync_fwd allows us to begin forwarding states received from N/ S to E/ W
+  if (!is_west_edge) @fmovs(send_west_dsd, state_dsd,
+                            .{ .async = true, .unblock = sync_fwd_task_id });
+  if (!is_east_edge) @fmovs(send_east_dsd, state_dsd,
+                            .{ .async = true, .activate = sync_fwd_task_id });
 
-const recvColor_E: color = @get_color(if (colorSwapParity) 6 else 7);
-const sendColor_W: color = @get_color(if (colorSwapParity) 7 else 6);
-const ignRecvTaskID_E: data_task_id = (
-  if (@is_arch("wse2")) @get_data_task_id(recvColor_E)
-  else @get_data_task_id(q_in_E)
-);
+  if (is_west_edge) @unblock(sync_fwd_task_id);
+  if (is_east_edge) @activate(sync_fwd_task_id);
 
-// color 8 is available
-
-// color 9 is used by RPC launcher
-
-const sendFinalizeTaskID_N: local_task_id = @get_local_task_id(10);
-const sendFinalizeTaskID_S: local_task_id = @get_local_task_id(11);
-const sendFinalizeTaskID_E: local_task_id = @get_local_task_id(12);
-const sendFinalizeTaskID_W: local_task_id = @get_local_task_id(13);
-
-const recvFinalizeTaskID_N: local_task_id = @get_local_task_id(14);
-const recvFinalizeTaskID_S: local_task_id = @get_local_task_id(15);
-const recvFinalizeTaskID_E: local_task_id = @get_local_task_id(16);
-const recvFinalizeTaskID_W: local_task_id = @get_local_task_id(17);
-
-const closeoutTaskID: local_task_id = @get_local_task_id(18);
-const cycleTaskID: local_task_id = @get_local_task_id(19);
-
-// available: 20, 24, 25, 26, 32, 33, 34, 35
-// reserved (memcpy): 21, 22, 23, 27, 28, 30
-// reserved: 29, 31
-
-///////////////////////////////////////////////////////////////////////////////
-// ============================================================================
-// send tasks
-// ============================================================================
-// asynchronously send genomes sampled from population to neighbors
-///////////////////////////////////////////////////////////////////////////////
-const sendNumGenomes: u16 = 1;  // how many genomes to batch sending together?
-const sendBufSize: u16 = sendNumGenomes * population.gSize;
-
-// send NORTH =================================================================
-var sendFlag_N: u8; // need refill? initialized at startup
-var sendThread_N: u8;  // which thread is sending?
-var sendBuf_N = @zeros([sendBufSize]u32);  // hold genomes being sent
-const sendBufDsd_N = @get_dsd(mem1d_dsd, .{
-  .tensor_access = |i|{sendBufSize} -> sendBuf_N[i], });
-
-// callback for when send is complete, set flag to request refill & next send
-task sendFinalizeTask_N() void {
-  sendFlag_N = 1; sendCounter_N[0] += 1; busyThreads[sendThread_N] = 0;
+  // Do no send again until we forward N/ S recvs to E/ W neighbors
+  @block(send_task_id);
 }
 
-// open async uthread to send from sendBuf
-fn doDispatchSend_N(comptime thread: u8) void {
-  population.emigrate_genomes(sendBufDsd_N, sendNumGenomes);
-  const oq = if (@is_arch("wse2")) @get_output_queue(thread) else q_out_N;
-  const sendDsd_N = @get_dsd(fabout_dsd, .{ .fabric_color = sendColor_N,
-    .extent = sendBufSize, .output_queue = oq, });
-  @fmovs(sendDsd_N, sendBufDsd_N,  // callback on complete
-    if (@is_arch("wse2")) .{ .async = true, .activate = sendFinalizeTaskID_N, }
-    else .{ .async = true, .activate = sendFinalizeTaskID_N,
-      .ut_id = @get_ut_id(thread),
-    },
-  );
-  sendCounter_N[0] += 1;  // counter only used for telemetry
+// Guarantee that we do not begin forwarding N/ S recvs to E/ W neighbors
+// until E/ W sends from our cell complete
+task sync_fwd() void {
+  @block(sync_fwd_task_id);
+  @unblock(fwd_east_west_task_id);
 }
 
-fn tryDispatchSend_N(thread: u8) bool {
-  if (busyThreads[thread] == 1) { return false; }
-  busyThreads[thread] = 1;  // mark thread as busy
-  sendThread_N = thread;
-  switch (thread) {
-    0 => doDispatchSend_N(0),
-    1 => doDispatchSend_N(1),
-    2 => doDispatchSend_N(2),
-    3 => doDispatchSend_N(3),
-    else => { @assert(false); },
-  }
-  return true;
+// Forward states received from N/ S neighbors to E/ W neighbors
+task fwd_east_west() void {
+  // fwd_vals[0] is N neighbor forwarded to E and W
+  // fwd_vals[1] is S neighbor forwarded to E and W
+  // if we are N edge, there is no N neighbor to forward, so we access only fwd_vals[1]
+  const offset = if (is_north_edge) 1 else 0;
+  const fwd_dsd = @get_dsd(mem1d_dsd,
+                           .{ .tensor_access = |i|{num_ns_nbrs} -> fwd_vals[i + offset] });
+
+  // When forwarding to E and W finishes, allow sync_send task to proceed
+  // sync_send allows us to begin sending next generation
+  if (!is_west_edge) @fmovs(send_west_dsd, fwd_dsd,
+                            .{ .async = true, .unblock = sync_send_task_id });
+  if (!is_east_edge) @fmovs(send_east_dsd, fwd_dsd,
+                            .{ .async = true, .activate = sync_send_task_id });
+
+  if (is_west_edge) @unblock(sync_send_task_id);
+  if (is_east_edge) @activate(sync_send_task_id);
+
+  // Do not forward again until we complete next generation E/ W sends
+  // from our cell to neighbors
+  @block(fwd_east_west_task_id);
 }
 
-fn dispatchSend_N() bool {
-  for (@range(u8, 4)) |thread| {
-    if (tryDispatchSend_N(thread)) { return true; }
-  }
-  return false;
+// Guarantee that we do not begin sending next generation until we have forwarded
+// all neighbors from current generation
+task sync_send() void {
+  @block(sync_send_task_id);
+  @unblock(send_task_id);
 }
 
-// send SOUTH =================================================================
-var sendFlag_S: u8; // need refill? initialized at startup
-var sendThread_S: u8;  // which thread is sending?
-var sendBuf_S = @zeros([sendBufSize]u32);  // hold genomes being sent
-const sendBufDsd_S = @get_dsd(mem1d_dsd, .{
-  .tensor_access = |i|{sendBufSize} -> sendBuf_S[i], });
+// In each generation, PE will receive from W up to three times:
+// W neighbor, NW neighbor, and SW neighbor
+task recv_west(val: u32) void {
+  num_west_recv += 1;
+  num_recv += 1;
+  current_sum += val;
 
-// callback for when send is complete, set flag to request refill & next send
-task sendFinalizeTask_S() void {
-  sendFlag_S = 1; sendCounter_S[0] += 1; busyThreads[sendThread_S] = 0;
+  // If we have received from all W neighbors, block to prevent
+  // any activations until we begin next generation
+  if (num_west_recv == num_west_nbrs) @block(recv_west_task_id);
+  // If we have received from all neighbors, begin next generation
+  if (num_recv == num_neighbors) @activate(start_next_gen_task_id);
 }
 
-// open async uthread to send from sendBuf
-fn doDispatchSend_S(comptime thread: u8) void {
-  population.emigrate_genomes(sendBufDsd_S, sendNumGenomes);
-  const oq = if (@is_arch("wse2")) @get_output_queue(thread) else q_out_S;
-  const sendDsd_S = @get_dsd(fabout_dsd, .{ .fabric_color = sendColor_S,
-    .extent = sendBufSize, .output_queue = oq, });
-  @fmovs(sendDsd_S, sendBufDsd_S,  // callback on complete
-    if (@is_arch("wse2")) .{ .async = true, .activate = sendFinalizeTaskID_S, }
-    else .{ .async = true, .activate = sendFinalizeTaskID_S,
-      .ut_id = @get_ut_id(thread),
-    },
-  );
-  sendCounter_S[0] += 1;  // counter only used for telemetry
+// In each generation, PE will receive from E up to three times
+// E neighbor, NE neighbor, and SE neighbor
+task recv_east(val: u32) void {
+  num_east_recv += 1;
+  num_recv += 1;
+  current_sum += val;
+
+  // If we have received from all E neighbors, block to prevent
+  // any activations until we begin next generation
+  if (num_east_recv == num_east_nbrs) @block(recv_east_task_id);
+  // If we have received from all neighbors, begin next generation
+  if (num_recv == num_neighbors) @activate(start_next_gen_task_id);
 }
 
-fn tryDispatchSend_S(thread: u8) bool {
-  if (busyThreads[thread] == 1) { return false; }
-  busyThreads[thread] = 1;  // mark thread as busy
-  sendThread_S = thread;
-  switch (thread) {
-    0 => doDispatchSend_S(0),
-    1 => doDispatchSend_S(1),
-    2 => doDispatchSend_S(2),
-    3 => doDispatchSend_S(3),
-    else => { @assert(false); },
-  }
-  return true;
+// In each generation, PE will receive from N if there is N neighbor
+task recv_north(val: u32) void {
+  num_ns_recv += 1;
+  num_recv += 1;
+  current_sum += val;
+
+  // Per generation, we only receive from N once. Block to prevent any
+  // activations until we begin next generation.
+  @block(recv_north_task_id);
+
+  // Store value received from N to forward to E and W neighbors
+  fwd_vals[0] = val;
+
+  // If we have received from N and S, fwd to E and W neighbors
+  if (num_ns_recv == num_ns_nbrs) @activate(fwd_east_west_task_id);
+  // If we have received from all neighbors, begin next generation
+  if (num_recv == num_neighbors) @activate(start_next_gen_task_id);
 }
 
-fn dispatchSend_S() bool {
-  for (@range(u8, 4)) |thread| {
-    if (tryDispatchSend_S(thread)) { return true; }
-  }
-  return false;
+// In each generation, PE will receive from S if there is S neighbor
+task recv_south(val: u32) void {
+  num_ns_recv += 1;
+  num_recv += 1;
+  current_sum += val;
+
+  // Per generation, we only receive from S once. Block to prevent any
+  // activations until we begin next generation.
+  @block(recv_south_task_id);
+
+  // Store value received from S to forward to E and W neighbors
+  fwd_vals[1] = val;
+
+  // If we have received from N and S, fwd to E and W neighbors
+  if (num_ns_recv == num_ns_nbrs) @activate(fwd_east_west_task_id);
+  // If we have received from all neighbors, begin next generation
+  if (num_recv == num_neighbors) @activate(start_next_gen_task_id);
 }
 
-// send EAST =================================================================
-var sendFlag_E: u8; // need refill? initialized at startup
-var sendThread_E: u8;  // which thread is sending?
-var sendBuf_E = @zeros([sendBufSize]u32);  // hold genomes being sent
-const sendBufDsd_E = @get_dsd(mem1d_dsd, .{
-  .tensor_access = |i|{sendBufSize} -> sendBuf_E[i], });
+// Update current state and begin sending next generation to neighbors
+task start_next_gen() void {
 
-// callback for when send is complete, set flag to request refill & next send
-task sendFinalizeTask_E() void {
-  sendFlag_E = 1; sendCounter_E[0] += 1; busyThreads[sendThread_E] = 0;
-}
+  current_iter += 1;
+  state_dsd = @increment_dsd_offset(state_dsd, 1, u32);
 
-// open async uthread to send from sendBuf
-fn doDispatchSend_E(comptime thread: u8) void {
-  population.emigrate_genomes(sendBufDsd_E, sendNumGenomes);
-  const oq = if (@is_arch("wse2")) @get_output_queue(thread) else q_out_E;
-  const sendDsd_E = @get_dsd(fabout_dsd, .{ .fabric_color = sendColor_E,
-    .extent = sendBufSize, .output_queue = oq, });
-  @fmovs(sendDsd_E, sendBufDsd_E,  // callback on complete
-    if (@is_arch("wse2")) .{ .async = true, .activate = sendFinalizeTaskID_E, }
-    else .{ .async = true, .activate = sendFinalizeTaskID_E,
-      .ut_id = @get_ut_id(thread),
-    },
-  );
-  sendCounter_E[0] += 1;  // counter only used for telemetry
-}
-
-fn tryDispatchSend_E(thread: u8) bool {
-  if (busyThreads[thread] == 1) { return false; }
-  busyThreads[thread] = 1;  // mark thread as busy
-  sendThread_E = thread;
-  switch (thread) {
-    0 => doDispatchSend_E(0),
-    1 => doDispatchSend_E(1),
-    2 => doDispatchSend_E(2),
-    3 => doDispatchSend_E(3),
-    else => { @assert(false); },
-  }
-  return true;
-}
-
-fn dispatchSend_E() bool {
-  for (@range(u8, 4)) |thread| {
-    if (tryDispatchSend_E(thread)) { return true; }
-  }
-  return false;
-}
-
-// send WEST =================================================================
-var sendFlag_W: u8; // need refill? initialized at startup
-var sendThread_W: u8;  // which thread is sending?
-var sendBuf_W = @zeros([sendBufSize]u32);  // hold genomes being sent
-const sendBufDsd_W = @get_dsd(mem1d_dsd, .{
-  .tensor_access = |i|{sendBufSize} -> sendBuf_W[i], });
-
-// callback for when send is complete, set flag to request refill & next send
-task sendFinalizeTask_W() void {
-  sendFlag_W = 1; sendCounter_W[0] += 1; busyThreads[sendThread_W] = 0;
-}
-
-// open async uthread to send from sendBuf
-fn doDispatchSend_W(comptime thread: u8) void {
-  population.emigrate_genomes(sendBufDsd_W, sendNumGenomes);
-  const oq = if (@is_arch("wse2")) @get_output_queue(thread) else q_out_W;
-  const sendDsd_W = @get_dsd(fabout_dsd, .{ .fabric_color = sendColor_W,
-    .extent = sendBufSize, .output_queue = oq, });
-  @fmovs(sendDsd_W, sendBufDsd_W,  // callback on complete
-    if (@is_arch("wse2")) .{ .async = true, .activate = sendFinalizeTaskID_W, }
-    else .{ .async = true, .activate = sendFinalizeTaskID_W,
-      .ut_id = @get_ut_id(thread),
-    },
-  );
-  sendCounter_W[0] += 1;  // counter only used for telemetry
-}
-
-fn tryDispatchSend_W(thread: u8) bool {
-  if (busyThreads[thread] == 1) { return false; }
-  busyThreads[thread] = 1;  // mark thread as busy
-  sendThread_W = thread;
-  switch (thread) {
-    0 => doDispatchSend_W(0),
-    1 => doDispatchSend_W(1),
-    2 => doDispatchSend_W(2),
-    3 => doDispatchSend_W(3),
-    else => { @assert(false); },
-  }
-  return true;
-}
-
-fn dispatchSend_W() bool {
-  for (@range(u8, 4)) |thread| {
-    if (tryDispatchSend_W(thread)) { return true; }
-  }
-  return false;
-}
-
-///////////////////////////////////////////////////////////////////////////////
-// ============================================================================
-// recv tasks
-// ============================================================================
-// asynchronously accept genomes from neighbors,
-// which are then harvested from buffer & immigrated into the population
-///////////////////////////////////////////////////////////////////////////////
-const recvNumGenomes: u16 = 4;  // how many genomes to batch together?
-const recvBufSize: u16 = recvNumGenomes * population.gSize;
-
-// recv NORTH =================================================================
-var recvFlag_N: u8 = 0;  // need harvest? init 0 (naked dispatchRecv on startup)
-var recvBuf_N = @zeros([recvBufSize]u32);  // hold genomes being received
-const recvBufDsd_N = @get_dsd(mem1d_dsd, .{
-  .tensor_access = |i|{recvBufSize} -> recvBuf_N[i], });
-
-// callback when recv is complete, set flag to
-// 1) trigger immigration from recv buffer into pop and 2) request next recv
-task recvFinalizeTask_N() void { recvFlag_N = 1; recvCounter_N[0] += 1;
-  if (closeoutRemaining == 0) { @unblock(ignRecvTaskID_N); }
-}
-
-fn dispatchRecv_N() void {  // open async microthread to recv ing recvBuf
-  const recvDsd_N = @get_dsd(fabin_dsd, .{ .fabric_color = recvColor_N,
-    .extent = recvBufSize, .input_queue = q_in_N, });
-  @fmovs(recvBufDsd_N, recvDsd_N,  // callback on complete
-    if (@is_arch("wse2")) .{ .async = true, .activate = recvFinalizeTaskID_N }
-    else .{ .async = true, .activate = recvFinalizeTaskID_N,
-      .ut_id = @get_ut_id(ut_in_N),
-    },
-  );
-  recvCounter_N[0] += 1;  // counter only used for telemetry
-}
-
-// recv SOUTH =================================================================
-var recvFlag_S: u8 = 0;  // need harvest? init 0 (naked dispatchRecv on startup)
-var recvBuf_S = @zeros([recvBufSize]u32);  // hold genomes being received
-const recvBufDsd_S = @get_dsd(mem1d_dsd, .{
-  .tensor_access = |i|{recvBufSize} -> recvBuf_S[i],
-});
-
-// callback when recv is complete, set flag to
-// 1) trigger immigration from recv buffer into pop and 2) request next recv
-task recvFinalizeTask_S() void { recvFlag_S = 1; recvCounter_S[0] += 1;
-  if (closeoutRemaining == 0) { @unblock(ignRecvTaskID_S); }
-}
-
-// open an async microthread to recv from neighbor into recvBuf
-fn dispatchRecv_S() void {  // open async microthread to recv ing recvBuf
-  const recvDsd_S = @get_dsd(fabin_dsd, .{ .fabric_color = recvColor_S,
-    .extent = recvBufSize, .input_queue = q_in_S, });
-  @fmovs(recvBufDsd_S, recvDsd_S,  // callback on complete
-    if (@is_arch("wse2")) .{ .async = true, .activate = recvFinalizeTaskID_S }
-    else .{ .async = true, .activate = recvFinalizeTaskID_S,
-      .ut_id = @get_ut_id(ut_in_S),
-    },
-  );
-  recvCounter_S[0] += 1;  // counter only used for telemetry
-}
-
-// recv EAST ==================================================================
-var recvFlag_E: u8 = 0;  // need harvest? init 0 (naked dispatchRecv on startup)
-var recvBuf_E = @zeros([recvBufSize]u32);  // hold genomes being received
-const recvBufDsd_E = @get_dsd(mem1d_dsd, .{
-  .tensor_access = |i|{recvBufSize} -> recvBuf_E[i], });
-
-// callback when recv is complete, set flag to
-// 1) trigger immigration from recv buffer into pop and 2) request next recv
-task recvFinalizeTask_E() void { recvFlag_E = 1; recvCounter_E[0] += 1;
-  if (closeoutRemaining == 0) { @unblock(ignRecvTaskID_E); }
-}
-
-fn dispatchRecv_E() void {  // open an async microthread to recv into recvBuf
-  const recvDsd_E = @get_dsd(fabin_dsd, .{  .fabric_color = recvColor_E,
-    .extent = recvBufSize, .input_queue = q_in_E, });
-  @fmovs(recvBufDsd_E, recvDsd_E,  // callback on complete
-    if (@is_arch("wse2")) .{ .async = true, .activate = recvFinalizeTaskID_E }
-    else .{ .async = true, .activate = recvFinalizeTaskID_E,
-      .ut_id = @get_ut_id(ut_in_E),
-    },
-  );
-  recvCounter_E[0] += 1;  // counter only used for telemetry
-}
-
-// recv WEST ==================================================================
-var recvFlag_W: u8 = 0;  // need harvest? init 0 (naked dispatchRecv on startup)
-var recvBuf_W = @zeros([recvBufSize]u32);  // hold genomes being received
-const recvBufDsd_W = @get_dsd(mem1d_dsd, .{
-  .tensor_access = |i|{recvBufSize} -> recvBuf_W[i], });
-
-// callback when recv is complete, set flag to
-// 1) trigger immigration from recv buffer into pop and 2) request next recv
-task recvFinalizeTask_W() void { recvFlag_W = 1; recvCounter_W[0] += 1;
-  if (closeoutRemaining == 0) { @unblock(ignRecvTaskID_W); }
-}
-
-fn dispatchRecv_W() void { // open an async microthread to recv into recvBuf
-  const recvDsd_W = @get_dsd(fabin_dsd, .{ .fabric_color = recvColor_W,
-    .extent = recvBufSize, .input_queue = q_in_W, });
-  @fmovs(recvBufDsd_W, recvDsd_W,  // callback on complete
-    if (@is_arch("wse2")) .{ .async = true, .activate = recvFinalizeTaskID_W }
-    else .{ .async = true, .activate = recvFinalizeTaskID_W,
-      .ut_id = @get_ut_id(ut_in_W),
-    },
-  );
-  recvCounter_W[0] += 1;  // counter only used for telemetry
-}
-
-///////////////////////////////////////////////////////////////////////////////
-// ============================================================================
-// closeout task
-// ============================================================================
-// when PEs' sends are complete, ensure all recvs are open
-// (or switched to ignore) and then terminate
-///////////////////////////////////////////////////////////////////////////////
-var closeoutRemaining: u8;  // set at startup
-fn closeoutSend() bool {
-  if (sendFlag_N == 1) { sendFlag_N = 0; closeoutRemaining -= 1; }
-  if (sendFlag_S == 1) { sendFlag_S = 0; closeoutRemaining -= 1; }
-  if (sendFlag_E == 1) { sendFlag_E = 0; closeoutRemaining -= 1; }
-  if (sendFlag_W == 1) { sendFlag_W = 0; closeoutRemaining -= 1; }
-  return !@as(bool, closeoutRemaining);
-}
-task ignRecvTask_N(_: u16) void { } task ignRecvTask_S(_: u16) void { }
-task ignRecvTask_E(_: u16) void { } task ignRecvTask_W(_: u16) void { }
-fn closeoutRecv() void {
-  if (recvFlag_N == 1) { recvFlag_N = 0; @unblock(ignRecvTaskID_N); }
-  if (recvFlag_S == 1) { recvFlag_S = 0; @unblock(ignRecvTaskID_S); }
-  if (recvFlag_E == 1) { recvFlag_E = 0; @unblock(ignRecvTaskID_E); }
-  if (recvFlag_W == 1) { recvFlag_W = 0; @unblock(ignRecvTaskID_W); }
-}
-
-task closeoutTask() void {
-  if (closeoutSend()) {
-    if (nonBlock == 0) memcpy.unblock_cmd_stream();  // terminate
-  } else { @activate(closeoutTaskID); }  // trigger next cycle
-  closeoutRecv();  // run LAST in either case
-}
-///////////////////////////////////////////////////////////////////////////////
-
-// halt condition ============================================================
-fn shouldHalt(cycle: u32) bool {
-  const nCycleOk = cycle >= nCycleAtLeast;
-  return nCycleOk;
-  // const msecOk = optime.has_elapsed_ms_(
-  //   msecAtLeast,
-  //   @ptrcast(*[3]u16, &tscStartBuffer),
-  // );
-  // const tscOk = optime.has_elapsed_tsc_(
-  //   tscAtLeast,
-  //   @ptrcast(*[3]u16, &tscStartBuffer),
-  // );
-  // return nCycleOk and msecOk and tscOk;
-}
-
-// cycle task =================================================================
-// main program loop: self-activate with incrementing values until nCycleAtLeast
-///////////////////////////////////////////////////////////////////////////////
-task cycleTask() void {
-  // handle recv flags, pull recv buffer into pop and start next async recv
-  // note: never-filled recv requests on PE array edges ok
-  // --------------------------------------------------------------------------
-  if (recvFlag_N == 1) {  // has open recv request been filled?
-    var recvBufPtr_N = @ptrcast([*]u32, &recvBuf_N[0]);
-    population.immigrate_genomes(recvBufPtr_N, recvNumGenomes);
-    recvFlag_N = 0; dispatchRecv_N();
-  }
-  if (recvFlag_S == 1) {
-    var recvBufPtr_S = @ptrcast([*]u32, &recvBuf_S[0]);
-    population.immigrate_genomes(recvBufPtr_S, recvNumGenomes);
-    recvFlag_S = 0; dispatchRecv_S();
-  }
-  if (recvFlag_E == 1) {
-    var recvBufPtr_E = @ptrcast([*]u32, &recvBuf_E[0]);
-    population.immigrate_genomes(recvBufPtr_E, recvNumGenomes);
-    recvFlag_E = 0; dispatchRecv_E();
-  }
-  if (recvFlag_W == 1) {
-    var recvBufPtr_W = @ptrcast([*]u32, &recvBuf_W[0]);
-    population.immigrate_genomes(recvBufPtr_W, recvNumGenomes);
-    recvFlag_W = 0; dispatchRecv_W();
-  }
-
-  // apply replication/selection to population
-  // --------------------------------------------------------------------------
-  population.do_generation();
-
-  // handle send flags, load send buffer from pop and start next async send
-  // --------------------------------------------------------------------------
-  const shuf = @random16() & 3;
-  for (@range(u16, 4)) |i| {  // send to all neighbors
-    const numBusy = (
-      busyThreads[0] + busyThreads[1] + busyThreads[2] + busyThreads[3]
-    );
-    if (numBusy == 4) break;
-    const j = (i + shuf) & 3;  // round-robin order
-    if (j == 0 and sendFlag_N == 1) {
-      if (dispatchSend_N()) { sendFlag_N = 0; }
-    } else if (j == 1 and sendFlag_S == 1) {
-      if (dispatchSend_S()) { sendFlag_S = 0; }
-    } else if (j == 2 and sendFlag_E == 1) {
-      if (dispatchSend_E()) { sendFlag_E = 0; }
-    } else if (j == 3 and sendFlag_W == 1) {
-      if (dispatchSend_W()) { sendFlag_W = 0; }
-    }
-  }
-
-  // update telemetry
-  // --------------------------------------------------------------------------
-  for (@range(u16, popSize)) |i| {  // will record last cycle traits were seen
-    traitCycles[population._get_ith_trait_value(i)] = cycleCounter[0];
-  }
-
-  wildtypeLogger.update(population._get_ith_trait_value(0) == 0);
-
-  // trigger next cycle
-  // --------------------------------------------------------------------------
-  if (!shouldHalt(cycleCounter[0])) { cycleCounter[0] += 1;  // for telemetry
-    @activate(cycleTaskID);  // send wavelet to self, trigger next cycle
+  // Previous generation of cell is alive
+  if (states[current_iter-1] == 1) {
+    states[current_iter] = if (current_sum == 2 or current_sum == 3) 1 else 0;
+  // Previous generation of cell is dead
   } else {
-    // closeout telemetry
-    // ------------------------------------------------------------------------
-    time.get_timestamp(@ptrcast(*[3]u16, ptr_tscEndBuffer));
-    fitness[0] = population._calc_ith_fitness(0);
-    // record final trait distributions
-    for (@range(u16, popSize)) |i| {
-      traitCounts[population._get_ith_trait_value(i)] += 1;
-    }
-    // record trait values
-    for (@range(u32, nTraitVals)) |i| { traitValues[i] = i; }
+    states[current_iter] = if (current_sum == 3) 1 else 0;
+  }
 
-    // sample 0th element of population for telemetry
-    const genome_ptr = population._get_ith_genome(0);
-    for(@range(u16, population.gSize)) |i| {
-      genome[i] = genome_ptr[i];
-    }
-
-    // trigger closeout cycle
-    // ------------------------------------------------------------------------
-    @activate(closeoutTaskID);  // trigger closeout cycle
+  if (current_iter == iters - 1) {
+    @activate(exit_task_id);
+  } else {
+    current_sum = 0;
+    num_recv = 0;
+    num_west_recv = 0;
+    num_east_recv = 0;
+    num_ns_recv = 0;
+    @unblock(recv_west_task_id);
+    @unblock(recv_east_task_id);
+    @unblock(recv_north_task_id);
+    @unblock(recv_south_task_id);
+    @activate(send_task_id);
   }
 }
 
-// launcher ===================================================================
-///////////////////////////////////////////////////////////////////////////////
-// appears to prevent hardware simulation crash, will consume different
-// numbers of cycles on different PEs at launch to desynchronize them at startup
-fn desync() void { for (@range(u16, @random16() % 256)) |i| { @random16(); } }
-
-fn genomerefresh() void {
-  const genome_ptr = population._get_ith_genome(0);
-  genomeBookend[population.gSize + 1] += 1;
-  for(@range(u16, population.gSize)) |i| {
-    genomeBookend[i + 1] = genome_ptr[i];
-  }
-  genomeBookend[0] += 1;
+task exit() void {
+  sys_mod.unblock_cmd_stream();
 }
 
-fn dorefresh() void {  // launched by RPC (remote procedure call)
-  genomerefresh();
-  memcpy.unblock_cmd_stream();
+fn generate(num_gen: u16) void {
+  // Set number of generations for current run
+  iters = num_gen;
+  @assert(iters <= MAX_GENERATIONS);
+
+  // Begin sending to neighbors
+  @activate(send_task_id);
 }
 
-fn dolaunch() void {  // launched by RPC (remote procedure call)
-  time.enable_tsc();
-  // record layout params for telemetry
-  x = @as(i16, layout_module.get_x_coord());
-  y = @as(i16, layout_module.get_y_coord());
-  whereami_x[0] = @as(u32, x);
-  whereami_y[0] = @as(u32, y);
-  whoami[0] = whereami_y[0] * @as(u32, nCol) + whereami_x[0];
-
-  busyThreads[0] = nonBlock;  // leave microthread/queue 0 open for memcpy
-
-  // initialize send flags to request first fill, except for edges
-  sendFlag_N = @as(u8, y != 0);  // except top PE row
-  sendFlag_S = @as(u8, y != nRow - 1);  // except bottom row
-  sendFlag_E = @as(u8, x != nCol - 1);  // except right col
-  sendFlag_W = @as(u8, x != 0);  // except left col
-
-  // apply barrierEveryNth to disable migration between PEs
-  if (nRowSubgrid != 0) {
-    sendFlag_N *= @as(u8, y % nRowSubgrid != 0);
-    sendFlag_S *= @as(u8, y % nRowSubgrid != nRowSubgrid - 1);
-  }
-  if (nColSubgrid != 0) {
-    sendFlag_E *= @as(u8, x % nColSubgrid != nColSubgrid - 1);
-    sendFlag_W *= @as(u8, x % nColSubgrid != 0);
-  }
-
-  //  how many active neighbors?
-  closeoutRemaining = sendFlag_N + sendFlag_S + sendFlag_E + sendFlag_W;
-
-  // + 1 ensures nonzero local seed
-  const localSeed = (
-    @as(u32, globalSeed) * @as(u32, nRow) * @as(u32, nCol) + whoami[0] + 1
-  );
-  random.set_global_prng_seed(localSeed);  // zero seed seems to break RNG...
-  desync();
-  population.init_module();
-  // initialize genome telemetry
-  genomerefresh();
-  // open initial recv requests, never-filled recv requests on edges ok
-  dispatchRecv_N(); dispatchRecv_S(); dispatchRecv_E(); dispatchRecv_W();
-  @activate(cycleTaskID);  // trigger first cycle
-  @ptrcast(*[3]u16, ptr_tscEndBuffer).*[0] = 507;
-  @ptrcast(*[3]u16, ptr_tscEndBuffer).*[1] = 3;
-  @ptrcast(*[3]u16, ptr_tscEndBuffer).*[2] = 7;
-  time.get_timestamp(@ptrcast(*[3]u16, ptr_tscStartBuffer));
-  if (nonBlock == 1) memcpy.unblock_cmd_stream();
-}
-
-// bind tasks =================================================================
-///////////////////////////////////////////////////////////////////////////////
 comptime {
-  @bind_local_task(sendFinalizeTask_N, sendFinalizeTaskID_N);
-  @bind_local_task(sendFinalizeTask_S, sendFinalizeTaskID_S);
-  @bind_local_task(sendFinalizeTask_E, sendFinalizeTaskID_E);
-  @bind_local_task(sendFinalizeTask_W, sendFinalizeTaskID_W);
+  @bind_local_task(send, send_task_id);
+  @bind_local_task(sync_send, sync_send_task_id);
+  @bind_local_task(sync_fwd, sync_fwd_task_id);
+  @bind_local_task(start_next_gen, start_next_gen_task_id);
+  @bind_local_task(fwd_east_west, fwd_east_west_task_id);
+  @bind_local_task(exit, exit_task_id);
 
-  @bind_local_task(recvFinalizeTask_N, recvFinalizeTaskID_N);
-  @bind_local_task(recvFinalizeTask_S, recvFinalizeTaskID_S);
-  @bind_local_task(recvFinalizeTask_E, recvFinalizeTaskID_E);
-  @bind_local_task(recvFinalizeTask_W, recvFinalizeTaskID_W);
+  @bind_data_task(recv_west,  recv_west_task_id);
+  @bind_data_task(recv_east,  recv_east_task_id);
+  @bind_data_task(recv_north, recv_north_task_id);
+  @bind_data_task(recv_south, recv_south_task_id);
 
-  @bind_data_task(ignRecvTask_N, ignRecvTaskID_N); @block(ignRecvTaskID_N);
-  @bind_data_task(ignRecvTask_S, ignRecvTaskID_S); @block(ignRecvTaskID_S);
-  @bind_data_task(ignRecvTask_E, ignRecvTaskID_E); @block(ignRecvTaskID_E);
-  @bind_data_task(ignRecvTask_W, ignRecvTaskID_W); @block(ignRecvTaskID_W);
+  @block(sync_send_task_id);
+  @block(sync_fwd_task_id);
 
-  @bind_local_task(cycleTask, cycleTaskID);
-  @bind_local_task(closeoutTask, closeoutTaskID);
+  // Will only become unbocked after first executoin of sync_fwd
+  @block(fwd_east_west_task_id);
 
-  if (!@is_arch("wse2")) {
-    @initialize_queue(q_in_N, .{ .color = recvColor_N });
-    @initialize_queue(q_in_S, .{ .color = recvColor_S });
-    @initialize_queue(q_in_E, .{ .color = recvColor_E });
-    @initialize_queue(q_in_W, .{ .color = recvColor_W });
+  // On WSE-3, we must explicitly initialize input and output queues
+  if (@is_arch("wse3")) {
+    @initialize_queue(send_west_oq,  .{ .color = send_west_color });
+    @initialize_queue(send_east_oq,  .{ .color = send_east_color });
+    @initialize_queue(send_north_oq, .{ .color = send_north_color });
+    @initialize_queue(send_south_oq, .{ .color = send_south_color });
 
-    @initialize_queue(q_out_N, .{ .color = sendColor_N });
-    @initialize_queue(q_out_S, .{ .color = sendColor_S });
-    @initialize_queue(q_out_E, .{ .color = sendColor_E });
-    @initialize_queue(q_out_W, .{ .color = sendColor_W });
+    @initialize_queue(recv_west_iq,  .{ .color = recv_west_color });
+    @initialize_queue(recv_east_iq,  .{ .color = recv_east_color });
+    @initialize_queue(recv_north_iq, .{ .color = recv_north_color });
+    @initialize_queue(recv_south_iq, .{ .color = recv_south_color });
   }
-}
 
-// wavlet routing =============================================================
-///////////////////////////////////////////////////////////////////////////////
-comptime {
-  // NORTH / SOUTH (vertical)
-  // note use of color swaps: neighbor's outgoing color -> PE's incoming color
-  @set_local_color_config(sendColor_N, .{
-    .routes = .{ .rx = .{ RAMP }, .tx = .{ NORTH } } }, );
-  @set_local_color_config(sendColor_S, .{
-    .routes = .{ .rx = .{ RAMP }, .tx = .{ SOUTH } } }, );
-  @set_local_color_config(recvColor_N, .{
-    .routes = .{ .rx = .{ NORTH }, .tx = .{ RAMP } } }, );
-  @set_local_color_config( recvColor_S, .{
-    .routes = .{ .rx = .{ SOUTH }, .tx = .{ RAMP } } }, );
-
-  // EAST / WEST (horizontal)
-  // note use of color swaps: neighbor's outgoing color -> PE's incoming color
-  @set_local_color_config(sendColor_E, .{
-    .routes = .{ .rx = .{ RAMP }, .tx = .{ EAST } } }, );
-  @set_local_color_config(sendColor_W, .{
-    .routes = .{ .rx = .{ RAMP }, .tx = .{ WEST } } }, );
-  @set_local_color_config(recvColor_E, .{
-    .routes = .{ .rx = .{ EAST }, .tx = .{ RAMP } } }, );
-  @set_local_color_config(recvColor_W, .{
-    .routes = .{ .rx = .{ WEST }, .tx = .{ RAMP } } }, );
-}
-
-// symbol exports =============================================================
-///////////////////////////////////////////////////////////////////////////////
-comptime {  // symbols let memcpy gather end-state data from device to host
-  @export_symbol(ptr_cycleCounter, "cycleCounter");
-  @export_symbol(ptr_recvCounter_N, "recvCounter_N");
-  @export_symbol(ptr_recvCounter_S, "recvCounter_S");
-  @export_symbol(ptr_recvCounter_E, "recvCounter_E");
-  @export_symbol(ptr_recvCounter_W, "recvCounter_W");
-  @export_symbol(ptr_sendCounter_N, "sendCounter_N");
-  @export_symbol(ptr_sendCounter_S, "sendCounter_S");
-  @export_symbol(ptr_sendCounter_E, "sendCounter_E");
-  @export_symbol(ptr_sendCounter_W, "sendCounter_W");
-  @export_symbol(ptr_traitCounts, "traitCounts");
-  @export_symbol(ptr_traitCycles, "traitCycles");
-  @export_symbol(ptr_traitValues, "traitValues");
-  @export_symbol(ptr_fitness, "fitness");
-  @export_symbol(ptr_genome, "genome");
-  @export_symbol(ptr_genomeBookend, "genomeBookend");
-  @export_symbol(ptr_whoami, "whoami");
-  @export_symbol(ptr_whereami_x, "whereami_x");
-  @export_symbol(ptr_whereami_y, "whereami_y");
-  @export_symbol(ptr_tscControlBuffer, "tscControlBuffer");
-  @export_symbol(ptr_tscEndBuffer, "tscEndBuffer");
-  @export_symbol(ptr_tscStartBuffer, "tscStartBuffer");
-  @export_symbol(dolaunch);
-  @export_symbol(dorefresh);
+  @export_symbol(states_ptr, "states");
+  @export_symbol(generate);
 }
