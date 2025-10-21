@@ -477,6 +477,7 @@ if fossils:
     log(f" - data_hex: {df['data_hex'].head(3)}")
     assert (df["data_hex"].str.len_chars() == (nWav + 2) * 8).all()
     assert (df["data_hex"].str.len_bytes() == (nWav + 2) * 8).all()
+    assert (df["data_hex"].str.contains("^[0-9a-fA-F]+$")).all()
 
     len_before = len(df)
     df = df.filter(
@@ -496,6 +497,7 @@ if fossils:
     log(f" - data_hex: {df['data_hex'].head(3)}")
     assert (df["data_hex"].str.len_chars() == nWav * 8).all()
     assert (df["data_hex"].str.len_bytes() == nWav * 8).all()
+    assert (df["data_hex"].str.contains("^[0-9a-fA-F]+$")).all()
 
     write_parquet_verbose(
         df,
@@ -704,6 +706,7 @@ df = df.with_columns(
 log(f" - data_hex: {df['data_hex'].head(3)}")
 assert (df["data_hex"].str.len_chars() == traitLoggerNumWavs * 8).all()
 assert (df["data_hex"].str.len_bytes() == traitLoggerNumWavs * 8).all()
+assert (df["data_hex"].str.contains("^[0-9a-fA-F]+$")).all()
 
 write_parquet_verbose(
     df,
@@ -777,6 +780,7 @@ df = df.with_columns(
 log(f" - data_hex: {df['data_hex'].head(3)}")
 assert (df["data_hex"].str.len_chars() == nWav * 8).all()
 assert (df["data_hex"].str.len_bytes() == nWav * 8).all()
+assert (df["data_hex"].str.contains("^[0-9a-fA-F]+$")).all()
 
 write_parquet_verbose(
     df,
