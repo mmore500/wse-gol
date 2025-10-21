@@ -60,7 +60,7 @@ const recv_north_task_id: data_task_id =
 const sys_mod = @import_module("<memcpy/memcpy>", memcpy_params);
 const layout_mod = @import_module("<layout>");
 
-const MAX_GENERATIONS = 1000; // Max num total generations that can be stored
+const N_STATES = 8; // Max num total generations that can be stored
 
 // Number of neighboring PEs for this cell
 const num_neighbors: u16 = (if (is_west_edge)  0 else 1) + (if (is_east_edge)  0 else 1) // W, E
@@ -81,11 +81,20 @@ var iters: u16 = 0; // Number of generations for current run
 var current_iter: u16 = 0; // Track num generations completed so far
 
 // Store states of all cells for each generation
-var states: [MAX_GENERATIONS]u32;
+var states: [N_STATES]u32;
 var states_ptr: [*]u32 = &states;
 var state_dsd = @get_dsd(mem1d_dsd, .{ .tensor_access = |i|{1} -> states[i] });
 
 // For current generation, track received states from neighbors
+var west0_states: [N_STATES]u32;
+var west1_states: [N_STATES]u32;
+var west2_states: [N_STATES]u32;
+var east0_states: [N_STATES]u32;
+var east1_states: [N_STATES]u32;
+var east2_states: [N_STATES]u32;
+var north_states: [N_STATES]u32;
+var south_states: [N_STATES]u32;
+
 var num_recv: u16 = 0;
 var current_sum: u32 = 0;
 
@@ -166,9 +175,16 @@ task sync_send() void {
 // In each generation, PE will receive from W up to three times:
 // W neighbor, NW neighbor, and SW neighbor
 task recv_west(val: u32) void {
+  if (num_west_recv == 0) {
+    west0_states[current_iter % N_STATES] = val;
+  } else if (num_west_recv == 1) {
+    west1_states[current_iter % N_STATES] = val;
+  } else if (num_west_recv == 2) {
+    west2_states[current_iter % N_STATES] = val;
+  }
   num_west_recv += 1;
   num_recv += 1;
-  current_sum += val;
+  if (current_iter % N_STATES == 0) current_sum += val;
 
   // If we have received from all W neighbors, block to prevent
   // any activations until we begin next generation
@@ -180,9 +196,16 @@ task recv_west(val: u32) void {
 // In each generation, PE will receive from E up to three times
 // E neighbor, NE neighbor, and SE neighbor
 task recv_east(val: u32) void {
+  if (num_east_recv == 0) {
+    east0_states[current_iter % N_STATES] = val;
+  } else if (num_east_recv == 1) {
+    east1_states[current_iter % N_STATES] = val;
+  } else if (num_east_recv == 2) {
+    east2_states[current_iter % N_STATES] = val;
+  }
   num_east_recv += 1;
   num_recv += 1;
-  current_sum += val;
+  if (current_iter % N_STATES == 0) current_sum += val;
 
   // If we have received from all E neighbors, block to prevent
   // any activations until we begin next generation
@@ -195,7 +218,8 @@ task recv_east(val: u32) void {
 task recv_north(val: u32) void {
   num_ns_recv += 1;
   num_recv += 1;
-  current_sum += val;
+  if (current_iter % N_STATES == 0) current_sum += val;
+  north_states[current_iter % N_STATES] = val;
 
   // Per generation, we only receive from N once. Block to prevent any
   // activations until we begin next generation.
@@ -214,7 +238,8 @@ task recv_north(val: u32) void {
 task recv_south(val: u32) void {
   num_ns_recv += 1;
   num_recv += 1;
-  current_sum += val;
+  if (current_iter % N_STATES == 0) { current_sum += val; }
+  south_states[current_iter % N_STATES] = val;
 
   // Per generation, we only receive from S once. Block to prevent any
   // activations until we begin next generation.
@@ -232,15 +257,21 @@ task recv_south(val: u32) void {
 // Update current state and begin sending next generation to neighbors
 task start_next_gen() void {
 
+  if (current_iter % N_STATES == 0) {
+    // Previous generation of cell is alive
+    if (states[0] == 0) {
+      states[0] = if (current_sum == 2 or current_sum == 3) 1 else 0;
+    // Previous generation of cell is dead
+    } else {
+      states[0] = if (current_sum == 3) 1 else 0;
+    }
+
+  }
+
   current_iter += 1;
   state_dsd = @increment_dsd_offset(state_dsd, 1, u32);
-
-  // Previous generation of cell is alive
-  if (states[current_iter-1] == 1) {
-    states[current_iter] = if (current_sum == 2 or current_sum == 3) 1 else 0;
-  // Previous generation of cell is dead
-  } else {
-    states[current_iter] = if (current_sum == 3) 1 else 0;
+  if (current_iter % N_STATES == 0) {
+    state_dsd = @set_dsd_base_addr(state_dsd, &states);
   }
 
   if (current_iter == iters - 1) {
@@ -266,7 +297,6 @@ task exit() void {
 fn generate(num_gen: u16) void {
   // Set number of generations for current run
   iters = num_gen;
-  @assert(iters <= MAX_GENERATIONS);
 
   // Begin sending to neighbors
   @activate(send_task_id);

@@ -297,7 +297,7 @@ log("- runner run ran")
 states_symbol = runner.get_id('states')
 
 print('Copy initial state to device...')
-initial_state = create_initial_state('glider', x_dim, y_dim)
+initial_state = create_initial_state('random', x_dim, y_dim)
 # Copy initial state into all PEs
 runner.memcpy_h2d(states_symbol, initial_state.flatten(), 0, 0, x_dim, y_dim, 1,
 streaming=False, order=MemcpyOrder.ROW_MAJOR, data_type=MemcpyDataType.MEMCPY_32BIT,nonblock=False)
@@ -307,8 +307,8 @@ print(f'Run for {nCycleAtLeast} generations...')
 runner.launch('generate', np.uint16(nCycleAtLeast), nonblock=False)
 
 # Copy states back
-states_result = np.zeros([x_dim * y_dim * nCycleAtLeast], dtype=np.uint32)
-runner.memcpy_d2h(states_result, states_symbol, 0, 0, x_dim, y_dim, nCycleAtLeast, streaming=False,
+states_result = np.zeros([x_dim * y_dim * 8], dtype=np.uint32)
+runner.memcpy_d2h(states_result, states_symbol, 0, 0, x_dim, y_dim, 8, streaming=False,
 order=MemcpyOrder.ROW_MAJOR, data_type=MemcpyDataType.MEMCPY_32BIT, nonblock=False)
 
 # Stop the program
@@ -317,7 +317,8 @@ runner.stop()
 print('Create output...')
 
 # Reshape states results to x_dim x y_dim frames
-all_states = states_result.reshape((x_dim, y_dim, nCycleAtLeast))
+all_states = states_result.reshape((x_dim, y_dim, 8)).transpose(2, 0, 1)
+print(all_states)
 
 # Ensure that the result matches our expectation
 log("SUCCESS!")
