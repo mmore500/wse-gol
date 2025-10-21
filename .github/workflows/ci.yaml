@@ -173,18 +173,18 @@ jobs:
               ./kernel-gol/execute.sh \
               # >/dev/null 2>&1
 
-      - name: Build artifact
-        run: |
-          ls -1 ./kernel-gol
-          find ./kernel-gol \
-            -type f -name "a=genomes+*.pqt" \
-            | python3 -m joinem \
-              --with-column 'pl.lit(filepath).alias("source_file")' \
-              "./kernel-gol/a=concatenated_genomes+ext=.csv"
-          ls -1 "./kernel-gol/a=concatenated_genomes+ext=.csv"
+      # - name: Build artifact
+      #   run: |
+      #     ls -1 ./kernel-gol
+      #     find ./kernel-gol \
+      #       -type f -name "a=genomes+*.pqt" \
+      #       | python3 -m joinem \
+      #         --with-column 'pl.lit(filepath).alias("source_file")' \
+      #         "./kernel-gol/a=concatenated_genomes+ext=.csv"
+      #     ls -1 "./kernel-gol/a=concatenated_genomes+ext=.csv"
 
-      - name: Upload output as artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: sample-populations+arch=${{ matrix.arch }}
-          path: ./kernel-gol/a=concatenated_genomes+ext=.csv
+      # - name: Upload output as artifact
+      #   uses: actions/upload-artifact@v4
+      #   with:
+      #     name: sample-populations+arch=${{ matrix.arch }}
+      #     path: ./kernel-gol/a=concatenated_genomes+ext=.csv
