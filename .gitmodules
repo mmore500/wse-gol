@@ -1,4 +1,4 @@
-[submodule "kernel-async-ga/downstream"]
-	path = kernel-async-ga/downstream
+[submodule "kernel-gol/downstream"]
+	path = kernel-gol/downstream
 	url = https://github.com/mmore500/downstream.git
 	branch = csl

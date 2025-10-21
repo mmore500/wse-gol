@@ -159,7 +159,7 @@ jobs:
         run: |
           export CSLC CS_PYTHON PATH ASYNC_GA_ARCH_FLAG
           sudo -E env PATH=$PATH \
-            ./kernel-async-ga/compile.sh \
+            ./kernel-gol/compile.sh \
             >/dev/null 2>&1
 
       - name: Run async-ga
@@ -170,21 +170,21 @@ jobs:
           command: |
             export CSLC CS_PYTHON PATH ASYNC_GA_ARCH_FLAG
             sudo -E env PATH=$PATH \
-              ./kernel-async-ga/execute.sh \
+              ./kernel-gol/execute.sh \
               # >/dev/null 2>&1
 
       - name: Build artifact
         run: |
-          ls -1 ./kernel-async-ga
-          find ./kernel-async-ga \
+          ls -1 ./kernel-gol
+          find ./kernel-gol \
             -type f -name "a=genomes+*.pqt" \
             | python3 -m joinem \
               --with-column 'pl.lit(filepath).alias("source_file")' \
-              "./kernel-async-ga/a=concatenated_genomes+ext=.csv"
-          ls -1 "./kernel-async-ga/a=concatenated_genomes+ext=.csv"
+              "./kernel-gol/a=concatenated_genomes+ext=.csv"
+          ls -1 "./kernel-gol/a=concatenated_genomes+ext=.csv"
 
       - name: Upload output as artifact
         uses: actions/upload-artifact@v4
         with:
           name: sample-populations+arch=${{ matrix.arch }}
-          path: ./kernel-async-ga/a=concatenated_genomes+ext=.csv
+          path: ./kernel-gol/a=concatenated_genomes+ext=.csv
