@@ -465,12 +465,18 @@ if fossils:
         pl.lit(value, dtype=dtype).alias(key)
         for key, (value, dtype) in metadata.items()
     ])
+    log(f" - data_raw: {df['data_raw'].head(3)}")
+    assert (df["data_raw"].bin.size(unit="b") == (nWav + 2) * 4).all()
 
     log(f" - encoding {len(df)} binary fossil rows to hex...")
     df = df.with_columns(
         data_hex=pl.col("data_raw").bin.encode("hex"),
     ).drop("data_raw")
     log(f" - ... done!")
+
+    log(f" - data_hex: {df['data_hex'].head(3)}")
+    assert (df["data_hex"].str.len_chars() == (nWav + 2) * 8).all()
+    assert (df["data_hex"].str.len_bytes() == (nWav + 2) * 8).all()
 
     len_before = len(df)
     df = df.filter(
@@ -485,8 +491,11 @@ if fossils:
 
     log(f" - stripping bookends...")
     df = df.with_columns(pl.col("data_hex").str.head(-8).str.tail(-8))
-    assert (df["data_hex"].str.len_chars() == nWav * 8).all()
     log(f" - ... done!")
+
+    log(f" - data_hex: {df['data_hex'].head(3)}")
+    assert (df["data_hex"].str.len_chars() == nWav * 8).all()
+    assert (df["data_hex"].str.len_bytes() == nWav * 8).all()
 
     write_parquet_verbose(
         df,
@@ -676,7 +685,10 @@ df = pl.DataFrame({
 }).with_columns(
     pl.lit(value, dtype=dtype).alias(key)
     for key, (value, dtype) in metadata.items()
-).with_columns(
+)
+log(f" - data_raw: {df['data_raw'].head(3)}")
+assert (df["data_raw"].bin.size(unit="b") == traitLoggerNumWavs * 4).all()
+df = df.with_columns(
     data_hex=pl.col("data_raw").bin.encode("hex"),
     dstream_algo=pl.lit(
         f"dstream.{traitLoggerDstreamAlgoName}", dtype=pl.Categorical
@@ -688,6 +700,10 @@ df = pl.DataFrame({
     dstream_T_bitwidth=pl.lit(32, dtype=pl.UInt16),
     trait_value=pl.lit(0, dtype=pl.UInt16),
 ).drop("data_raw")
+
+log(f" - data_hex: {df['data_hex'].head(3)}")
+assert (df["data_hex"].str.len_chars() == traitLoggerNumWavs * 8).all()
+assert (df["data_hex"].str.len_bytes() == traitLoggerNumWavs * 8).all()
 
 write_parquet_verbose(
     df,
@@ -747,13 +763,20 @@ df = pl.DataFrame({
     "tile": pl.Series(whoami_data.ravel(), dtype=pl.UInt32),
     "row": pl.Series(whereami_y_data.ravel(), dtype=pl.UInt16),
     "col": pl.Series(whereami_x_data.ravel(), dtype=pl.UInt16),
-}).with_columns(
+})
+log(f" - data_raw: {df['data_raw'].head(3)}")
+assert (df["data_raw"].bin.size(unit="b") == nWav * 4).all()
+df = df.with_columns(
     *(
         pl.lit(value, dtype=dtype).alias(key)
         for key, (value, dtype) in metadata.items()
     ),
     data_hex=pl.col("data_raw").bin.encode("hex"),
 ).drop("data_raw")
+
+log(f" - data_hex: {df['data_hex'].head(3)}")
+assert (df["data_hex"].str.len_chars() == nWav * 8).all()
+assert (df["data_hex"].str.len_bytes() == nWav * 8).all()
 
 write_parquet_verbose(
     df,
