@@ -5,6 +5,8 @@
 
 const random = @import_module("<random>");
 
+const dstream_algo = @import_module("<downstream/dstream/hybrid_0_steady_1_tilted_2_algo>");
+
 const bitmanip = @import_module("cerebraslib/bitmanip.csl");
 const opscalar = @import_module("cerebraslib/opscalar.csl");
 
@@ -380,6 +382,19 @@ task start_next_gen() void {
 
     if (current_iter > 0) {
       states[1] += 1;
+      const S = 64;
+      const T = states[1];
+      const randomize_idx = dstream_algo.assign_storage_site(S, T);
+      if (randomize_idx != S) {
+        for (@range(u32, 3)) |j| {
+          bitmanip.set_nth_bit_with_swaps(
+            @ptrcast([*]u8, &states),
+            @as(u16, randomize_idx + 64 + S * j),
+            opscalar.p(0.5),
+            .{ .byteSwap = true, .bitSwap = true },
+          );
+        }
+      }
     }
 
     @assert(states[1] * N_STATES == @as(u32, current_iter));
