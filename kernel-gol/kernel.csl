@@ -272,23 +272,26 @@ task start_next_gen() void {
       states[0] = if (current_sum == 3) 1 else 0;
     }
 
+    for (@range(i16, 3)) |j| {
+    const num_options: u16 = (
+      @as(u16, num_west_recv > 0 and west0_states[0] != 0)
+      + @as(u16, num_west_recv > 1 and west1_states[0] != 0)
+      + @as(u16, num_west_recv > 2 and west2_states[0] != 0)
+      + @as(u16, num_east_recv > 0 and east0_states[0] != 0)
+      + @as(u16, num_east_recv > 1 and east1_states[0] != 0)
+      + @as(u16, num_east_recv > 2 and east2_states[0] != 0)
+      + @as(u16, !is_north_edge and north_states[0] != 0)
+      + @as(u16, !is_south_edge and south_states[0] != 0)
+    );
+
     while (states[0] != 0 and (current_iter > 0)) {
-      const num_options: u16 = (
-        @as(u16, num_west_recv > 0 and west0_states[0] != 0)
-        + @as(u16, num_west_recv > 1 and west1_states[0] != 0)
-        + @as(u16, num_west_recv > 2 and west2_states[0] != 0)
-        + @as(u16, num_east_recv > 0 and east0_states[0] != 0)
-        + @as(u16, num_east_recv > 1 and east1_states[0] != 0)
-        + @as(u16, num_east_recv > 2 and east2_states[0] != 0)
-        + @as(u16, !is_north_edge and north_states[0] != 0)
-        + @as(u16, !is_south_edge and south_states[0] != 0)
-      );
       var choice = opscalar.unif16(num_options);
 
       if (num_west_recv > 0 and west0_states[0] != 0) {
         if (choice == 0) {
-          for (@range(i16, N_STATES - 1)) |i| {
-            states[i + 1] = west0_states[i + 1];
+          @assert(states[1] == west0_states[1]);
+          for (@range(i16, 2)) |i| {
+            states[2 * j + i + 2] = west0_states[2 * j + i + 2];
           }
           break;
         }
@@ -297,8 +300,9 @@ task start_next_gen() void {
 
       if (num_west_recv > 1 and west1_states[0] != 0) {
         if (choice == 0) {
-          for (@range(i16, N_STATES - 1)) |i| {
-            states[i + 1] = west1_states[i + 1];
+          @assert(states[1] == west1_states[1]);
+          for (@range(i16, 2)) |i| {
+            states[2 * j + i + 2] = west1_states[2 * j + i + 2];
           }
           break;
         }
@@ -307,8 +311,9 @@ task start_next_gen() void {
 
       if (num_west_recv > 2 and west2_states[0] != 0) {
         if (choice == 0) {
-          for (@range(i16, N_STATES - 1)) |i| {
-            states[i + 1] = west2_states[i + 1];
+          @assert(states[1] == west2_states[1]);
+          for (@range(i16, 2)) |i| {
+            states[2 * j + i + 2] = west2_states[2 * j + i + 2];
           }
           break;
         }
@@ -317,8 +322,9 @@ task start_next_gen() void {
 
       if (num_east_recv > 0 and east0_states[0] != 0) {
         if (choice == 0) {
-          for (@range(i16, N_STATES - 1)) |i| {
-            states[i + 1] = east0_states[i + 1];
+          @assert(states[1] == east0_states[1]);
+          for (@range(i16, 2)) |i| {
+            states[2 * j + i + 2] = east0_states[2 * j + i + 2];
           }
           break;
         }
@@ -327,8 +333,9 @@ task start_next_gen() void {
 
       if (num_east_recv > 1 and east1_states[0] != 0) {
         if (choice == 0) {
-          for (@range(i16, N_STATES - 1)) |i| {
-            states[i + 1] = east1_states[i + 1];
+          @assert(states[1] == east1_states[1]);
+          for (@range(i16, 2)) |i| {
+            states[2 * j + i + 2] = east1_states[2 * j + i + 2];
           }
           break;
         }
@@ -337,8 +344,9 @@ task start_next_gen() void {
 
       if (num_east_recv > 2 and east2_states[0] != 0) {
         if (choice == 0) {
-          for (@range(i16, N_STATES - 1)) |i| {
-            states[i + 1] = east2_states[i + 1];
+          @assert(states[1] == east2_states[1]);
+          for (@range(i16, 2)) |i| {
+            states[2 * j + i + 2] = east2_states[2 * j + i + 2];
           }
           break;
         }
@@ -347,8 +355,9 @@ task start_next_gen() void {
 
       if (!is_north_edge and north_states[0] != 0) {
         if (choice == 0) {
-          for (@range(i16, N_STATES - 1)) |i| {
-            states[i + 1] = north_states[i + 1];
+          @assert(states[1] == north_states[1]);
+          for (@range(i16, 2)) |i| {
+            states[2 * j + i + 2] = north_states[2 * j + i + 2];
           }
           break;
         }
@@ -357,14 +366,16 @@ task start_next_gen() void {
 
       if (!is_south_edge and south_states[0] != 0) {
         if (choice == 0) {
-          for (@range(i16, N_STATES - 1)) |i| {
-            states[i + 1] = south_states[i + 1];
+          @assert(states[1] == south_states[1]);
+          for (@range(i16, 2)) |i| {
+            states[2 * j + i + 2] = south_states[2 * j + i + 2];
           }
           break;
         }
         choice -= 1;
       }
       @assert(false); // Should never reach here
+    }
     }
 
     if (current_iter > 0) {
