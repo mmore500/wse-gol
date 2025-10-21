@@ -50,9 +50,8 @@ def assemble_binary_data(
             values = (inner[word] for outer in raw_binary_data for inner in outer)
             log(str([*it.islice(values, 10)]))
 
-    shape = raw_binary_data.shape
     binary_ints = np.ascontiguousarray(
-        raw_binary_data.astype(">u4").reshape(-1, shape[-1]),
+        raw_binary_data.astype(">u4").reshape(-1, nWav)
     )
 
     assert len(binary_ints) == nRow * nCol
@@ -62,13 +61,17 @@ def assemble_binary_data(
             log(f"{len(binary_ints)=} {binary_int=}")
 
     bytes_per_string = nWav * binary_ints.itemsize
-
     if verbose:
         log("--------------------------------------------------- creating view")
         log(f"  - Input array shape for view: {binary_ints.shape}")
         log(f"  - Target dtype: S{bytes_per_string}")
 
-    byte_string_view = binary_ints.view(f'S{bytes_per_string}')
+    byte_string_view = (
+        binary_ints
+        .view(np.uint8)
+        .reshape(-1, bytes_per_string)
+        .view(f'S{bytes_per_string}')
+    )
     assert byte_string_view.shape == (nRow * nCol, 1)
 
     binary_strings = byte_string_view.reshape(-1)
