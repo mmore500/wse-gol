@@ -50,14 +50,12 @@ def assemble_binary_data(
             values = (inner[word] for outer in raw_binary_data for inner in outer)
             log(str([*it.islice(values, 10)]))
 
-    binary_ints = np.ascontiguousarray(
-        raw_binary_data.astype(">u4").reshape(-1, nWav)
-    )
+    binary_ints = np.ascontiguousarray(raw_binary_data.astype(">u4").ravel())
 
-    assert len(binary_ints) == nRow * nCol
+    assert len(binary_ints) == nRow * nCol * nWav
     if verbose:
         log("------------------------------------------------ binary u32 ints")
-        for binary_int in binary_ints[:10]:
+        for binary_int in binary_ints[:5]:
             log(f"{len(binary_ints)=} {binary_int=}")
 
     bytes_per_string = nWav * binary_ints.itemsize
@@ -66,21 +64,17 @@ def assemble_binary_data(
         log(f"  - Input array shape for view: {binary_ints.shape}")
         log(f"  - Target dtype: S{bytes_per_string}")
 
-    byte_string_view = (
+    binary_strings = (
         binary_ints
         .view(np.uint8)
-        .reshape(-1, bytes_per_string)
         .view(f'S{bytes_per_string}')
-    )
-    assert byte_string_view.shape == (nRow * nCol, 1)
-
-    binary_strings = byte_string_view.reshape(-1)
-    assert binary_strings.shape == (nRow * nCol,)
+    ).ravel()
+    assert binary_strings.shape == (nRow * nCol,), f"{binary_strings.shape=}"
 
     if verbose:
         log("--------------------------------------------- raw byte strings")
-        for binary_string in binary_strings[:10]:
-            log(f"{binary_string=}")
+        for binary_string in binary_strings[:5]:
+            log(f"{nWav=} {len(binary_string)=} {binary_string=}")
 
     return binary_strings
 
