@@ -352,8 +352,9 @@ runner.memcpy_h2d(states_symbol, initial_state.flatten(), 0, 0, x_dim, y_dim, 1,
 streaming=False, order=MemcpyOrder.ROW_MAJOR, data_type=MemcpyDataType.MEMCPY_32BIT,nonblock=False)
 
 log(f'Run for {nCycleAtLeast} generations...')
-# Launch the generate function on device
-runner.launch('generate', np.uint16(nCycleAtLeast), nonblock=False)
+if nCycleAtLeast != 0:
+    # Launch the generate function on device
+    runner.launch('generate', np.uint16(nCycleAtLeast), nonblock=False)
 
 # Copy states back
 states_result = np.zeros([x_dim * y_dim * nWav], dtype=np.uint32)
