@@ -374,6 +374,8 @@ fn copy_in_surface(j: u16, num_options: u16) void {  // jth surface
 // Update current state and begin sending next generation to neighbors
 task start_next_gen() void {
 
+  const was_live: bool = states[0] != 0;
+
   if (current_iter % N_STATES == 0) {
     // Previous generation of cell is alive
     if (states[0] == 0) {
@@ -384,7 +386,7 @@ task start_next_gen() void {
     }
 
     const num_options: u16 = (
-      @as(u16, states[1] != S - 1) // own instrumentation from prior generation
+      @as(u16, was_live) // own instrumentation from prior generation
       + @as(u16, num_west_recv > 0 and west0_states[0] != 0)
       + @as(u16, num_west_recv > 1 and west1_states[0] != 0)
       + @as(u16, num_west_recv > 2 and west2_states[0] != 0)
