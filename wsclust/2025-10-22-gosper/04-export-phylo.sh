@@ -144,7 +144,7 @@ for i in 0 1 2; do
     f="a=phylogeny+i=${i}+ext=.pqt"
     echo "processing set ${i}, filename ${f}..."
 
-    ls -1 ""${WORKDIR}/03-build-phylo/${f}" \
+    ls -1 "${WORKDIR}/03-build-phylo/${f}" \
         | singularity exec docker://ghcr.io/mmore500/hstrat:v1.20.14 \
         python3 -m hstrat._auxiliary_lib._alifestd_join_roots \
         --eager-read \
