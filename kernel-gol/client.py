@@ -512,7 +512,10 @@ runner.stop()
 
 log('Log output...')
 # Reshape states results to x_dim x y_dim frames
-all_states = states_result.reshape((x_dim, y_dim, nWav)).transpose(2, 0, 1)
+all_states = states_result.reshape(
+    (x_dim, y_dim, nWav),
+    order="F",
+).transpose(2, 0, 1)
 
 grid = all_states[0]
 log(f"num cells set 1: {grid.ravel().sum()}")
