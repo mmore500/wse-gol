@@ -147,7 +147,7 @@ for i in 0 1 2; do
     ls -1 "${WORKDIR}/03-build-phylo/${f}" \
         | singularity exec docker://ghcr.io/mmore500/hstrat:v1.20.14 \
         python3 -m hstrat._auxiliary_lib._alifestd_join_roots \
-        --eager-read \
+        --eager-read --eager-write \
         "${WORKDIR_STEP}/${f}"
 
     singularity exec docker://ghcr.io/mmore500/hstrat:v1.20.13 \
