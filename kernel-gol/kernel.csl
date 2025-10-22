@@ -453,7 +453,7 @@ task exit() void {
 fn generate(num_gen: u16) void {
   // Set number of generations for current run
   iters = num_gen;
-  random.set_global_prng_seed((2 * (globalSeed * 1048576 + whoami)) & 1);
+  random.set_global_prng_seed(whoami * 100 + globalSeed + 1);
 
   states[1] = 0;
   for (@range(u16, N_STATES - 2)) |i| {  // +2 for GOL state and counter
