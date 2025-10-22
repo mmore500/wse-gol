@@ -144,20 +144,20 @@ for i in 0 1 2; do
     f="a=phylogeny+i=${i}+ext=.pqt"
     echo "processing set ${i}, filename ${f}..."
 
-    ls -1 "${f}" \
+    ls -1 ""${WORKDIR}/03-build-phylo/${f}" \
         | singularity exec docker://ghcr.io/mmore500/hstrat:v1.20.14 \
         python3 -m hstrat._auxiliary_lib._alifestd_join_roots \
         --eager-read \
-        "${WORKDIR}/04-export-phylo/${f}"
+        "${WORKDIR_STEP}/${f}"
 
     singularity exec docker://ghcr.io/mmore500/hstrat:v1.20.13 \
         python3 -m hstrat._auxiliary_lib._alifestd_as_newick_asexual \
-            -i "${WORKDIR}/04-build-phylo/${f}" \
+            -i "${WORKDIR_STEP}/${f}" \
             -o "${WORKDIR_STEP}/a=phylotree+i=${i}+ext=.nwk" \
             -l "id" \
             | tee "${RESULTDIR_STEP}/_alifestd_as_newick_asexual${i}.log"
 
-    ls -1 "${WORKDIR}/04-build-phylo/${f}" \
+    ls -1 "${WORKDIR_STEP}/${f}" \
         | singularity run docker://ghcr.io/mmore500/joinem:v0.11.0 \
             "${WORKDIR_STEP}/a=phylometa+i=${i}+ext=.csv" \
             --select "id" \
