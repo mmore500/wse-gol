@@ -150,6 +150,27 @@ def create_initial_state(state_type, x_dim, y_dim):
     initial_state[:29, :56] = gosper
     assert initial_state.ravel().sum() == sum(row.count('O') for row in pattern)
 
+  elif state_type == 'cisloaf':
+    log("creating gosper glider gun initial state...")
+    assert y_dim >= 5 and x_dim >=6, \
+           'For cisloaf initial state, x_dim and y_dim must be at least 5, 6'
+
+    # https://conwaylife.com/patterns/gosperglidergun.cells
+    pattern = [
+        "...OO",
+        "..O..O",
+        ".O.O.O",
+        ".O..O",
+        "OO",
+    ]
+
+    assert max(len(row) for row in pattern) == 6 and len(pattern) == 5
+    padded = [row.ljust(6, '.') for row in pattern]
+    cisloaf = np.array([[1 if c == 'O' else 0 for c in row] for row in padded])
+
+    initial_state[:5, :6] = cisloaf
+    assert initial_state.ravel().sum() == sum(row.count('O') for row in pattern)
+
   else: # state_type == 'random'
     log("creating random initial state...")
     np.random.seed(seed=7)
@@ -371,7 +392,7 @@ add_bool_arg(parser, "suptrace", default=True)
 parser.add_argument("--cmaddr", help="IP:port for CS system")
 parser.add_argument(
     '--initial-state',
-    choices=['glider', 'random', 'gosper', 'empty'],
+    choices=['glider', 'random', 'gosper', 'empty', 'cisloaf'],
     default='glider',
 )
 parser.add_argument("--ncycle", default=40, type=int, help="run duration")
