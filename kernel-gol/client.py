@@ -144,7 +144,7 @@ def create_initial_state(state_type, x_dim, y_dim):
     gosper = np.array([[1 if c == 'O' else 0 for c in row] for row in padded])
 
     initial_state[:29, :56] = gosper
-    assert initial_state.ravel().sum() == pattern.count('O')
+    assert initial_state.ravel().sum() == sum(row.count('O') for row in pattern)
 
   else: # state_type == 'random'
     log("creating random initial state...")
