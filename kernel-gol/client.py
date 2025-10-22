@@ -85,6 +85,18 @@ def create_initial_state(state_type, x_dim, y_dim):
   if state_type == 'empty':
     log("creating empty initial state...")
 
+  elif state_type == 'block':
+    log("creating block initial state...")
+    assert x_dim >= 2 and y_dim >=2, \
+           'For block initial state, x_dim and y_dim must be at least 4'
+
+    block = np.array([
+        [1, 1],
+        [1, 1],
+    ])
+    initial_state[:2, :2] = block
+
+
   elif state_type == 'glider':
     log("creating glider initial state...")
     assert x_dim >= 4 and y_dim >=4, \
@@ -392,7 +404,7 @@ add_bool_arg(parser, "suptrace", default=True)
 parser.add_argument("--cmaddr", help="IP:port for CS system")
 parser.add_argument(
     '--initial-state',
-    choices=['glider', 'random', 'gosper', 'empty', 'cisloaf'],
+    choices=['glider', 'random', 'gosper', 'empty', 'cisloaf', 'block'],
     default='glider',
 )
 parser.add_argument("--ncycle", default=40, type=int, help="run duration")
