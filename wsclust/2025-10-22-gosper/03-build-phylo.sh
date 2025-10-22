@@ -164,7 +164,7 @@ for i in 0 1 2; do
         --filter '~pl.col("data_hex").str.contains(r"^0+$")' \
         --eager-read --eager-write --string-cache \
         --with-column 'pl.lit(filepath).cast(pl.Categorical).alias("file")' \
-        --with-column 'pl.when(pl.col("dstream_algo").str.starts_with("dstream.")).then(pl.col("dstream_algo")).otherwise(pl.concat_str(pl.lit("dstream."), pl.col("dstream_algo"))).alias("dstream_algo")' \
+        --with-column 'pl.when(pl.col("dstream_algo").cast(pl.Utf8).str.starts_with("dstream.")).then(pl.col("dstream_algo").cast(pl.Utf8)).otherwise(pl.concat_str(pl.lit("dstream."), pl.col("dstream_algo").cast(pl.Utf8))).alias("dstream_algo").cast(pl.Categorical)' \
         | tee "${RESULTDIR_STEP}/surface_build_tree${i}.log"
 done
 
