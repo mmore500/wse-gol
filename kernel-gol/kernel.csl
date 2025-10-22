@@ -16,7 +16,6 @@ param N_SURFACES: comptime_int;
 param SURFACE_WORDS: comptime_int;
 
 param globalSeed: u32;
-param whoami: u32;
 param is_east_edge:  bool;
 param is_west_edge:  bool;
 param is_south_edge: bool;
@@ -462,7 +461,11 @@ task exit() void {
 fn generate(num_gen: u16) void {
   // Set number of generations for current run
   iters = num_gen;
-  random.set_global_prng_seed(whoami * 100 + globalSeed + 1);
+  random.set_global_prng_seed(
+    @as(u32, layout_mod.get_x_coord()) * 100 * 100
+    + @as(u32, layout_mod.get_y_coord()) * 100
+    + @as(u32, globalSeed) + 1
+  );
 
   states[1] = S - 1;  // Assume surface already filled
   for (@range(u16, N_STATES - 2)) |i| {  // +2 for GOL state and counter
