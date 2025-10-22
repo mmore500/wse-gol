@@ -515,8 +515,8 @@ log('Log output...')
 all_states = states_result.reshape((x_dim, y_dim, nWav)).transpose(2, 0, 1)
 
 grid = all_states[0]
-log(f"num cells set 1: {all_states[0].ravel().sum()}")
-log(f"num cells set 0: {int(all_states[0].size) - all_states[0].ravel().sum()}")
+log(f"num cells set 1: {grid.ravel().sum()}")
+log(f"num cells set 0: {int(grid.size) - int(grid.ravel().sum())}")
 log(f"grid shape: {grid.shape}")
 log(f"grid dtype: {grid.dtype}")
 log(f"grid max: {grid.max()}")
