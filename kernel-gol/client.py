@@ -384,8 +384,8 @@ nSurf = 3
 assert nWav == 8 and surfWavs == 2 and nSurf == 3  # currently hardcoded
 assert nWav == surfWavs * nSurf + 2  # currently hardcoded
 
-dstream_algo = "hybrid_0_steady_1_tilted_2_algo"
-assert dstream_algo == "hybrid_0_steady_1_tilted_2_algo"  # hardcoded
+dstream_algo = "dstream.hybrid_0_steady_1_tilted_2_algo"
+assert dstream_algo == "dstream.hybrid_0_steady_1_tilted_2_algo"  # hardcoded
 
 # PE grid dimensions
 x_dim = nCol
