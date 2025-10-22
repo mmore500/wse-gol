@@ -65,6 +65,7 @@ jobs:
       fail-fast: false
       matrix:
         arch:
+          - wse2
           - wse3
     env:
       CSLC: cslc
