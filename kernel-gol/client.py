@@ -103,8 +103,8 @@ def create_initial_state(state_type, x_dim, y_dim):
 
   elif state_type == 'gosper':
     log("creating gosper glider gun initial state...")
-    # assert x_dim >= 56 and y_dim >=29, \
-    #        'For gosper initial state, x_dim and y_dim must be at least 56, 29'
+    assert x_dim >= 56 and y_dim >=29, \
+           'For gosper initial state, x_dim and y_dim must be at least 56, 29'
 
     # https://conwaylife.com/patterns/gosperglidergun.cells
     pattern = [
