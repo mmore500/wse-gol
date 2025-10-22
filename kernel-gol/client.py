@@ -107,7 +107,7 @@ def create_initial_state(state_type, x_dim, y_dim):
 
   elif state_type == 'gosper':
     log("creating gosper glider gun initial state...")
-    assert x_dim >= 56 and y_dim >=29, \
+    assert y_dim >= 56 and x_dim >=29, \
            'For gosper initial state, x_dim and y_dim must be at least 56, 29'
 
     # https://conwaylife.com/patterns/gosperglidergun.cells
@@ -153,7 +153,7 @@ def create_initial_state(state_type, x_dim, y_dim):
   else: # state_type == 'random'
     log("creating random initial state...")
     np.random.seed(seed=7)
-    initial_state = np.random.binomial(1, 0.5, (x_dim, y_dim)).astype(np.uint32)
+    initial_state = np.random.binomial(1, 0.5, (y_dim, x_dim)).astype(np.uint32)
 
   return initial_state
 
@@ -495,7 +495,7 @@ log(f"initial_state raw (up to 10x10): \n{initial_state[:10,:10]}")
 
 # Copy initial state into all PEs
 runner.memcpy_h2d(states_symbol, initial_state.flatten(), 0, 0, x_dim, y_dim, 1,
-streaming=False, order=MemcpyOrder.ROW_MAJOR, data_type=MemcpyDataType.MEMCPY_32BIT,nonblock=False)
+streaming=False, order=MemcpyOrder.COL_MAJOR, data_type=MemcpyDataType.MEMCPY_32BIT,nonblock=False)
 
 log(f'Run for {nCycleAtLeast} generations...')
 if nCycleAtLeast != 0:
@@ -505,7 +505,7 @@ if nCycleAtLeast != 0:
 # Copy states back
 states_result = np.zeros([x_dim * y_dim * nWav], dtype=np.uint32)
 runner.memcpy_d2h(states_result, states_symbol, 0, 0, x_dim, y_dim, nWav, streaming=False,
-order=MemcpyOrder.ROW_MAJOR, data_type=MemcpyDataType.MEMCPY_32BIT, nonblock=False)
+order=MemcpyOrder.COL_MAJOR, data_type=MemcpyDataType.MEMCPY_32BIT, nonblock=False)
 
 # Stop the program
 runner.stop()
@@ -513,8 +513,8 @@ runner.stop()
 log('Log output...')
 # Reshape states results to x_dim x y_dim frames
 all_states = states_result.reshape(
-    (y_dim, x_dim, nWav),
-).transpose(2, 0, 1)
+    (nWav, y_dim, x_dim),
+).transpose(0, 2, 1)
 
 grid = all_states[0]
 log(f"num cells set 1: {grid.ravel().sum()}")
