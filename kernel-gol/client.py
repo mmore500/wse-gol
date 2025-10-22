@@ -273,7 +273,7 @@ parser.add_argument("--name", help="the test compile output dir", default="out")
 add_bool_arg(parser, "suptrace", default=True)
 parser.add_argument("--cmaddr", help="IP:port for CS system")
 parser.add_argument('--initial-state', choices=['glider', 'random', 'gosper'], default='glider')
-parser.add_argument("--ncycle", default=40, type=int, help="run duration", default="out")
+parser.add_argument("--ncycle", default=40, type=int, help="run duration")
 log("- parsing arguments")
 args = parser.parse_args()
 
