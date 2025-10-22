@@ -82,6 +82,7 @@ def create_initial_state(state_type, x_dim, y_dim):
   initial_state = np.zeros((x_dim, y_dim), dtype=np.uint32)
 
   if state_type == 'glider':
+    log("creating glider initial state...")
     assert x_dim >= 4 and y_dim >=4, \
            'For glider initial state, x_dim and y_dim must be at least 4'
 
@@ -100,7 +101,32 @@ def create_initial_state(state_type, x_dim, y_dim):
         elif i%2 == 1 and j%2 == 1:
           initial_state[4*i:4*i+3, 4*j:4*j+3] = glider[::-1,:]
 
+  elif state_type == 'gosper':
+    log("creating gosper glider gun initial state...")
+    assert x_dim >= 36 and y_dim >=9, \
+           'For gosper initial state, x_dim and y_dim must be at least 36, 9'
+
+    # https://conwaylife.com/patterns/gosperglidergun.cells
+    pattern = [
+        "........................O",
+        "......................O.O",
+        "............OO......OO............OO",
+        "...........O...O....OO............OO",
+        "OO........O.....O...OO",
+        "OO........O...O.OO....O.O",
+        "..........O.....O.......O",
+        "...........O...O",
+        "............OO"
+    ]
+
+    assert max(len(row) for row in pattern) == 36 and len(pattern) == 9
+    padded = [row.ljust(36, '.') for row in pattern]
+    gosper = np.array([[1 if c == 'O' else 0 for c in row] for row in padded])
+
+    initial_state[:9, :36] = gosper
+
   else: # state_type == 'random'
+    log("creating random initial state...")
     np.random.seed(seed=7)
     initial_state = np.random.binomial(1, 0.5, (x_dim, y_dim)).astype(np.uint32)
 
@@ -226,6 +252,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument("--name", help="the test compile output dir", default="out")
 add_bool_arg(parser, "suptrace", default=True)
 parser.add_argument("--cmaddr", help="IP:port for CS system")
+parser.add_argument('--initial-state', choices=['glider', 'random', 'gosper'], default='glider')
 log("- parsing arguments")
 args = parser.parse_args()
 
@@ -299,7 +326,7 @@ log("- runner run ran")
 states_symbol = runner.get_id('states')
 
 log('Copy initial state to device...')
-initial_state = create_initial_state('random', x_dim, y_dim)
+initial_state = create_initial_state(args.initial_state, x_dim, y_dim)
 # Copy initial state into all PEs
 runner.memcpy_h2d(states_symbol, initial_state.flatten(), 0, 0, x_dim, y_dim, 1,
 streaming=False, order=MemcpyOrder.ROW_MAJOR, data_type=MemcpyDataType.MEMCPY_32BIT,nonblock=False)
