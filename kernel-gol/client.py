@@ -80,7 +80,7 @@ def assemble_state_data(
 def create_initial_state(state_type, x_dim, y_dim):
   """Generate intitial state for Game of Life"""
 
-  initial_state = np.zeros((x_dim, y_dim), dtype=np.uint32)
+  initial_state = np.zeros((y_dim, x_dim), dtype=np.uint32)
 
   if state_type == 'empty':
     log("creating empty initial state...")
@@ -271,7 +271,7 @@ def draw_unicode(
     def get_cell(r: int, c: int) -> int:
         # Check against *total* dims
         if r < total_rows and c < total_cols:
-            return grid[c][r] # Access as [col][row]
+            return grid[r][c] # Access as [row][col]
         return 0  # Treat out-of-bounds as 'off'
 
     output = []
@@ -329,7 +329,7 @@ def draw_ascii(
             val = 0
             # Check against *total* dims to avoid wrapping
             if r < total_rows and c < total_cols:
-                val = grid[c][r]  # Access as [col][row]
+                val = grid[r][c]  # Access as [row][col]
             else:
                 val = 0 # Out of bounds
 
@@ -495,7 +495,7 @@ log(f"initial_state raw (up to 10x10): \n{initial_state[:10,:10]}")
 
 # Copy initial state into all PEs
 runner.memcpy_h2d(states_symbol, initial_state.flatten(), 0, 0, x_dim, y_dim, 1,
-streaming=False, order=MemcpyOrder.COL_MAJOR, data_type=MemcpyDataType.MEMCPY_32BIT,nonblock=False)
+streaming=False, order=MemcpyOrder.ROW_MAJOR, data_type=MemcpyDataType.MEMCPY_32BIT,nonblock=False)
 
 log(f'Run for {nCycleAtLeast} generations...')
 if nCycleAtLeast != 0:
@@ -505,7 +505,7 @@ if nCycleAtLeast != 0:
 # Copy states back
 states_result = np.zeros([x_dim * y_dim * nWav], dtype=np.uint32)
 runner.memcpy_d2h(states_result, states_symbol, 0, 0, x_dim, y_dim, nWav, streaming=False,
-order=MemcpyOrder.COL_MAJOR, data_type=MemcpyDataType.MEMCPY_32BIT, nonblock=False)
+order=MemcpyOrder.ROW_MAJOR, data_type=MemcpyDataType.MEMCPY_32BIT, nonblock=False)
 
 # Stop the program
 runner.stop()
@@ -513,8 +513,7 @@ runner.stop()
 log('Log output...')
 # Reshape states results to x_dim x y_dim frames
 all_states = states_result.reshape(
-    (x_dim, y_dim, nWav),
-    order="F",
+    (y_dim, x_dim, nWav),
 ).transpose(2, 0, 1)
 
 grid = all_states[0]
@@ -587,7 +586,7 @@ log("Build state dataframe...")
 
 log("- verbose assemble_state_data")
 assembled_state_data = assemble_state_data(
-   states_result.reshape((x_dim, y_dim, nWav)),
+   states_result.reshape((y_dim, x_dim, nWav)),
    verbose=True,
 )
 log(f"  - assembled_state_data.dtype={assembled_state_data.dtype}")
@@ -599,12 +598,12 @@ log(f"  - assembled_state_data.dtype={assembled_state_data.dtype}")
 log(f"  - assembled_state_data.shape={assembled_state_data.shape}")
 
 log(f" - reshaping assembled_state_data")
-assembled_state_data = assembled_state_data.reshape((x_dim, y_dim))
+assembled_state_data = assembled_state_data.reshape((y_dim, x_dim))
 log(f"  - assembled_state_data.dtype={assembled_state_data.dtype}")
 log(f"  - assembled_state_data.shape={assembled_state_data.shape}")
 
 log(" - creating indices")
-positions = np.arange(x_dim * y_dim, dtype=np.uint32).reshape((x_dim, y_dim))
+positions = np.arange(x_dim * y_dim, dtype=np.uint32).reshape((y_dim, x_dim))
 rows, cols = np.indices(assembled_state_data.shape)
 log(" - creating DataFrame")
 df = pl.DataFrame({
