@@ -150,11 +150,15 @@ mkdir -p "${WORKDIR_STEP}/run"
 
 cd "${WORKDIR_STEP}/run"
 echo "PWD ${PWD}"
+ls
+echo "copying kernel-gol files from ${WORKDIR}/src/kernel-gol..."
 cp -rL "${WORKDIR}/src/kernel-gol/cerebraslib" .
 cp -rL "${WORKDIR}/src/kernel-gol/out" .
 cp -L "${WORKDIR}/src/kernel-gol/client.py" .
 cp -L "${WORKDIR}/src/kernel-gol/compconf.json" .
+
 ls
+cat client.py
 
 cd "${WORKDIR_STEP}"
 echo "PWD ${PWD}"
