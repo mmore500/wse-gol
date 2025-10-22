@@ -71,7 +71,7 @@ layout {
       const y_color_params = if (pe_y % 2 == 0) y_even_params else y_odd_params;
 
       const y_params = @concat_structs(
-                         .{ .is_north_edge = north_edge, .is_south_edge = south_edge, .whoami = whoami_counter },
+                         .{ .is_north_edge = north_edge, .is_south_edge = south_edge, .whoami = whoami_counter, .globalSeed = globalSeed, .N_SURFACES = 3, .SURFACE_WORDS = 2 },
                          y_color_params
                        );
 
