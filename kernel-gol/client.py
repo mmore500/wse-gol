@@ -641,7 +641,7 @@ rows, cols = np.indices(assembled_state_data.shape)
 log(" - creating DataFrame")
 df = pl.DataFrame({
     "data_raw": pl.Series(assembled_state_data.ravel(), dtype=pl.Binary),
-    "is_extant": False,
+    "is_extant": True,
     "position": pl.Series(positions.ravel(), dtype=pl.UInt32),
     "row": pl.Series(rows.ravel(), dtype=pl.UInt16),
     "col": pl.Series(cols.ravel(), dtype=pl.UInt16),
