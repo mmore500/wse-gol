@@ -301,13 +301,13 @@ log("- runner run ran")
 
 states_symbol = runner.get_id('states')
 
-print('Copy initial state to device...')
+log('Copy initial state to device...')
 initial_state = create_initial_state('random', x_dim, y_dim)
 # Copy initial state into all PEs
 runner.memcpy_h2d(states_symbol, initial_state.flatten(), 0, 0, x_dim, y_dim, 1,
 streaming=False, order=MemcpyOrder.ROW_MAJOR, data_type=MemcpyDataType.MEMCPY_32BIT,nonblock=False)
 
-print(f'Run for {nCycleAtLeast} generations...')
+log(f'Run for {nCycleAtLeast} generations...')
 # Launch the generate function on device
 runner.launch('generate', np.uint16(nCycleAtLeast), nonblock=False)
 
@@ -319,11 +319,11 @@ order=MemcpyOrder.ROW_MAJOR, data_type=MemcpyDataType.MEMCPY_32BIT, nonblock=Fal
 # Stop the program
 runner.stop()
 
-print('Create output...')
+log('Log output...')
 
 # Reshape states results to x_dim x y_dim frames
 all_states = states_result.reshape((x_dim, y_dim, nWav)).transpose(2, 0, 1)
-print(all_states)
+log(all_states)
 
 # Ensure that the result matches our expectation
 log("SUCCESS!")
