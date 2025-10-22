@@ -146,7 +146,7 @@ for i in 0 1 2; do
 
     ls -1 "${WORKDIR}/03-build-phylo/${f}" \
         | singularity run docker://ghcr.io/mmore500/joinem:v0.11.1 \
-        python3 -m hstrat._auxiliary_lib._alifestd_join_roots \
+        python3 -m joinem \
         --eager-read --eager-write \
         --with_column 'pl.selectors.categorical().cast(pl.String)' \
         "${WORKDIR_STEP}/${f}"
