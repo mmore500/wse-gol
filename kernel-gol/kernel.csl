@@ -376,12 +376,12 @@ task start_next_gen() void {
   const was_live: bool = states[0] != 0;
 
   if (current_iter % N_STATES == 0) {
-    // Previous generation of cell is alive
-    if (states[0] == 0) {
-      states[0] = if (current_sum == 2 or current_sum == 3) 1 else 0;
     // Previous generation of cell is dead
-    } else {
+    if (states[0] == 0) {
       states[0] = if (current_sum == 3) 1 else 0;
+    // Previous generation of cell is alive
+    } else {
+      states[0] = if (current_sum == 2 or current_sum == 3) 1 else 0;
     }
 
     const num_options: u16 = (
