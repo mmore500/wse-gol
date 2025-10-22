@@ -346,7 +346,15 @@ runner.stop()
 log('Log output...')
 # Reshape states results to x_dim x y_dim frames
 all_states = states_result.reshape((x_dim, y_dim, nWav)).transpose(2, 0, 1)
-log(all_states[:, :5, :5])  # log first 5x5 of each wave
+
+log("\nascii rendering")
+for row in all_states[0]:
+    # Use your logic to convert 1s/0s to #/.
+    log(' '.join(['#' if cell else '.' for cell in row]))
+
+
+log("\nstate layers")
+log(all_states[:, :10, :10])  # log first 5x5 of each wave
 
 log("Build state dataframe...")
 # states_z = states_result.reshape((x_dim * y_dim, nWav))
