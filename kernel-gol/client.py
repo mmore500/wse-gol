@@ -242,6 +242,62 @@ def add_bool_arg(parser, name, default=False):
     group.add_argument("--no-" + name, dest=name, action="store_false")
     parser.set_defaults(**{name: default})
 
+def render_ascii_braille(
+    grid: "np.ndarray",
+    total_rows: int,
+    total_cols: int,
+    max_render_rows: int = None,
+    max_render_cols: int = None,
+) -> str:
+    """
+    Renders the grid as ASCII Braille art.
+    Expects grid with shape (total_cols, total_rows).
+    """
+
+    # Determine render dimensions
+    render_rows = total_rows
+    if max_render_rows is not None:
+        render_rows = min(total_rows, max_render_rows)
+
+    render_cols = total_cols
+    if max_render_cols is not None:
+        render_cols = min(total_cols, max_render_cols)
+
+    # Helper to safely get a cell value (handles out-of-bounds)
+    def get_cell(r: int, c: int) -> int:
+        # Check against *total* dims
+        if r < total_rows and c < total_cols:
+            return grid[c][r] # Access as [col][row]
+        return 0  # Treat out-of-bounds as 'off'
+
+    output = []
+    # Iterate in 4-row, 2-column steps
+    for r in range(0, render_rows, 4):
+        line = ""
+        for c in range(0, render_cols, 2):
+            val = 0
+
+            # Braille dot mapping (base Unicode 0x2800)
+            # Left column dots (1, 2, 3, 7)
+            if get_cell(r, c):     val |= 0x01 # dot 1
+            if get_cell(r + 1, c): val |= 0x02 # dot 2
+            if get_cell(r + 2, c): val |= 0x04 # dot 3
+            if get_cell(r + 3, c): val |= 0x40 # dot 7
+
+            # Right column dots (4, 5, 6, 8)
+            if get_cell(r, c + 1):     val |= 0x08 # dot 4
+            if get_cell(r + 1, c + 1): val |= 0x10 # dot 5
+            if get_cell(r + 2, c + 1): val |= 0x20 # dot 6
+            if get_cell(r + 3, c + 1): val |= 0x80 # dot 8
+
+            # 0x2800 is the Unicode offset for the blank Braille pattern
+            line += chr(0x2800 + val)
+
+        output.append(line)
+
+    return "\n".join(output)
+
+
 log("- reading env variables")
 # number of rows, columns, and genome words
 nCol = int(os.getenv("WSE_GOL_NCOL", 3))
@@ -349,6 +405,21 @@ states_symbol = runner.get_id('states')
 
 log('Copy initial state to device...')
 initial_state = create_initial_state(args.initial_state, x_dim, y_dim)
+log(f"initial_state sum: {initial_state.ravel().sum()}")
+log(f"initial_state shape: {initial_state.shape}")
+log(f"initial_state dtype: {initial_state.dtype}")
+
+log("\npartial initial ascii rendering")
+partial_initial_render = render_ascii_braille(
+    initial_state, nRow, nCol, max_render_rows=100, max_render_cols=100
+)
+log(partial_initial_render)
+
+log("\nfull initial ascii rendering")
+full_initial_render = render_ascii_braille(initial_state, nRow, nCol)
+log(full_initial_render)
+
+
 # Copy initial state into all PEs
 runner.memcpy_h2d(states_symbol, initial_state.flatten(), 0, 0, x_dim, y_dim, 1,
 streaming=False, order=MemcpyOrder.ROW_MAJOR, data_type=MemcpyDataType.MEMCPY_32BIT,nonblock=False)
@@ -379,74 +450,16 @@ log(f"grid max: {grid.max()}")
 log(f"grid min: {grid.min()}")
 assert set(map(int, grid.ravel())).issubset({0, 1})
 
-log("\npartial ascii rendering")
+log("\npartial output ascii rendering")
+partial_output_render = render_ascii_braille(
+    grid, nRow, nCol, max_render_rows=100, max_render_cols=100
+)
+log(partial_output_render)
 
-# Helper to safely get a cell value (handles out-of-bounds)
-def get_cell(r: int, c: int) -> int:
-    if r < nRow and c < nCol:
-        return grid[c][r]
-    return 0  # Treat out-of-bounds as 'off'
+log("\nfull output ascii rendering")
+full_output_render = render_ascii_braille(grid, nRow, nCol)
+log(full_output_render)
 
-output = []
-for r in range(0, min(nRow, 100), 4):  # Iterate in 4-row, 2-column steps
-    line = ""
-    for c in range(0, min(nCol, 100), 2):
-        val = 0
-
-        # Braille dot mapping (base Unicode 0x2800)
-        # Left column dots (1, 2, 3, 7)
-        if get_cell(r, c):     val |= 0x01 # dot 1
-        if get_cell(r + 1, c): val |= 0x02 # dot 2
-        if get_cell(r + 2, c): val |= 0x04 # dot 3
-        if get_cell(r + 3, c): val |= 0x40 # dot 7
-
-        # Right column dots (4, 5, 6, 8)
-        if get_cell(r, c + 1):     val |= 0x08 # dot 4
-        if get_cell(r + 1, c + 1): val |= 0x10 # dot 5
-        if get_cell(r + 2, c + 1): val |= 0x20 # dot 6
-        if get_cell(r + 3, c + 1): val |= 0x80 # dot 8
-
-        # 0x2800 is the Unicode offset for the blank Braille pattern
-        line += chr(0x2800 + val)
-
-    output.append(line)
-
-log("\n".join(output))
-
-log("\nfull ascii rendering")
-grid = all_states[0]
-
-# Helper to safely get a cell value (handles out-of-bounds)
-def get_cell(r: int, c: int) -> int:
-    if r < nRow and c < nCol:
-        return grid[c][r]
-    return 0  # Treat out-of-bounds as 'off'
-
-output = []
-for r in range(0, nRow, 4):  # Iterate in 4-row, 2-column steps
-    line = ""
-    for c in range(0, nCol, 2):
-        val = 0
-
-        # Braille dot mapping (base Unicode 0x2800)
-        # Left column dots (1, 2, 3, 7)
-        if get_cell(r, c):     val |= 0x01 # dot 1
-        if get_cell(r + 1, c): val |= 0x02 # dot 2
-        if get_cell(r + 2, c): val |= 0x04 # dot 3
-        if get_cell(r + 3, c): val |= 0x40 # dot 7
-
-        # Right column dots (4, 5, 6, 8)
-        if get_cell(r, c + 1):     val |= 0x08 # dot 4
-        if get_cell(r + 1, c + 1): val |= 0x10 # dot 5
-        if get_cell(r + 2, c + 1): val |= 0x20 # dot 6
-        if get_cell(r + 3, c + 1): val |= 0x80 # dot 8
-
-        # 0x2800 is the Unicode offset for the blank Braille pattern
-        line += chr(0x2800 + val)
-
-    output.append(line)
-
-log("\n".join(output))
 
 log("\nstate layers")
 log(all_states[:, :10, :10])  # log first 5x5 of each wave
