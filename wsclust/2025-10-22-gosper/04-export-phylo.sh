@@ -148,7 +148,7 @@ for i in 0 1 2; do
         | singularity exec docker://ghcr.io/mmore500/hstrat:v1.20.14 \
         python3 -m hstrat._auxiliary_lib._alifestd_join_roots \
         --eager-read \
-        ${WORKDIR}/04-export-phylo/${f}"
+        "${WORKDIR}/04-export-phylo/${f}"
 
     singularity exec docker://ghcr.io/mmore500/hstrat:v1.20.13 \
         python3 -m hstrat._auxiliary_lib._alifestd_as_newick_asexual \
