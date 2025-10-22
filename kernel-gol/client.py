@@ -103,27 +103,47 @@ def create_initial_state(state_type, x_dim, y_dim):
 
   elif state_type == 'gosper':
     log("creating gosper glider gun initial state...")
-    assert x_dim >= 36 and y_dim >=9, \
-           'For gosper initial state, x_dim and y_dim must be at least 36, 9'
+    # assert x_dim >= 56 and y_dim >=29, \
+    #        'For gosper initial state, x_dim and y_dim must be at least 56, 29'
 
     # https://conwaylife.com/patterns/gosperglidergun.cells
     pattern = [
-        "........................O",
-        "......................O.O",
-        "............OO......OO............OO",
-        "...........O...O....OO............OO",
-        "OO........O.....O...OO",
-        "OO........O...O.OO....O.O",
-        "..........O.....O.......O",
-        "...........O...O",
-        "............OO"
+       ".",
+       ".",
+       ".",
+       ".",
+       ".",
+       ".",
+       ".",
+       ".",
+       ".",
+       ".",
+        "..................................O",
+        "................................O.O",
+        "......................OO......OO............OO..........",
+        ".....................O...O....OO............OO",
+        "..........OO........O.....O...OO",
+        "..........OO........O...O.OO....O.O",
+        "....................O.....O.......O",
+        ".....................O...O",
+        "......................OO",
+       ".",
+       ".",
+       ".",
+       ".",
+       ".",
+       ".",
+       ".",
+       ".",
+       ".",
+       ".",
     ]
 
-    assert max(len(row) for row in pattern) == 36 and len(pattern) == 9
-    padded = [row.ljust(36, '.') for row in pattern]
+    assert max(len(row) for row in pattern) == 56 and len(pattern) == 29
+    padded = [row.ljust(56, '.') for row in pattern]
     gosper = np.array([[1 if c == 'O' else 0 for c in row] for row in padded])
 
-    initial_state[:9, :36] = gosper
+    initial_state[:29, :56] = gosper
 
   else: # state_type == 'random'
     log("creating random initial state...")
