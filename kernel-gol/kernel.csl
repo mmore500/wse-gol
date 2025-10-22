@@ -72,6 +72,7 @@ const recv_north_task_id: data_task_id =
 const sys_mod = @import_module("<memcpy/memcpy>", memcpy_params);
 const layout_mod = @import_module("<layout>");
 
+const S = SURFACE_WORDS * 32;  // Number of items per surface, 1 bit items
 // GOL state, counter, surfaces...
 const N_STATES = 2 + SURFACE_WORDS * N_SURFACES;
 
@@ -280,7 +281,7 @@ task start_next_gen() void {
     }
 
     const num_options: u16 = (
-      @as(u16, states[1] != 0) // own instrumentation from prior generation
+      @as(u16, states[1] != S - 1) // own instrumentation from prior generation
       + @as(u16, num_west_recv > 0 and west0_states[0] != 0)
       + @as(u16, num_west_recv > 1 and west1_states[0] != 0)
       + @as(u16, num_west_recv > 2 and west2_states[0] != 0)
@@ -297,8 +298,8 @@ task start_next_gen() void {
       for (@range(i16, N_STATES)) |j| {
         states[j] = 0;
       }
-    } else if (states[1] == 0 and current_iter > 0) {
-      states[1] = @as(u32, current_iter - 1) / N_STATES;
+    } else if (states[1] == 0) {
+      states[1] = S + @as(u32, current_iter) / N_STATES - 1;
     }
 
     for (@range(i16, N_SURFACES)) |j| {
@@ -405,9 +406,8 @@ task start_next_gen() void {
     }
     }
 
-    if (current_iter > 0 and states[0] != 0) {
+    if (states[0] != 0) {
       states[1] += 1;
-      const S = 32 * SURFACE_WORDS;
       const T = states[1];
       const randomize_idx = dstream_algo.assign_storage_site(S, T);
       if (randomize_idx != S) {
@@ -420,7 +420,8 @@ task start_next_gen() void {
           );
         }
       }
-      @assert(states[1] * N_STATES == @as(u32, current_iter));
+      @assert(states[1] >= S);
+      @assert((states[1] - S) * N_STATES == @as(u32, current_iter));
     }
   }
 
@@ -455,9 +456,9 @@ fn generate(num_gen: u16) void {
   iters = num_gen;
   random.set_global_prng_seed(whoami * 100 + globalSeed + 1);
 
-  states[1] = 0;
+  states[1] = S - 1;  // Assume surface already filled
   for (@range(u16, N_STATES - 2)) |i| {  // +2 for GOL state and counter
-    states[i + 2] = random.random_pow_u32(32);
+    states[i + 2] = @as(u32, @random16()) | (@as(u32, @random16()) << 16);
   }
 
   // Begin sending to neighbors
