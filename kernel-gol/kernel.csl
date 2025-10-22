@@ -268,6 +268,109 @@ task recv_south(val: u32) void {
   if (num_recv == num_neighbors) @activate(start_next_gen_task_id);
 }
 
+fn copy_in_surface(j: u16, num_options: u16) void {  // jth surface
+  var choice = opscalar.unif16(num_options);
+
+  if (num_west_recv > 0 and west0_states[0] != 0) {
+    if (choice == 0) {
+      @assert(states[1] == west0_states[1]);
+      for (@range(u16, SURFACE_WORDS)) |i| {
+        const target = SURFACE_WORDS * j + i + 2;  // +2 GOL state/counter
+        states[target] = west0_states[target];
+      }
+      return;
+    }
+    choice -= 1;
+  }
+
+  if (num_west_recv > 1 and west1_states[0] != 0) {
+    if (choice == 0) {
+      @assert(states[1] == west1_states[1]);
+      for (@range(u16, SURFACE_WORDS)) |i| {
+        const target = SURFACE_WORDS * j + i + 2;  // +2 GOL state/counter
+        states[target] = west1_states[target];
+      }
+      return;
+    }
+    choice -= 1;
+  }
+
+  if (num_west_recv > 2 and west2_states[0] != 0) {
+    if (choice == 0) {
+      @assert(states[1] == west2_states[1]);
+      for (@range(u16, SURFACE_WORDS)) |i| {
+        const target = SURFACE_WORDS * j + i + 2;  // +2 GOL state/counter
+        states[target] = west2_states[target];
+      }
+      return;
+    }
+    choice -= 1;
+  }
+
+  if (num_east_recv > 0 and east0_states[0] != 0) {
+    if (choice == 0) {
+      @assert(states[1] == east0_states[1]);
+      for (@range(u16, SURFACE_WORDS)) |i| {
+        const target = SURFACE_WORDS * j + i + 2;  // +2 GOL state/counter
+        states[target] = east0_states[target];
+      }
+      return;
+    }
+    choice -= 1;
+  }
+
+  if (num_east_recv > 1 and east1_states[0] != 0) {
+    if (choice == 0) {
+      @assert(states[1] == east1_states[1]);
+      for (@range(u16, SURFACE_WORDS)) |i| {
+        const target = SURFACE_WORDS * j + i + 2;  // +2 GOL state/counter
+        states[target] = east1_states[target];
+      }
+      return;
+    }
+    choice -= 1;
+  }
+
+  if (num_east_recv > 2 and east2_states[0] != 0) {
+    if (choice == 0) {
+      @assert(states[1] == east2_states[1]);
+      for (@range(u16, SURFACE_WORDS)) |i| {
+        const target = SURFACE_WORDS * j + i + 2;  // +2 GOL state/counter
+        states[target] = east2_states[target];
+      }
+      return;
+    }
+    choice -= 1;
+  }
+
+  if (!is_north_edge and north_states[0] != 0) {
+    if (choice == 0) {
+      @assert(states[1] == north_states[1]);
+      for (@range(u16, SURFACE_WORDS)) |i| {
+        const target = SURFACE_WORDS * j + i + 2;  // +2 GOL state/counter
+        states[target] = north_states[target];
+      }
+      return;
+    }
+    choice -= 1;
+  }
+
+  if (!is_south_edge and south_states[0] != 0) {
+    if (choice == 0) {
+      @assert(states[1] == south_states[1]);
+      for (@range(u16, SURFACE_WORDS)) |i| {
+        const target = SURFACE_WORDS * j + i + 2;  // +2 GOL state/counter
+        states[target] = south_states[target];
+      }
+      return;
+    }
+    choice -= 1;
+  }
+
+  @assert(choice == 0); // Keep own instrumentation
+}
+
+
 // Update current state and begin sending next generation to neighbors
 task start_next_gen() void {
 
@@ -302,110 +405,13 @@ task start_next_gen() void {
       states[1] = S + @as(u32, current_iter) / N_STATES - 1;
     }
 
-    for (@range(i16, N_SURFACES)) |j| {
-    while (states[0] != 0 and (current_iter > 0)) {
-      var choice = opscalar.unif16(num_options);
-
-      if (num_west_recv > 0 and west0_states[0] != 0) {
-        if (choice == 0) {
-          @assert(states[1] == west0_states[1]);
-          for (@range(i16, SURFACE_WORDS)) |i| {
-            const target = SURFACE_WORDS * j + i + 2;  // +2 GOL state/counter
-            states[target] = west0_states[target];
-          }
-          break;
-        }
-        choice -= 1;
+    for (@range(u16, N_SURFACES)) |j| {
+      if (states[0] != 0 and (current_iter > 0)) {
+        copy_in_surface(j, num_options);
       }
-
-      if (num_west_recv > 1 and west1_states[0] != 0) {
-        if (choice == 0) {
-          @assert(states[1] == west1_states[1]);
-          for (@range(i16, SURFACE_WORDS)) |i| {
-            const target = SURFACE_WORDS * j + i + 2;  // +2 GOL state/counter
-            states[target] = west1_states[target];
-          }
-          break;
-        }
-        choice -= 1;
-      }
-
-      if (num_west_recv > 2 and west2_states[0] != 0) {
-        if (choice == 0) {
-          @assert(states[1] == west2_states[1]);
-          for (@range(i16, SURFACE_WORDS)) |i| {
-            const target = SURFACE_WORDS * j + i + 2;  // +2 GOL state/counter
-            states[target] = west2_states[target];
-          }
-          break;
-        }
-        choice -= 1;
-      }
-
-      if (num_east_recv > 0 and east0_states[0] != 0) {
-        if (choice == 0) {
-          @assert(states[1] == east0_states[1]);
-          for (@range(i16, SURFACE_WORDS)) |i| {
-            const target = SURFACE_WORDS * j + i + 2;  // +2 GOL state/counter
-            states[target] = east0_states[target];
-          }
-          break;
-        }
-        choice -= 1;
-      }
-
-      if (num_east_recv > 1 and east1_states[0] != 0) {
-        if (choice == 0) {
-          @assert(states[1] == east1_states[1]);
-          for (@range(i16, SURFACE_WORDS)) |i| {
-            const target = SURFACE_WORDS * j + i + 2;  // +2 GOL state/counter
-            states[target] = east1_states[target];
-          }
-          break;
-        }
-        choice -= 1;
-      }
-
-      if (num_east_recv > 2 and east2_states[0] != 0) {
-        if (choice == 0) {
-          @assert(states[1] == east2_states[1]);
-          for (@range(i16, SURFACE_WORDS)) |i| {
-            const target = SURFACE_WORDS * j + i + 2;  // +2 GOL state/counter
-            states[target] = east2_states[target];
-          }
-          break;
-        }
-        choice -= 1;
-      }
-
-      if (!is_north_edge and north_states[0] != 0) {
-        if (choice == 0) {
-          @assert(states[1] == north_states[1]);
-          for (@range(i16, SURFACE_WORDS)) |i| {
-            const target = SURFACE_WORDS * j + i + 2;  // +2 GOL state/counter
-            states[target] = north_states[target];
-          }
-          break;
-        }
-        choice -= 1;
-      }
-
-      if (!is_south_edge and south_states[0] != 0) {
-        if (choice == 0) {
-          @assert(states[1] == south_states[1]);
-          for (@range(i16, SURFACE_WORDS)) |i| {
-            const target = SURFACE_WORDS * j + i + 2;  // +2 GOL state/counter
-            states[target] = south_states[target];
-          }
-          break;
-        }
-        choice -= 1;
-      }
-
-      @assert(choice == 0); // Keep own instrumentation
-    }
     }
 
+    // advance hstrat instrumentation
     if (states[0] != 0) {
       states[1] += 1;
       const T = states[1];
