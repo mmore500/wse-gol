@@ -205,9 +205,14 @@ log("- reading env variables")
 # number of rows, columns, and genome words
 nCol = int(os.getenv("WSE_GOL_NCOL", 3))
 nRow = int(os.getenv("WSE_GOL_NROW", 3))
-nWav = int(os.getenv("WSE_GOL_NWAV", -1))
+nWav = int(os.getenv("WSE_GOL_NWAV", 8))
 nTrait = int(os.getenv("WSE_GOL_NTRAIT", 1))
 log(f"{nCol=}, {nRow=}, {nWav=}, {nTrait=}")
+
+surfWavs = 2
+nSurf = 3
+assert nWav == 8 and surfWavs == 2 and nSurf == 3 # currentl hardcoded
+assert nWav == surfWavs * nSurf + 2
 
 # PE grid dimensions
 x_dim = nCol
@@ -307,8 +312,8 @@ print(f'Run for {nCycleAtLeast} generations...')
 runner.launch('generate', np.uint16(nCycleAtLeast), nonblock=False)
 
 # Copy states back
-states_result = np.zeros([x_dim * y_dim * 8], dtype=np.uint32)
-runner.memcpy_d2h(states_result, states_symbol, 0, 0, x_dim, y_dim, 8, streaming=False,
+states_result = np.zeros([x_dim * y_dim * nWav], dtype=np.uint32)
+runner.memcpy_d2h(states_result, states_symbol, 0, 0, x_dim, y_dim, nWav, streaming=False,
 order=MemcpyOrder.ROW_MAJOR, data_type=MemcpyDataType.MEMCPY_32BIT, nonblock=False)
 
 # Stop the program
@@ -317,7 +322,7 @@ runner.stop()
 print('Create output...')
 
 # Reshape states results to x_dim x y_dim frames
-all_states = states_result.reshape((x_dim, y_dim, 8)).transpose(2, 0, 1)
+all_states = states_result.reshape((x_dim, y_dim, nWav)).transpose(2, 0, 1)
 print(all_states)
 
 # Ensure that the result matches our expectation
