@@ -81,7 +81,10 @@ def create_initial_state(state_type, x_dim, y_dim):
 
   initial_state = np.zeros((x_dim, y_dim), dtype=np.uint32)
 
-  if state_type == 'glider':
+  if state_type == 'empty':
+    log("creating empty initial state...")
+
+  elif state_type == 'glider':
     log("creating glider initial state...")
     assert x_dim >= 4 and y_dim >=4, \
            'For glider initial state, x_dim and y_dim must be at least 4'
@@ -329,7 +332,11 @@ parser = argparse.ArgumentParser()
 parser.add_argument("--name", help="the test compile output dir", default="out")
 add_bool_arg(parser, "suptrace", default=True)
 parser.add_argument("--cmaddr", help="IP:port for CS system")
-parser.add_argument('--initial-state', choices=['glider', 'random', 'gosper'], default='glider')
+parser.add_argument(
+    '--initial-state',
+    choices=['glider', 'random', 'gosper', 'empty'],
+    default='glider',
+)
 parser.add_argument("--ncycle", default=40, type=int, help="run duration")
 log("- parsing arguments")
 args = parser.parse_args()
