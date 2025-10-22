@@ -70,16 +70,10 @@ def assemble_binary_data(
     return binary_strings
 
 
-def assemble_genome_data(
+def assemble_state_data(
         data: "np.ndarray", verbose: bool = False
 ) -> "np.ndarray":
     return assemble_binary_data(data, nWav=nWav, verbose=verbose)
-
-
-def assemble_genome_bookend_data(
-    data: "np.ndarray", verbose: bool = False
-) -> "np.ndarray":
-    return assemble_binary_data(data, nWav=nWav + 2, verbose=verbose)
 
 
 def create_initial_state(state_type, x_dim, y_dim):
@@ -211,8 +205,11 @@ log(f"{nCol=}, {nRow=}, {nWav=}, {nTrait=}")
 
 surfWavs = 2
 nSurf = 3
-assert nWav == 8 and surfWavs == 2 and nSurf == 3 # currentl hardcoded
-assert nWav == surfWavs * nSurf + 2
+assert nWav == 8 and surfWavs == 2 and nSurf == 3  # currently hardcoded
+assert nWav == surfWavs * nSurf + 2  # currently hardcoded
+
+dstream_algo = "hybrid_0_steady_1_tilted_2_algo"
+assert dstream_algo == "hybrid_0_steady_1_tilted_2_algo"  # hardcoded
 
 # PE grid dimensions
 x_dim = nCol
@@ -320,10 +317,83 @@ order=MemcpyOrder.ROW_MAJOR, data_type=MemcpyDataType.MEMCPY_32BIT, nonblock=Fal
 runner.stop()
 
 log('Log output...')
-
 # Reshape states results to x_dim x y_dim frames
 all_states = states_result.reshape((x_dim, y_dim, nWav)).transpose(2, 0, 1)
-log(all_states)
+log(all_states[:, :5, :5])  # log first 5x5 of each wave
 
-# Ensure that the result matches our expectation
+log("Build state dataframe...")
+# states_z = states_result.reshape((x_dim * y_dim, nWav))
+# log(states_z[:5, :])  # log first 5 rows
+# log(f" - states_z.dtype={states_z.dtype}")
+# log(f" - states_z.shape={states_z.shape}")
+
+log("- verbose assemble_state_data")
+assembled_state_data = assemble_state_data(
+   states_result.reshape((x_dim, y_dim, nWav)),
+   verbose=True,
+)
+log(f"  - assembled_state_data.dtype={assembled_state_data.dtype}")
+log(f"  - assembled_state_data.shape={assembled_state_data.shape}")
+
+log(f" - casting assembled_state_data to object")
+assembled_state_data = assembled_state_data.astype(object)
+log(f"  - assembled_state_data.dtype={assembled_state_data.dtype}")
+log(f"  - assembled_state_data.shape={assembled_state_data.shape}")
+
+log(f" - reshaping assembled_state_data")
+assembled_state_data = assembled_state_data.reshape((x_dim, y_dim))
+log(f"  - assembled_state_data.dtype={assembled_state_data.dtype}")
+log(f"  - assembled_state_data.shape={assembled_state_data.shape}")
+
+log(" - creating indices")
+positions = np.arange(x_dim * y_dim, dtype=np.uint32).reshape((x_dim, y_dim))
+rows, cols = np.indices(assembled_state_data.shape)
+log(" - creating DataFrame")
+df = pl.DataFrame({
+    "data_raw": pl.Series(assembled_state_data.ravel(), dtype=pl.Binary),
+    "is_extant": False,
+    "position": pl.Series(positions.ravel(), dtype=pl.UInt32),
+    "row": pl.Series(rows.ravel(), dtype=pl.UInt16),
+    "col": pl.Series(cols.ravel(), dtype=pl.UInt16),
+}).with_columns([
+    pl.lit(value, dtype=dtype).alias(key)
+    for key, (value, dtype) in metadata.items()
+])
+log(f" - data_raw: {df['data_raw'].head(3)}")
+assert (df["data_raw"].bin.size(unit="b") == nWav * 4).all()
+
+log(f" - encoding {len(df)} binary fossil rows to hex...")
+df = df.with_columns(
+    data_hex=pl.col("data_raw").bin.encode("hex"),
+).drop("data_raw")
+log(f" - ... done!")
+
+log(f" - data_hex: {df['data_hex'].head(3)}")
+assert (df["data_hex"].str.len_chars() == nWav * 8).all()
+assert (df["data_hex"].str.len_bytes() == nWav * 8).all()
+assert (df["data_hex"].str.contains("^[0-9a-fA-F]+$")).all()
+
+for i in range(nSurf):
+    log(f"saving surface {i}")
+    data_slice = pl.concat_str(
+       pl.col("data_hex").str.head(16),  # GOL state and counter
+       pl.col("data_hex").str.slice(16 + 8 * i * surfWavs, surfWavs * 8),
+    )
+    df_surf = df.with_columns(
+        dstream_algo=pl.lit(dstream_algo, dtype=pl.Categorical),
+        dstream_storage_bitoffset=pl.lit(64, dtype=pl.UInt16),
+        dstream_storage_bitwidth=pl.lit(surfWavs * 32, dtype=pl.UInt16),
+        dstream_S=pl.lit(surfWavs * 32, dtype=pl.UInt16),
+        dstream_T_bitoffset=pl.lit(32, dtype=pl.UInt16),
+        dstream_T_bitwidth=pl.lit(32, dtype=pl.UInt16),
+        gol_state=pl.col("data_hex").str.slice(0, 8).str.to_integer(base=16),
+        data_hex=data_slice,
+    )
+    write_parquet_verbose(
+        df_surf,
+        f"a=surfaces+i={i}+ext=.pqt",
+    )
+
+del df, df_surf
+
 log("SUCCESS!")
