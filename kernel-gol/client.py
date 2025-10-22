@@ -11,6 +11,7 @@ import itertools as it
 import json
 import logging
 import os
+import pathlib
 import random
 import uuid
 import shutil
@@ -245,7 +246,7 @@ def add_bool_arg(parser, name, default=False):
     group.add_argument("--no-" + name, dest=name, action="store_false")
     parser.set_defaults(**{name: default})
 
-def render_ascii_braille(
+def draw_unicode(
     grid: "np.ndarray",
     total_rows: int,
     total_cols: int,
@@ -253,7 +254,7 @@ def render_ascii_braille(
     max_render_cols: int = None,
 ) -> str:
     """
-    Renders the grid as ASCII Braille art.
+    Renders the grid as Unicode Braille art.
     Expects grid with shape (total_cols, total_rows).
     """
 
@@ -299,6 +300,42 @@ def render_ascii_braille(
         output.append(line)
 
     return "\n".join(output)
+
+
+def draw_ascii(
+    grid: "np.ndarray",
+    total_rows: int,
+    total_cols: int,
+    max_render_rows: int = None,
+    max_render_cols: int = None,
+) -> str:
+    """
+    Renders the grid as ASCII art (O for alive, . for dead).
+    Expects grid with shape (total_cols, total_rows).
+    """
+    render_rows = total_rows
+    if max_render_rows is not None:
+        render_rows = min(total_rows, max_render_rows)
+
+    render_cols = total_cols
+    if max_render_cols is not None:
+        render_cols = min(total_cols, max_render_cols)
+
+    cells_lines = []
+    for r in range(render_rows):
+        line = ""
+        for c in range(render_cols):
+            # grid shape is (total_cols, total_rows)
+            val = 0
+            # Check against *total* dims to avoid wrapping
+            if r < total_rows and c < total_cols:
+                val = grid[c][r]  # Access as [col][row]
+            else:
+                val = 0 # Out of bounds
+
+            line += "O" if val else "."
+        cells_lines.append(line)
+    return "\n".join(cells_lines)
 
 
 log("- reading env variables")
@@ -416,16 +453,45 @@ log(f"initial_state sum: {initial_state.ravel().sum()}")
 log(f"initial_state shape: {initial_state.shape}")
 log(f"initial_state dtype: {initial_state.dtype}")
 
-log("\npartial initial ascii rendering")
-partial_initial_render = render_ascii_braille(
+log("\npartial initial unicode rendering (100x100)")
+partial_initial_render = draw_unicode(
     initial_state, nRow, nCol, max_render_rows=100, max_render_cols=100
 )
 log(partial_initial_render)
 
-log("\nfull initial ascii rendering")
-full_initial_render = render_ascii_braille(initial_state, nRow, nCol)
-log(full_initial_render)
+log("Saving initial render snapshots...")
+# 1. Initial Unicode (Full) (.txt)
+initial_full_output_render = draw_unicode(initial_state, nRow, nCol)
+filename = "a=render-unicode+what=initial+ext=.txt"
+log(f"  - Saving full initial Unicode render to {filename} ...")
+pathlib.Path(filename).write_text(initial_full_output_render)
+log("  - ... done!")
 
+# 2. Initial Unicode (100x100) (.txt)
+# We already rendered this for the log
+filename = "a=render-unicode+what=initial+render-rows=100+render-cols=100+ext=.txt"
+log(f"  - Saving 100x100 initial Unicode render to {filename} ...")
+pathlib.Path(filename).write_text(partial_initial_render)
+log("  - ... done!")
+
+# 3. Initial Cells (Full) (.cells)
+initial_full_cells_render = draw_ascii(initial_state, nRow, nCol)
+filename = "a=render-cells+what=initial+ext=.cells"
+log(f"  - Saving full initial .cells render to {filename} ...")
+pathlib.Path(filename).write_text(initial_full_cells_render)
+log("  - ... done!")
+
+# 4. Initial Cells (100x100) (.cells)
+initial_render_100x100_cells = draw_ascii(
+    initial_state, nRow, nCol, max_render_rows=100, max_render_cols=100
+)
+filename = "a=render-cells+what=initial+render-rows=100+render-cols=100+ext=.cells"
+log(f"  - Saving 100x100 initial .cells render to {filename}")
+pathlib.Path(filename).write_text(initial_render_100x100_cells)
+log("  - ... done!")
+
+
+log(f"initial_state raw (up to 10x10): \n{initial_state[:10,:10]}")
 
 # Copy initial state into all PEs
 runner.memcpy_h2d(states_symbol, initial_state.flatten(), 0, 0, x_dim, y_dim, 1,
@@ -457,15 +523,54 @@ log(f"grid max: {grid.max()}")
 log(f"grid min: {grid.min()}")
 assert set(map(int, grid.ravel())).issubset({0, 1})
 
-log("\npartial output ascii rendering")
-partial_output_render = render_ascii_braille(
+log("\npartial output unicode rendering (100x100)")
+partial_output_render = draw_unicode(
     grid, nRow, nCol, max_render_rows=100, max_render_cols=100
 )
 log(partial_output_render)
 
-log("\nfull output ascii rendering")
-full_output_render = render_ascii_braille(grid, nRow, nCol)
+log("\nfull output unicode rendering")
+full_output_render = draw_unicode(grid, nRow, nCol)
 log(full_output_render)
+
+log("Generating .cells ASCII art...")
+full_cells_render = draw_ascii(grid, nRow, nCol)
+log("... .cells ASCII art generated (first 10 lines):")
+log("\n".join(line[:10] for line in full_cells_render.split("\n")[:10]))
+
+log("Saving final render snapshots...")
+
+# 1. Final Unicode (Full) (.txt)
+filename = "a=render-unicode+what=final+ext=.txt"
+log(f"  - Saving full final Unicode render to {filename} ...")
+pathlib.Path(filename).write_text(full_output_render)
+log("  - ... done!")
+
+# 2. Final Unicode (100x100) (.txt)
+render_100x100_unicode = draw_unicode(
+    grid, nRow, nCol, max_render_rows=100, max_render_cols=100
+)
+filename = "a=render-unicode+what=final+render-rows=100+render-cols=100+ext=.txt"
+log(f"  - Saving 100x100 final Unicode render to {filename} ...")
+pathlib.Path(filename).write_text(render_100x100_unicode)
+log("  - ... done!")
+
+# 3. Final Cells (Full) (.cells)
+filename = "a=render-cells+what=final+ext=.cells"
+log(f"  - Saving full final .cells render to {filename} ...")
+pathlib.Path(filename).write_text(full_cells_render)
+log("  - ... done!")
+
+# 4. Final Cells (100x100) (.cells)
+render_100x100_cells = draw_ascii(
+    grid, nRow, nCol, max_render_rows=100, max_render_cols=100
+)
+filename = (
+    "a=render-cells+what=final+render-rows=100+render-cols=100+ext=.cells"
+)
+log(f"  - Saving 100x100 final .cells render to {filename}")
+pathlib.Path(filename).write_text(render_100x100_cells)
+log("  - ... done!")
 
 
 log("\nstate layers")

@@ -215,7 +215,7 @@ with SdkLauncher("./run", disable_version_check=True) as launcher:
     logging.info("finding output files...")
     response = launcher.run(
         "find . -maxdepth 1 -type f "
-        r'\( -name "*.log" -o -name "*.pqt" -o -name "*.json" -o -name "*.npy" \)',
+        r'\( -name "*.log" -o -name "*.pqt" -o -name "*.json" -o -name "*.npy" -o -name "*.cells"  -o -name "*.txt" \)',
     )
     logging.info("... done!")
     logging.info(response + "\n")
