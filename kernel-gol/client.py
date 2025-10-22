@@ -429,7 +429,7 @@ log(full_initial_render)
 
 # Copy initial state into all PEs
 runner.memcpy_h2d(states_symbol, initial_state.flatten(), 0, 0, x_dim, y_dim, 1,
-streaming=False, order=MemcpyOrder.ROW_MAJOR, data_type=MemcpyDataType.MEMCPY_32BIT,nonblock=False)
+streaming=False, order=MemcpyOrder.COL_MAJOR, data_type=MemcpyDataType.MEMCPY_32BIT,nonblock=False)
 
 log(f'Run for {nCycleAtLeast} generations...')
 if nCycleAtLeast != 0:
@@ -439,7 +439,7 @@ if nCycleAtLeast != 0:
 # Copy states back
 states_result = np.zeros([x_dim * y_dim * nWav], dtype=np.uint32)
 runner.memcpy_d2h(states_result, states_symbol, 0, 0, x_dim, y_dim, nWav, streaming=False,
-order=MemcpyOrder.ROW_MAJOR, data_type=MemcpyDataType.MEMCPY_32BIT, nonblock=False)
+order=MemcpyOrder.COL_MAJOR, data_type=MemcpyDataType.MEMCPY_32BIT, nonblock=False)
 
 # Stop the program
 runner.stop()
