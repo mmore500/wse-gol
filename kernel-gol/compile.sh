@@ -12,9 +12,6 @@ echo "CSLC ${CSLC}"
 WSE_GOL_GLOBAL_SEED="${WSE_GOL_GLOBAL_SEED:-0}"
 echo "WSE_GOL_GLOBAL_SEED ${WSE_GOL_GLOBAL_SEED}"
 
-WSE_GOL_NCYCLE_AT_LEAST="${WSE_GOL_NCYCLE_AT_LEAST:-40}"
-echo "WSE_GOL_NCYCLE_AT_LEAST ${WSE_GOL_NCYCLE_AT_LEAST}"
-
 WSE_GOL_FABRIC_DIMS="${WSE_GOL_FABRIC_DIMS:-11,6}"
 echo "WSE_GOL_FABRIC_DIMS ${WSE_GOL_FABRIC_DIMS}"
 
@@ -54,4 +51,4 @@ rsync -rI "$(readlink -f cerebraslib)" .
 # 9x4 because compiler says
 # RuntimeError: Fabric dimension must be at least 9-by-4
 
-python3 -m compconf --compconf-verbose --compconf-cslc "${CSLC}" layout.csl --arch=${WSE_GOL_ARCH_FLAG} --import-path ./downstream/include --fabric-dims=${WSE_GOL_FABRIC_DIMS} --fabric-offsets=4,1 --channels=1 --memcpy --params=globalSeed:${WSE_GOL_GLOBAL_SEED},nCycleAtLeast:${WSE_GOL_NCYCLE_AT_LEAST},nRow:${WSE_GOL_NROW},nCol:${WSE_GOL_NCOL} -o out
+python3 -m compconf --compconf-verbose --compconf-cslc "${CSLC}" layout.csl --arch=${WSE_GOL_ARCH_FLAG} --import-path ./downstream/include --fabric-dims=${WSE_GOL_FABRIC_DIMS} --fabric-offsets=4,1 --channels=1 --memcpy --params=globalSeed:${WSE_GOL_GLOBAL_SEED},nRow:${WSE_GOL_NROW},nCol:${WSE_GOL_NCOL} -o out

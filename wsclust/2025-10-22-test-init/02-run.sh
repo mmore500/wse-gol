@@ -201,7 +201,7 @@ with SdkLauncher("./run", disable_version_check=True) as launcher:
         for key, value in os.environ.items()
         if key.startswith("WSE_GOL_") or key.startswith("COMPCONFENV_")
     )
-    command = f"{env_prefix} cs_python client.py --initial-state gosper --cmaddr %CMADDR% 2>&1 | tee run.log"
+    command = f"{env_prefix} cs_python client.py --ncycle 50 --initial-state gosper --cmaddr %CMADDR% 2>&1 | tee run.log"
     logging.info(f"command={command}")
     logging.info("running command...")
     response = launcher.run(command)

@@ -273,6 +273,7 @@ parser.add_argument("--name", help="the test compile output dir", default="out")
 add_bool_arg(parser, "suptrace", default=True)
 parser.add_argument("--cmaddr", help="IP:port for CS system")
 parser.add_argument('--initial-state', choices=['glider', 'random', 'gosper'], default='glider')
+parser.add_argument("--ncycle", default=40, type=int, help="run duration", default="out")
 log("- parsing arguments")
 args = parser.parse_args()
 
@@ -284,7 +285,7 @@ with open(f"{args.name}/out.json", encoding="utf-8") as json_file:
     compile_data = json.load(json_file)
 
 globalSeed = int(compile_data["params"]["globalSeed"])
-nCycleAtLeast = int(compile_data["params"]["nCycleAtLeast"])
+nCycleAtLeast = args.ncycle
 
 with open("compconf.json", encoding="utf-8") as json_file:
     compconf_data = json.load(json_file)
