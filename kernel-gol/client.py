@@ -369,10 +369,39 @@ log('Log output...')
 all_states = states_result.reshape((x_dim, y_dim, nWav)).transpose(2, 0, 1)
 
 log("\nascii rendering")
-for row in all_states[0]:
-    # Use your logic to convert 1s/0s to #/.
-    log(' '.join(['#' if cell else '.' for cell in row]))
+grid = all_states[0]
 
+# Helper to safely get a cell value (handles out-of-bounds)
+def get_cell(r: int, c: int) -> int:
+    if r < nRow and c < nCol:
+        return grid[r][c]
+    return 0 # Treat out-of-bounds as 'off'
+
+output = []
+for r in range(0, nRow, 4):  # Iterate in 4-row, 2-column steps
+    line = ""
+    for c in range(0, nCol, 2):
+        val = 0
+
+        # Braille dot mapping (base Unicode 0x2800)
+        # Left column dots (1, 2, 3, 7)
+        if get_cell(r, c):     val |= 0x01 # dot 1
+        if get_cell(r + 1, c): val |= 0x02 # dot 2
+        if get_cell(r + 2, c): val |= 0x04 # dot 3
+        if get_cell(r + 3, c): val |= 0x40 # dot 7
+
+        # Right column dots (4, 5, 6, 8)
+        if get_cell(r, c + 1):     val |= 0x08 # dot 4
+        if get_cell(r + 1, c + 1): val |= 0x10 # dot 5
+        if get_cell(r + 2, c + 1): val |= 0x20 # dot 6
+        if get_cell(r + 3, c + 1): val |= 0x80 # dot 8
+
+        # 0x2800 is the Unicode offset for the blank Braille pattern
+        line += chr(0x2800 + val)
+
+    output.append(line)
+
+log("\n".join(output))
 
 log("\nstate layers")
 log(all_states[:, :10, :10])  # log first 5x5 of each wave
