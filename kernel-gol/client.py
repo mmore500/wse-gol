@@ -144,6 +144,7 @@ def create_initial_state(state_type, x_dim, y_dim):
     gosper = np.array([[1 if c == 'O' else 0 for c in row] for row in padded])
 
     initial_state[:29, :56] = gosper
+    assert initial_state.ravel().sum() == pattern.count('O')
 
   else: # state_type == 'random'
     log("creating random initial state...")
@@ -369,14 +370,22 @@ log('Log output...')
 # Reshape states results to x_dim x y_dim frames
 all_states = states_result.reshape((x_dim, y_dim, nWav)).transpose(2, 0, 1)
 
-log("\npartial ascii rendering")
 grid = all_states[0]
+log(f"num cells set 0: {all_states[0].ravel().sum()}")
+log(f"num cells set 1: {all_states[0].size - all_states[0].ravel().sum()}")
+log(f"grid shape: {grid.shape}")
+log(f"grid dtype: {grid.dtype}")
+log(f"grid max: {grid.max()}")
+log(f"grid min: {grid.min()}")
+assert set(map(int, grid.ravel())).issubset({0, 1})
+
+log("\npartial ascii rendering")
 
 # Helper to safely get a cell value (handles out-of-bounds)
 def get_cell(r: int, c: int) -> int:
     if r < nRow and c < nCol:
         return grid[c][r]
-    return 0 # Treat out-of-bounds as 'off'
+    return 0  # Treat out-of-bounds as 'off'
 
 output = []
 for r in range(0, min(nRow, 100), 4):  # Iterate in 4-row, 2-column steps
@@ -411,7 +420,7 @@ grid = all_states[0]
 def get_cell(r: int, c: int) -> int:
     if r < nRow and c < nCol:
         return grid[c][r]
-    return 0 # Treat out-of-bounds as 'off'
+    return 0  # Treat out-of-bounds as 'off'
 
 output = []
 for r in range(0, nRow, 4):  # Iterate in 4-row, 2-column steps
